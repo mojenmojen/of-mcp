@@ -171,20 +171,19 @@ function generateAppleScript(params: EditItemParams): string {
       if (params.newStatus === 'completed') {
         script += `
           -- Mark task as completed
-          set completed of foundItem to true
+          mark complete foundItem
           set end of changedProperties to "status (completed)"
 `;
       } else if (params.newStatus === 'dropped') {
         script += `
           -- Mark task as dropped
-          set dropped of foundItem to true
+          mark dropped foundItem
           set end of changedProperties to "status (dropped)"
 `;
       } else if (params.newStatus === 'incomplete') {
         script += `
           -- Mark task as incomplete
-          set completed of foundItem to false
-          set dropped of foundItem to false
+          mark incomplete foundItem
           set end of changedProperties to "status (incomplete)"
 `;
       }
