@@ -220,6 +220,9 @@ Efficiently manage multiple tasks:
 ### 📊 Analytics & Tracking
 16. **get_today_completed_tasks** - View today's completed tasks
 
+### 🔧 Utility Tools
+17. **get_server_version** - Get server version and build information
+
 ## 🚀 Quick Start Examples
 
 ### Basic Task Creation
@@ -295,6 +298,9 @@ get_custom_perspective_tasks {
 # Check MCP status
 claude mcp list
 
+# Verify server version
+get_server_version
+
 # Test basic connection
 get_inbox_tasks
 
@@ -307,6 +313,7 @@ list_custom_perspectives
 - Verify Node.js 18+ is installed
 - Check Claude Code MCP configuration
 - Enable accessibility permissions for terminal apps if needed
+- Use `get_server_version` to verify the correct version is loaded after updates
 
 ## 🎯 Use Cases
 
