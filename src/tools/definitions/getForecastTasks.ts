@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { getForecastTasks } from '../primitives/getForecastTasks.js';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 
 export const schema = z.object({
   days: z.number().min(1).max(30).optional().describe("Number of days to look ahead for forecast (default: 7)"),
@@ -8,7 +9,7 @@ export const schema = z.object({
   includeDeferredOnly: z.boolean().optional().describe("Set to true to show only deferred tasks becoming available (default: false)")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra) {
+export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     const result = await getForecastTasks({
       days: args.days || 7,

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { getCustomPerspectiveTasks } from '../primitives/getCustomPerspectiveTasks.js';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 
 export const schema = z.object({
   perspectiveName: z.string().describe("Exact name of the OmniFocus custom perspective (e.g., '今日工作安排', '今日复盘', '本周项目'). This is NOT a tag name."),
@@ -9,7 +10,7 @@ export const schema = z.object({
   showHierarchy: z.boolean().optional().describe("Display tasks in hierarchical tree structure showing parent-child relationships. Use this when user wants '层级显示' or 'tree view' (default: false)")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra) {
+export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     const result = await getCustomPerspectiveTasks({
       perspectiveName: args.perspectiveName,

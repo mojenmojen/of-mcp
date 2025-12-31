@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { getTasksByTag } from '../primitives/getTasksByTag.js';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 
 export const schema = z.object({
   tagName: z.string().describe("Name of the tag to filter tasks by"),
@@ -8,7 +9,7 @@ export const schema = z.object({
   exactMatch: z.boolean().optional().describe("Set to true for exact tag name match, false for partial (default: false)")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra) {
+export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     const result = await getTasksByTag({
       tagName: args.tagName,

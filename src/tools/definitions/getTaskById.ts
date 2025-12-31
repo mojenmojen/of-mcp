@@ -1,13 +1,14 @@
 import { z } from 'zod';
 import { getTaskById, GetTaskByIdParams } from '../primitives/getTaskById.js';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 
 export const schema = z.object({
   taskId: z.string().optional().describe("The ID of the task to retrieve"),
   taskName: z.string().optional().describe("The name of the task to retrieve (alternative to taskId)")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra) {
+export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Validate that either taskId or taskName is provided
     if (!args.taskId && !args.taskName) {
