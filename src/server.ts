@@ -29,7 +29,7 @@ import * as getServerVersionTool from './tools/definitions/getServerVersion.js';
 // Create an MCP server
 const server = new McpServer({
   name: "OmniFocus MCP",
-  version: "1.7.1"
+  version: "1.8.0"
 });
 
 // Register tools
