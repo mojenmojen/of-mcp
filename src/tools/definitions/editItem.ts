@@ -21,6 +21,12 @@ export const schema = z.object({
   addTags: z.array(z.string()).optional().describe("Tags to add to the task"),
   removeTags: z.array(z.string()).optional().describe("Tags to remove from the task"),
   replaceTags: z.array(z.string()).optional().describe("Tags to replace all existing tags with"),
+
+  // Task movement fields
+  newProjectName: z.string().optional().describe("Move task to a different project (by project name)"),
+  newParentTaskId: z.string().optional().describe("Move task to be a subtask of another task (by task ID)"),
+  newParentTaskName: z.string().optional().describe("Move task to be a subtask of another task (by task name)"),
+  moveToInbox: z.boolean().optional().describe("Set to true to move task to inbox"),
   
   // Project-specific fields
   newSequential: z.boolean().optional().describe("Whether the project should be sequential"),

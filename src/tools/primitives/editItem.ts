@@ -29,6 +29,12 @@ export interface EditItemParams {
   addTags?: string[];           // Tags to add to the task
   removeTags?: string[];        // Tags to remove from the task
   replaceTags?: string[];       // Tags to replace all existing tags with
+
+  // Task movement fields
+  newProjectName?: string;      // Move task to a different project
+  newParentTaskId?: string;     // Move task to be a subtask of another task (by ID)
+  newParentTaskName?: string;   // Move task to be a subtask of another task (by name)
+  moveToInbox?: boolean;        // Move task to inbox
   
   // Project-specific fields
   newSequential?: boolean;      // Whether the project should be sequential
@@ -252,8 +258,75 @@ function generateAppleScript(params: EditItemParams): string {
 `;
       }
     }
+
+    // Task movement operations
+    if (params.moveToInbox === true) {
+      // Move task to inbox
+      script += `
+          -- Move task to inbox
+          set containing project of foundItem to missing value
+          set parent task of foundItem to missing value
+          set end of changedProperties to "moved to inbox"
+`;
+    } else if (params.newParentTaskId !== undefined || params.newParentTaskName !== undefined) {
+      // Move task to be a subtask of another task
+      const parentId = params.newParentTaskId ? escapeForAppleScript(params.newParentTaskId) : '';
+      const parentName = params.newParentTaskName ? escapeForAppleScript(params.newParentTaskName) : '';
+
+      script += `
+          -- Move task to be a subtask of another task
+          set parentTask to missing value
+`;
+      if (parentId) {
+        script += `
+          try
+            set parentTask to first flattened task where id = "${parentId}"
+          end try
+`;
+      }
+      if (parentName && !parentId) {
+        script += `
+          try
+            set parentTask to first flattened task where name = "${parentName}"
+          end try
+`;
+      } else if (parentName && parentId) {
+        script += `
+          if parentTask is missing value then
+            try
+              set parentTask to first flattened task where name = "${parentName}"
+            end try
+          end if
+`;
+      }
+      script += `
+          if parentTask is not missing value then
+            move foundItem to end of tasks of parentTask
+            set end of changedProperties to "moved to parent task"
+          else
+            error "Parent task not found"
+          end if
+`;
+    } else if (params.newProjectName !== undefined) {
+      // Move task to a different project
+      const projectName = escapeForAppleScript(params.newProjectName);
+      script += `
+          -- Move task to a different project
+          set destProject to missing value
+          try
+            set destProject to first flattened project where name = "${projectName}"
+          end try
+
+          if destProject is not missing value then
+            move foundItem to end of tasks of destProject
+            set end of changedProperties to "moved to project"
+          else
+            error "Project not found: ${projectName}"
+          end if
+`;
+    }
   }
-  
+
   // Project-specific updates
   if (itemType === 'project') {
     // Update sequential status
