@@ -78,14 +78,12 @@
     }
 
     // Create the new task
+    // All container types need .ending to specify the insertion location
     let newTask;
     if (containerType === 'inbox') {
-      // Create in inbox - use inbox.ending as the insertion location
-      // (inbox itself is not a valid position type, but inbox.ending is)
       newTask = new Task(taskName, inbox.ending);
     } else if (containerType === 'parentTask' || containerType === 'project') {
-      // Create as child of parent task or project
-      newTask = new Task(taskName, container);
+      newTask = new Task(taskName, container.ending);
     }
 
     // Set task properties
