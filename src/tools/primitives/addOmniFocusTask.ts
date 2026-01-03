@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import { writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { escapeForAppleScript, generateJsonEscapeHelper } from '../../utils/applescriptUtils.js'; // CLAUDEAI: Import AppleScript utilities
+import { escapeForAppleScript, generateJsonEscapeHelper, generateAppleScriptStringExpr } from '../../utils/applescriptUtils.js'; // CLAUDEAI: Import AppleScript utilities
 const execAsync = promisify(exec);
 
 // Interface for task creation parameters
@@ -25,56 +25,62 @@ export interface AddOmniFocusTaskParams {
  */
 function generateAppleScript(params: AddOmniFocusTaskParams): string {
   // CLAUDEAI: Sanitize and prepare parameters for AppleScript using utility functions
-  const name = escapeForAppleScript(params.name);
-  const note = escapeForAppleScript(params.note || '');
+  // Use generateAppleScriptStringExpr for names to handle special characters like $
+  const nameExpr = generateAppleScriptStringExpr(params.name);
+  const noteExpr = params.note ? generateAppleScriptStringExpr(params.note) : '""';
   const dueDate = params.dueDate || '';
   const deferDate = params.deferDate || '';
   const flagged = params.flagged === true;
   const estimatedMinutes = params.estimatedMinutes?.toString() || '';
   const tags = params.tags || [];
-  const projectName = escapeForAppleScript(params.projectName || '');
+  const projectNameExpr = params.projectName ? generateAppleScriptStringExpr(params.projectName) : '""';
   const parentTaskId = escapeForAppleScript(params.parentTaskId || '');
-  const parentTaskName = escapeForAppleScript(params.parentTaskName || '');
-  
+  const parentTaskNameExpr = params.parentTaskName ? generateAppleScriptStringExpr(params.parentTaskName) : '""';
+
   // Construct AppleScript with error handling
   let script = `
   ${generateJsonEscapeHelper()}
-  
+
   try
     tell application "OmniFocus"
       tell front document
+        -- Build search strings (handles special characters like $ safely)
+        set taskName to ${nameExpr}
+        set parentTaskSearchName to ${parentTaskNameExpr}
+        set projectSearchName to ${projectNameExpr}
+
         -- Determine the container (parent task, project, or inbox)
         if "${parentTaskId}" is not "" then
           -- Create subtask using parent task ID
           try
             set theParentTask to first flattened task where id = "${parentTaskId}"
-            set newTask to make new task with properties {name:"${name}"} at end of tasks of theParentTask
+            set newTask to make new task with properties {name:taskName} at end of tasks of theParentTask
           on error
             return "{\\\"success\\\":false,\\\"error\\\":\\\"Parent task not found with ID: ${parentTaskId}\\\"}"
           end try
-        else if "${parentTaskName}" is not "" then
+        else if parentTaskSearchName is not "" then
           -- Create subtask using parent task name
           try
-            set theParentTask to first flattened task where name = "${parentTaskName}"
-            set newTask to make new task with properties {name:"${name}"} at end of tasks of theParentTask
+            set theParentTask to first flattened task where name = parentTaskSearchName
+            set newTask to make new task with properties {name:taskName} at end of tasks of theParentTask
           on error
-            return "{\\\"success\\\":false,\\\"error\\\":\\\"Parent task not found with name: ${parentTaskName}\\\"}"
+            return "{\\\"success\\\":false,\\\"error\\\":\\\"Parent task not found\\\"}"
           end try
-        else if "${projectName}" is not "" then
+        else if projectSearchName is not "" then
           -- Use specified project
           try
-            set theProject to first flattened project where name = "${projectName}"
-            set newTask to make new task with properties {name:"${name}"} at end of tasks of theProject
+            set theProject to first flattened project where name = projectSearchName
+            set newTask to make new task with properties {name:taskName} at end of tasks of theProject
           on error
-            return "{\\\"success\\\":false,\\\"error\\\":\\\"Project not found: ${projectName}\\\"}"
+            return "{\\\"success\\\":false,\\\"error\\\":\\\"Project not found\\\"}"
           end try
         else
           -- Use inbox of the document
-          set newTask to make new inbox task with properties {name:"${name}"}
+          set newTask to make new inbox task with properties {name:taskName}
         end if
-        
+
         -- Set task properties
-        ${note ? `set note of newTask to "${note}"` : ''}
+        ${params.note ? `set note of newTask to ${noteExpr}` : ''}
         ${dueDate ? `
           set due date of newTask to (current date) + (time to GMT)
           set due date of newTask to date "${dueDate}"` : ''}
@@ -83,26 +89,27 @@ function generateAppleScript(params: AddOmniFocusTaskParams): string {
           set defer date of newTask to date "${deferDate}"` : ''}
         ${flagged ? `set flagged of newTask to true` : ''}
         ${estimatedMinutes ? `set estimated minutes of newTask to ${estimatedMinutes}` : ''}
-        
+
         -- Get the task ID
         set taskId to id of newTask as string
-        
+
         -- Add tags if provided
         ${tags.length > 0 ? tags.map(tag => {
-          const sanitizedTag = escapeForAppleScript(tag); // CLAUDEAI: Use utility function for consistent escaping
+          const tagExpr = generateAppleScriptStringExpr(tag);
           return `
           try
-            set theTag to first flattened tag where name = "${sanitizedTag}"
+            set tagSearchName to ${tagExpr}
+            set theTag to first flattened tag where name = tagSearchName
             tell newTask to add theTag
           on error
             -- Ignore errors finding/adding tags
           end try`;
         }).join('\n') : ''}
-        
+
         -- Escape values for JSON output
         set escapedTaskId to my escapeForJson(taskId)
-        set escapedName to my escapeForJson("${name}")
-        
+        set escapedName to my escapeForJson(name of newTask)
+
         -- Return success with task ID
         return "{\\\"success\\\":true,\\\"taskId\\\":\\"" & escapedTaskId & "\\",\\\"name\\\":\\"" & escapedName & "\\"}"
       end tell
@@ -113,7 +120,7 @@ function generateAppleScript(params: AddOmniFocusTaskParams): string {
     return "{\\\"success\\\":false,\\\"error\\\":\\"" & escapedError & "\\"}"
   end try
   `;
-  
+
   return script;
 }
 

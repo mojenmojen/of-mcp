@@ -231,12 +231,17 @@ function groupTasksByProject(tasks: any[]): Map<string, any[]> {
 // 格式化单个任务
 function formatTask(task: any): string {
   let output = '';
-  
+
   // 任务基本信息
   const flagSymbol = task.flagged ? '🚩 ' : '';
   const statusEmoji = getStatusEmoji(task.taskStatus);
-  
+
   output += `${statusEmoji} ${flagSymbol}${task.name}`;
+
+  // Add task ID for easy reference (useful for edit_item, remove_item operations)
+  if (task.id) {
+    output += ` [ID: ${task.id}]`;
+  }
   
   // 日期信息
   const dateInfo: string[] = [];
