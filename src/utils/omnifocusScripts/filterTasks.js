@@ -6,8 +6,9 @@
     
     const filters = {
       taskStatus: args.taskStatus || null,
-      perspective: args.perspective || "all", 
+      perspective: args.perspective || "all",
       flagged: args.flagged !== undefined ? args.flagged : null,
+      inInbox: args.inInbox !== undefined ? args.inInbox : null,
       
       // 完成日期过滤器
       completedToday: args.completedToday || false,
@@ -129,7 +130,12 @@
         if (filters.flagged !== null && task.flagged !== filters.flagged) {
           return false;
         }
-        
+
+        // 收件箱过滤
+        if (filters.inInbox !== null && task.inInbox !== filters.inInbox) {
+          return false;
+        }
+
         // 项目过滤
         if (filters.projectFilter) {
           const projectName = task.containingProject ? task.containingProject.name : '';
