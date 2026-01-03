@@ -1,10 +1,4 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import { writeFileSync, unlinkSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { escapeForAppleScript, generateJsonEscapeHelper, generateAppleScriptStringExpr } from '../../utils/applescriptUtils.js'; // CLAUDEAI: Import AppleScript utilities
-const execAsync = promisify(exec);
+import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 
 // Interface for task creation parameters
 export interface AddOmniFocusTaskParams {
@@ -21,113 +15,9 @@ export interface AddOmniFocusTaskParams {
 }
 
 /**
- * Generate pure AppleScript for task creation
- */
-function generateAppleScript(params: AddOmniFocusTaskParams): string {
-  // CLAUDEAI: Sanitize and prepare parameters for AppleScript using utility functions
-  // Use generateAppleScriptStringExpr for names to handle special characters like $
-  const nameExpr = generateAppleScriptStringExpr(params.name);
-  const noteExpr = params.note ? generateAppleScriptStringExpr(params.note) : '""';
-  const dueDate = params.dueDate || '';
-  const deferDate = params.deferDate || '';
-  const flagged = params.flagged === true;
-  const estimatedMinutes = params.estimatedMinutes?.toString() || '';
-  const tags = params.tags || [];
-  const projectNameExpr = params.projectName ? generateAppleScriptStringExpr(params.projectName) : '""';
-  const parentTaskId = escapeForAppleScript(params.parentTaskId || '');
-  const parentTaskNameExpr = params.parentTaskName ? generateAppleScriptStringExpr(params.parentTaskName) : '""';
-
-  // Construct AppleScript with error handling
-  let script = `
-  ${generateJsonEscapeHelper()}
-
-  try
-    tell application "OmniFocus"
-      tell front document
-        -- Build search strings (handles special characters like $ safely)
-        set taskName to ${nameExpr}
-        set parentTaskSearchName to ${parentTaskNameExpr}
-        set projectSearchName to ${projectNameExpr}
-
-        -- Determine the container (parent task, project, or inbox)
-        if "${parentTaskId}" is not "" then
-          -- Create subtask using parent task ID
-          try
-            set theParentTask to first flattened task where id = "${parentTaskId}"
-            set newTask to make new task with properties {name:taskName} at end of tasks of theParentTask
-          on error
-            return "{\\\"success\\\":false,\\\"error\\\":\\\"Parent task not found with ID: ${parentTaskId}\\\"}"
-          end try
-        else if parentTaskSearchName is not "" then
-          -- Create subtask using parent task name
-          try
-            set theParentTask to first flattened task where name = parentTaskSearchName
-            set newTask to make new task with properties {name:taskName} at end of tasks of theParentTask
-          on error
-            return "{\\\"success\\\":false,\\\"error\\\":\\\"Parent task not found\\\"}"
-          end try
-        else if projectSearchName is not "" then
-          -- Use specified project
-          try
-            set theProject to first flattened project where name = projectSearchName
-            set newTask to make new task with properties {name:taskName} at end of tasks of theProject
-          on error
-            return "{\\\"success\\\":false,\\\"error\\\":\\\"Project not found\\\"}"
-          end try
-        else
-          -- Use inbox of the document
-          set newTask to make new inbox task with properties {name:taskName}
-        end if
-
-        -- Set task properties
-        ${params.note ? `set note of newTask to ${noteExpr}` : ''}
-        ${dueDate ? `
-          set due date of newTask to (current date) + (time to GMT)
-          set due date of newTask to date "${dueDate}"` : ''}
-        ${deferDate ? `
-          set defer date of newTask to (current date) + (time to GMT)
-          set defer date of newTask to date "${deferDate}"` : ''}
-        ${flagged ? `set flagged of newTask to true` : ''}
-        ${estimatedMinutes ? `set estimated minutes of newTask to ${estimatedMinutes}` : ''}
-
-        -- Get the task ID
-        set taskId to id of newTask as string
-
-        -- Add tags if provided
-        ${tags.length > 0 ? tags.map(tag => {
-          const tagExpr = generateAppleScriptStringExpr(tag);
-          return `
-          try
-            set tagSearchName to ${tagExpr}
-            set theTag to first flattened tag where name = tagSearchName
-            tell newTask to add theTag
-          on error
-            -- Ignore errors finding/adding tags
-          end try`;
-        }).join('\n') : ''}
-
-        -- Escape values for JSON output
-        set escapedTaskId to my escapeForJson(taskId)
-        set escapedName to my escapeForJson(name of newTask)
-
-        -- Return success with task ID
-        return "{\\\"success\\\":true,\\\"taskId\\\":\\"" & escapedTaskId & "\\",\\\"name\\\":\\"" & escapedName & "\\"}"
-      end tell
-    end tell
-  on error errorMessage
-    -- Escape error message for JSON output
-    set escapedError to my escapeForJson(errorMessage)
-    return "{\\\"success\\\":false,\\\"error\\\":\\"" & escapedError & "\\"}"
-  end try
-  `;
-
-  return script;
-}
-
-/**
  * Validate parent task parameters to prevent conflicts
  */
-async function validateParentTaskParams(params: AddOmniFocusTaskParams): Promise<{valid: boolean, error?: string}> {
+function validateParentTaskParams(params: AddOmniFocusTaskParams): {valid: boolean, error?: string} {
   // Check if both parentTaskId and parentTaskName are provided
   if (params.parentTaskId && params.parentTaskName) {
     return {
@@ -149,11 +39,20 @@ async function validateParentTaskParams(params: AddOmniFocusTaskParams): Promise
 
 /**
  * Add a task to OmniFocus
+ * Uses OmniJS to correctly parse ISO date formats and handle special characters
  */
 export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<{success: boolean, taskId?: string, error?: string}> {
   try {
+    // Validate parameters
+    if (!params.name) {
+      return {
+        success: false,
+        error: "Task name is required"
+      };
+    }
+
     // Validate parent task parameters
-    const validation = await validateParentTaskParams(params);
+    const validation = validateParentTaskParams(params);
     if (!validation.valid) {
       return {
         success: false,
@@ -161,53 +60,51 @@ export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<
       };
     }
 
-    // Generate AppleScript
-    const script = generateAppleScript(params);
-    
-    console.error("Executing AppleScript via temporary file...");
-    
-    // CLAUDEAI: Write AppleScript to temporary file to avoid shell escaping issues with apostrophes
-    const tempFile = join(tmpdir(), `omnifocus-task-${Date.now()}.applescript`);
-    let stdout = '';
-    let stderr = '';
-    
-    try {
-      writeFileSync(tempFile, script);
-      const result = await execAsync(`osascript "${tempFile}"`);
-      stdout = result.stdout;
-      stderr = result.stderr;
-    } finally {
-      // CLAUDEAI: Clean up temporary file
+    console.error("Executing OmniJS script for addOmniFocusTask...");
+    console.error(`Task name: ${params.name}, Project: ${params.projectName || 'inbox'}`);
+
+    // Execute the OmniJS script
+    const result = await executeOmniFocusScript('@addTask.js', {
+      name: params.name,
+      note: params.note || null,
+      dueDate: params.dueDate || null,
+      deferDate: params.deferDate || null,
+      flagged: params.flagged || false,
+      estimatedMinutes: params.estimatedMinutes || null,
+      tags: params.tags || [],
+      projectName: params.projectName || null,
+      parentTaskId: params.parentTaskId || null,
+      parentTaskName: params.parentTaskName || null
+    });
+
+    // Parse result
+    let parsed;
+    if (typeof result === 'string') {
       try {
-        unlinkSync(tempFile);
-      } catch (cleanupError) {
-        console.error("Error cleaning up temporary file:", cleanupError);
+        parsed = JSON.parse(result);
+      } catch (e) {
+        console.error("Failed to parse result as JSON:", e);
+        return {
+          success: false,
+          error: `Failed to parse result: ${result}`
+        };
       }
+    } else {
+      parsed = result;
     }
-    
-    if (stderr) {
-      console.error("AppleScript stderr:", stderr);
-    }
-    
-    console.error("AppleScript stdout:", stdout);
-    
-    // Parse the result
-    try {
-      const result = JSON.parse(stdout);
-      
-      // Return the result
+
+    if (parsed.success) {
       return {
-        success: result.success,
-        taskId: result.taskId,
-        error: result.error
+        success: true,
+        taskId: parsed.taskId
       };
-    } catch (parseError) {
-      console.error("Error parsing AppleScript result:", parseError);
+    } else {
       return {
         success: false,
-        error: `Failed to parse result: ${stdout}`
+        error: parsed.error || "Unknown error"
       };
     }
+
   } catch (error: any) {
     console.error("Error in addOmniFocusTask:", error);
     return {
@@ -215,4 +112,4 @@ export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<
       error: error?.message || "Unknown error in addOmniFocusTask"
     };
   }
-} 
+}
