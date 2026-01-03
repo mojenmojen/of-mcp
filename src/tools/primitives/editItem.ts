@@ -20,6 +20,7 @@ export interface EditItemParams {
 
   // Task-specific fields
   newStatus?: TaskStatus;       // New status for tasks (incomplete, completed, dropped)
+  dropCompletely?: boolean;     // When dropping repeating task, true = drop completely (no future occurrences)
   addTags?: string[];           // Tags to add to the task
   removeTags?: string[];        // Tags to remove from the task
   replaceTags?: string[];       // Tags to replace all existing tags with
@@ -71,6 +72,7 @@ export async function editItem(params: EditItemParams): Promise<{
       newFlagged: params.newFlagged,
       newEstimatedMinutes: params.newEstimatedMinutes,
       newStatus: params.newStatus,
+      dropCompletely: params.dropCompletely || false,
       addTags: params.addTags,
       removeTags: params.removeTags,
       replaceTags: params.replaceTags,

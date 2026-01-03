@@ -109,8 +109,11 @@
         foundItem.markComplete();
         changedProperties.push("status (completed)");
       } else if (args.newStatus === 'dropped') {
-        foundItem.drop(false);
-        changedProperties.push("status (dropped)");
+        // drop(true) = drop completely (no future occurrences for repeating tasks)
+        // drop(false) = drop this occurrence only (repeating tasks create next occurrence)
+        const dropCompletely = args.dropCompletely === true;
+        foundItem.drop(dropCompletely);
+        changedProperties.push(dropCompletely ? "status (dropped completely)" : "status (dropped)");
       } else if (args.newStatus === 'incomplete') {
         foundItem.markIncomplete();
         changedProperties.push("status (incomplete)");
