@@ -79,7 +79,7 @@ export async function getTasksByTag(options: GetTasksByTagOptions): Promise<stri
               const statusStr = task.taskStatus !== 'Available' ? ` (${task.taskStatus})` : '';
               const estimateStr = task.estimatedMinutes ? ` ⏱${task.estimatedMinutes}m` : '';
               
-              output += `• ${flagSymbol}${task.name}${dueDateStr}${deferDateStr}${statusStr}${estimateStr}\n`;
+              output += `• ${flagSymbol}${task.name}${dueDateStr}${deferDateStr}${statusStr}${estimateStr} [ID: ${task.id}]\n`;
               
               if (task.note && task.note.trim()) {
                 output += `  📝 ${task.note.trim()}\n`;
