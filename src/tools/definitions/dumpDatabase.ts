@@ -26,10 +26,12 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
       }]
     };
   } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorStack = err instanceof Error ? err.stack : undefined;
     return {
       content: [{
         type: "text" as const,
-        text: `Error generating report. Please ensure OmniFocus is running and try again.`
+        text: `Error generating report: ${errorMessage}${errorStack ? `\n\nStack trace:\n${errorStack}` : ''}`
       }],
       isError: true
     };
