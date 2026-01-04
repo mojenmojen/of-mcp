@@ -78,11 +78,15 @@
     }
 
     // Create the new task
-    // All container types need .ending to specify the insertion location
     let newTask;
     if (containerType === 'inbox') {
       newTask = new Task(taskName, inbox.ending);
-    } else if (containerType === 'parentTask' || containerType === 'project') {
+    } else if (containerType === 'parentTask') {
+      // For subtasks, create in inbox first then move to parent
+      // Using moveTasks() is the reliable way to create subtasks
+      newTask = new Task(taskName, inbox.ending);
+      moveTasks([newTask], container);
+    } else if (containerType === 'project') {
       newTask = new Task(taskName, container.ending);
     }
 
