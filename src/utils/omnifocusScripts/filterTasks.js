@@ -195,16 +195,19 @@
       });
     }
     
+    // Capture count after filtering but before limit
+    const totalMatchingCount = filteredTasks.length;
+
     // 限制结果数量
     if (filters.limit && filteredTasks.length > filters.limit) {
       filteredTasks = filteredTasks.slice(0, filters.limit);
     }
-    
+
     // 构建返回数据
     const exportData = {
       exportDate: new Date().toISOString(),
       tasks: [],
-      totalCount: baseTasks.length,
+      totalCount: totalMatchingCount,
       filteredCount: filteredTasks.length,
       sortedBy: filters.sortBy,
       sortOrder: filters.sortOrder
