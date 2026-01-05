@@ -71,6 +71,10 @@ export interface OmnifocusProject {
   tasks: string[]; // Task IDs
   flagged?: boolean;
   estimatedMinutes?: number | null;
+  // Review fields (OmniFocus 4+)
+  reviewInterval: number | null; // seconds between reviews
+  nextReviewDate: string | null; // ISO date
+  lastReviewDate: string | null; // ISO date
 }
 
 export interface OmnifocusFolder {

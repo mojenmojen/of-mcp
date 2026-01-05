@@ -57,6 +57,21 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
         infoText += `• **Note**: ${project.note.substring(0, 200)}${project.note.length > 200 ? '...' : ''}\n`;
       }
 
+      // Review information
+      if (project.reviewInterval || project.nextReviewDate || project.lastReviewDate) {
+        infoText += `\n📋 **Review Information**\n`;
+        if (project.reviewInterval) {
+          const days = Math.round(project.reviewInterval / 86400); // 86400 = seconds in a day
+          infoText += `• **Review Interval**: ${days} day${days !== 1 ? 's' : ''}\n`;
+        }
+        if (project.nextReviewDate) {
+          infoText += `• **Next Review**: ${project.nextReviewDate}\n`;
+        }
+        if (project.lastReviewDate) {
+          infoText += `• **Last Reviewed**: ${project.lastReviewDate}\n`;
+        }
+      }
+
       return {
         content: [{
           type: "text" as const,

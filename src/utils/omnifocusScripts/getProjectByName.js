@@ -68,7 +68,33 @@
       taskCount: 0,
       remainingTaskCount: 0,
       folderId: null,
-      folderName: null
+      folderName: null,
+      // Review fields - ReviewInterval has .steps and .unit properties
+      reviewInterval: (function() {
+        try {
+          const ri = foundProject.reviewInterval;
+          if (ri === null || ri === undefined) return null;
+          // Convert steps + unit to seconds for consistency
+          const steps = ri.steps || 0;
+          const unit = ri.unit || 'days';
+          let seconds = steps;
+          if (unit === 'days') seconds = steps * 24 * 60 * 60;
+          else if (unit === 'weeks') seconds = steps * 7 * 24 * 60 * 60;
+          else if (unit === 'months') seconds = steps * 30 * 24 * 60 * 60;
+          else if (unit === 'years') seconds = steps * 365 * 24 * 60 * 60;
+          return seconds;
+        } catch (e) { return null; }
+      })(),
+      nextReviewDate: (function() {
+        try {
+          return foundProject.nextReviewDate ? foundProject.nextReviewDate.toISOString() : null;
+        } catch (e) { return null; }
+      })(),
+      lastReviewDate: (function() {
+        try {
+          return foundProject.lastReviewDate ? foundProject.lastReviewDate.toISOString() : null;
+        } catch (e) { return null; }
+      })()
     };
 
     // Get task counts

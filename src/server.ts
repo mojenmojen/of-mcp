@@ -30,6 +30,9 @@ import * as filterTasksTool from './tools/definitions/filterTasks.js';
 // Import custom perspective tools
 import * as listCustomPerspectivesTool from './tools/definitions/listCustomPerspectives.js';
 import * as getCustomPerspectiveTasksTool from './tools/definitions/getCustomPerspectiveTasks.js';
+// Import review tools
+import * as getProjectsForReviewTool from './tools/definitions/getProjectsForReview.js';
+import * as batchMarkReviewedTool from './tools/definitions/batchMarkReviewed.js';
 // Import utility tools
 import * as getServerVersionTool from './tools/definitions/getServerVersion.js';
 
@@ -168,6 +171,21 @@ server.tool(
   "Get tasks from a specific OmniFocus custom perspective by name. Use this when user refers to perspective names like '今日工作安排', '今日复盘', '本周项目' etc. - these are custom views created in OmniFocus, NOT tags. Supports hierarchical tree display of task relationships.",
   getCustomPerspectiveTasksTool.schema.shape,
   getCustomPerspectiveTasksTool.handler
+);
+
+// Review tools
+server.tool(
+  "get_projects_for_review",
+  "Get projects that are due for review (next review date is in the past or today)",
+  getProjectsForReviewTool.schema.shape,
+  getProjectsForReviewTool.handler
+);
+
+server.tool(
+  "batch_mark_reviewed",
+  "Mark multiple projects as reviewed in a single operation (advances their next review dates)",
+  batchMarkReviewedTool.schema.shape,
+  batchMarkReviewedTool.handler
 );
 
 // Utility tools

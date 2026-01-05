@@ -308,6 +308,87 @@
       }
     }
 
+    // Project-specific: Mark as reviewed
+    if (itemType === 'project' && args.markReviewed === true) {
+      try {
+        // Try the standard markReviewed method
+        if (typeof foundItem.markReviewed === 'function') {
+          foundItem.markReviewed();
+          changedProperties.push("marked as reviewed");
+        } else {
+          // Fallback: manually advance next review date based on interval
+          let intervalSeconds = null;
+          const ri = foundItem.reviewInterval;
+          if (ri !== null && ri !== undefined) {
+            // ReviewInterval has .steps and .unit properties
+            const steps = ri.steps || 0;
+            const unit = ri.unit || 'days';
+            if (unit === 'days') intervalSeconds = steps * 24 * 60 * 60;
+            else if (unit === 'weeks') intervalSeconds = steps * 7 * 24 * 60 * 60;
+            else if (unit === 'months') intervalSeconds = steps * 30 * 24 * 60 * 60;
+            else if (unit === 'years') intervalSeconds = steps * 365 * 24 * 60 * 60;
+          }
+          if (intervalSeconds) {
+            const nextDate = new Date();
+            nextDate.setTime(nextDate.getTime() + (intervalSeconds * 1000));
+            foundItem.nextReviewDate = nextDate;
+            changedProperties.push("next review date");
+          } else {
+            changedProperties.push("marked as reviewed (no interval set)");
+          }
+        }
+      } catch (e) {
+        return JSON.stringify({
+          success: false,
+          error: `Failed to mark reviewed: ${e}`
+        });
+      }
+    }
+
+    // Project-specific: Set review interval
+    // Project.ReviewInterval is a value object with .steps and .unit properties
+    if (itemType === 'project' && args.newReviewInterval !== undefined) {
+      try {
+        const days = args.newReviewInterval;
+
+        // Get the existing review interval or get a default one
+        let reviewInterval = foundItem.reviewInterval;
+
+        if (!reviewInterval) {
+          // Project may not have a review interval set - we need to create one
+          // Try getting a template from any other project, or create a default
+          try {
+            // Look for a project with an existing interval to use as template
+            for (const proj of flattenedProjects) {
+              if (proj.reviewInterval) {
+                reviewInterval = proj.reviewInterval;
+                break;
+              }
+            }
+          } catch (e) {}
+        }
+
+        if (reviewInterval) {
+          // Modify the interval: set steps to the number of days, unit to "days"
+          reviewInterval.steps = days;
+          reviewInterval.unit = "days";
+          foundItem.reviewInterval = reviewInterval;
+          changedProperties.push("review interval");
+        } else {
+          // Can't set interval - no template available
+          return JSON.stringify({
+            success: false,
+            error: `Cannot set review interval - project has no existing interval to modify`
+          });
+        }
+      } catch (e) {
+        return JSON.stringify({
+          success: false,
+          error: `Failed to set review interval: ${e}`
+        });
+      }
+    }
+
     return JSON.stringify({
       success: true,
       id: originalId,

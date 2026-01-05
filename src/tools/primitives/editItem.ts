@@ -38,6 +38,10 @@ export interface EditItemParams {
   newSequential?: boolean;      // Whether the project should be sequential
   newFolderName?: string;       // New folder to move the project to
   newProjectStatus?: ProjectStatus; // New status for projects
+
+  // Project review fields
+  markReviewed?: boolean;       // Mark project as reviewed (advances next review date)
+  newReviewInterval?: number;   // Set new review interval in days
 }
 
 /**
@@ -87,7 +91,9 @@ export async function editItem(params: EditItemParams): Promise<{
       moveToInbox: params.moveToInbox,
       newSequential: params.newSequential,
       newFolderName: params.newFolderName,
-      newProjectStatus: params.newProjectStatus
+      newProjectStatus: params.newProjectStatus,
+      markReviewed: params.markReviewed,
+      newReviewInterval: params.newReviewInterval
     });
 
     // Parse result

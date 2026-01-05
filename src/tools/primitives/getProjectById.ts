@@ -23,6 +23,10 @@ export interface ProjectInfo {
   remainingTaskCount: number;
   folderId: string | null;
   folderName: string | null;
+  // Review fields
+  reviewInterval: number | null; // seconds between reviews
+  nextReviewDate: string | null; // ISO date
+  lastReviewDate: string | null; // ISO date
 }
 
 /**
