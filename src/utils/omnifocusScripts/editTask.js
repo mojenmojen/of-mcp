@@ -166,8 +166,8 @@
 
     // Task-specific: Move to inbox
     if (itemType === 'task' && args.moveToInbox === true) {
-      // Move to inbox by removing from project
-      foundItem.assignedContainer = null;
+      // Move to inbox using moveTasks() with inbox.ending insertion location
+      moveTasks([foundItem], inbox.ending);
       changedProperties.push("moved to inbox");
     }
 
