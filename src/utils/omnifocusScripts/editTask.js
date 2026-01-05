@@ -287,7 +287,8 @@
       } else if (args.newProjectStatus === 'completed') {
         foundItem.markComplete();
       } else if (args.newProjectStatus === 'dropped') {
-        foundItem.drop(false);
+        // Projects use status property, not drop() method
+        foundItem.status = Project.Status.Dropped;
       } else if (args.newProjectStatus === 'onHold') {
         foundItem.status = Project.Status.OnHold;
       }
