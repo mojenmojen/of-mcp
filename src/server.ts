@@ -33,6 +33,8 @@ import * as getCustomPerspectiveTasksTool from './tools/definitions/getCustomPer
 // Import review tools
 import * as getProjectsForReviewTool from './tools/definitions/getProjectsForReview.js';
 import * as batchMarkReviewedTool from './tools/definitions/batchMarkReviewed.js';
+// Import project listing tool
+import * as listProjectsTool from './tools/definitions/listProjects.js';
 // Import utility tools
 import * as getServerVersionTool from './tools/definitions/getServerVersion.js';
 
@@ -188,6 +190,14 @@ server.tool(
   "Mark multiple projects as reviewed in a single operation (advances their next review dates)",
   batchMarkReviewedTool.schema.shape,
   batchMarkReviewedTool.handler
+);
+
+// Project listing tool
+server.tool(
+  "list_projects",
+  "List projects with optional folder and status filtering - use this instead of dump_database for project discovery",
+  listProjectsTool.schema.shape,
+  listProjectsTool.handler
 );
 
 // Utility tools
