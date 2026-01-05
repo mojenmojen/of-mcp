@@ -5,26 +5,30 @@
 [![Node.js CI](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![macOS](https://img.shields.io/badge/macOS-only-blue.svg)](https://www.apple.com/macos/)
 
-> **🌟 NEW: Native Custom Perspective Access with Hierarchical Display!**
+> **Transform OmniFocus into an AI-powered productivity powerhouse**
 
-> **Transform OmniFocus into an AI-powered productivity powerhouse with custom perspective support**
-
-Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **native custom perspective access**, hierarchical task display, AI-optimized tool selection, and comprehensive task management. Perfect integration with Claude AI for intelligent workflows.
+Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **repeating task support**, **native custom perspective access**, hierarchical task display, AI-optimized tool selection, and comprehensive task management. Perfect integration with Claude AI for intelligent workflows.
 
 ## ✨ Key Features
 
-### 🌟 **NEW: Native Custom Perspective Access**
+### 🔄 **Repeating Tasks**
+- **📅 Flexible Frequencies** - Daily, weekly, monthly, or yearly repetition
+- **🎯 Custom Intervals** - Repeat every N days/weeks/months
+- **📆 Specific Days** - Weekly tasks on specific days (e.g., Mon/Wed/Fri)
+- **🔁 Repeat From** - Choose to repeat from due date or completion date
+
+### 🌟 **Native Custom Perspective Access**
 - **🎯 Direct Integration** - Native access to your OmniFocus custom perspectives via `Perspective.Custom` API
 - **🌳 Hierarchical Display** - Tree-style task visualization with parent-child relationships
 - **🧠 AI-Optimized** - Enhanced tool descriptions prevent AI confusion between perspectives and tags
 - **⚡ Zero Setup** - Works with your existing custom perspectives instantly
 
 ### 🏗️ **Complete Task Management**
-- **🏗️ Complete Subtask Support** - Create hierarchical tasks with parent-child relationships
+- **🏗️ Subtask Support** - Create hierarchical tasks with parent-child relationships
 - **🔍 Built-in Perspectives** - Access Inbox, Flagged, Forecast, and Tag-based views
-- **🚀 Ultimate Task Filter** - Advanced filtering beyond OmniFocus native capabilities  
+- **🚀 Ultimate Task Filter** - Advanced filtering beyond OmniFocus native capabilities
 - **🎯 Batch Operations** - Add/remove multiple tasks efficiently
-- **📊 Smart Querying** - Find tasks by ID, name, or complex criteria
+- **📊 Smart Querying** - Find tasks, projects, or folders by ID or name
 - **🔄 Full CRUD Operations** - Create, read, update, delete tasks and projects
 - **📅 Time Management** - Due dates, defer dates, estimates, and scheduling
 - **🏷️ Advanced Tagging** - Tag-based filtering with exact/partial matching
@@ -131,15 +135,66 @@ filter_tasks {
 }
 ```
 
-### 4. 🌟 **NEW: Native Custom Perspective Access**
+### 4. 🔄 Repeating Tasks
+
+Create and manage recurring tasks with flexible repetition rules:
+
+```bash
+# Daily repeating task
+add_omnifocus_task {
+  "name": "Daily standup notes",
+  "projectName": "Work",
+  "dueDate": "2025-01-15",
+  "repetitionRule": {
+    "frequency": "daily"
+  }
+}
+
+# Weekly task on Mon/Wed/Fri
+add_omnifocus_task {
+  "name": "Exercise",
+  "dueDate": "2025-01-15",
+  "repetitionRule": {
+    "frequency": "weekly",
+    "daysOfWeek": [1, 3, 5]
+  }
+}
+
+# Monthly task on the 15th, repeat from completion
+add_omnifocus_task {
+  "name": "Pay bills",
+  "dueDate": "2025-01-15",
+  "repetitionRule": {
+    "frequency": "monthly",
+    "dayOfMonth": 15,
+    "repeatFrom": "completion"
+  }
+}
+
+# Edit task to add/remove repetition
+edit_item {
+  "id": "taskId123",
+  "itemType": "task",
+  "newRepetitionRule": {"frequency": "weekly", "interval": 2}
+}
+
+# Remove repetition from a task
+edit_item {
+  "id": "taskId123",
+  "itemType": "task",
+  "newRepetitionRule": null
+}
+```
+
+### 5. 🌟 Native Custom Perspective Access
 
 Access your OmniFocus custom perspectives with hierarchical task display:
 
 ```bash
-# 🌟 NEW: List all your custom perspectives
+# List all your custom perspectives
 list_custom_perspectives {"format": "detailed"}
 
-# 🌳 NEW: Get tasks from custom perspective with tree display
+# Get tasks from custom perspective with tree display
 get_custom_perspective_tasks {
   "perspectiveName": "今日工作安排",  # Your custom perspective name
   "showHierarchy": true,            # Enable tree display
@@ -164,7 +219,7 @@ get_custom_perspective_tasks {
 - ✅ **AI-Friendly** - Enhanced descriptions prevent tool selection confusion
 - ✅ **Professional Output** - Clean, readable task hierarchies
 
-### 5. 🎯 Batch Operations
+### 6. 🎯 Batch Operations
 
 Efficiently manage multiple tasks:
 
@@ -213,15 +268,17 @@ Efficiently manage multiple tasks:
 12. **get_tasks_by_tag** - Tag-based filtering
 13. **filter_tasks** - Ultimate filtering with unlimited combinations
 
-### 🌟 Custom Perspective Tools (NEW)
-14. **list_custom_perspectives** - 🌟 **NEW**: List all custom perspectives with details
-15. **get_custom_perspective_tasks** - 🌟 **NEW**: Access custom perspective with hierarchical display
+### 🌟 Custom Perspective Tools
+14. **list_custom_perspectives** - List all custom perspectives with details
+15. **get_custom_perspective_tasks** - Access custom perspective with hierarchical display
 
 ### 📊 Analytics & Tracking
 16. **get_today_completed_tasks** - View today's completed tasks
 
 ### 🔧 Utility Tools
 17. **get_server_version** - Get server version and build information
+18. **get_project_by_id** - Query project information by ID or name
+19. **get_folder_by_id** - Query folder information by ID or name
 
 ## 🚀 Quick Start Examples
 
@@ -272,7 +329,7 @@ filter_tasks {
 }
 ```
 
-### 🌟 Custom Perspective Usage
+### Custom Perspective Usage
 ```bash
 # List your custom perspectives
 list_custom_perspectives {"format": "detailed"}
@@ -304,7 +361,7 @@ get_server_version
 # Test basic connection
 get_inbox_tasks
 
-# Test new custom perspective features
+# Test custom perspective features
 list_custom_perspectives
 ```
 
@@ -340,6 +397,13 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 3. Make your changes
 4. Add tests if applicable
 5. Submit a pull request
+
+### Release Checklist
+
+When releasing a new version:
+1. Bump version in `package.json`
+2. Update this README with any new features or tools
+3. Commit and push changes
 
 ## 📄 License
 
