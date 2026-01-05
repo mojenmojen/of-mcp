@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // Test script for mark reviewed feature
 
-import { getProjectById } from './dist/tools/primitives/getProjectById.js';
-import { getProjectsForReview } from './dist/tools/primitives/getProjectsForReview.js';
-import { editItem } from './dist/tools/primitives/editItem.js';
-import { batchMarkReviewed } from './dist/tools/primitives/batchMarkReviewed.js';
-import { dumpDatabase } from './dist/tools/dumpDatabase.js';
+import { getProjectById } from '../dist/tools/primitives/getProjectById.js';
+import { getProjectsForReview } from '../dist/tools/primitives/getProjectsForReview.js';
+import { editItem } from '../dist/tools/primitives/editItem.js';
+import { batchMarkReviewed } from '../dist/tools/primitives/batchMarkReviewed.js';
+import { dumpDatabase } from '../dist/tools/dumpDatabase.js';
 
 async function runTests() {
   console.log('='.repeat(60));

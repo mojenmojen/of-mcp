@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Test script for planned date feature
 
-import { addOmniFocusTask } from './dist/tools/primitives/addOmniFocusTask.js';
-import { editItem } from './dist/tools/primitives/editItem.js';
-import { getTaskById } from './dist/tools/primitives/getTaskById.js';
-import { filterTasks } from './dist/tools/primitives/filterTasks.js';
+import { addOmniFocusTask } from '../dist/tools/primitives/addOmniFocusTask.js';
+import { editItem } from '../dist/tools/primitives/editItem.js';
+import { getTaskById } from '../dist/tools/primitives/getTaskById.js';
+import { filterTasks } from '../dist/tools/primitives/filterTasks.js';
 
 const TEST_PREFIX = '[PlannedDateTest]';
 
