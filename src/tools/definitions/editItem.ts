@@ -3,6 +3,16 @@ import { editItem, EditItemParams } from '../primitives/editItem.js';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 
+// Schema for repetition rule (matches addOmniFocusTask)
+const repetitionRuleSchema = z.object({
+  frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']).describe("How often the task repeats"),
+  interval: z.number().min(1).optional().describe("Repeat every N periods (default: 1)"),
+  daysOfWeek: z.array(z.number().min(0).max(6)).optional().describe("Days of week to repeat on (0=Sunday, 6=Saturday). Only for weekly frequency."),
+  dayOfMonth: z.number().min(1).max(31).optional().describe("Day of month to repeat on. Only for monthly frequency."),
+  month: z.number().min(1).max(12).optional().describe("Month to repeat in. Only for yearly frequency."),
+  repeatFrom: z.enum(['due', 'completion']).optional().describe("Repeat from due date or completion date (default: due)")
+});
+
 export const schema = z.object({
   id: z.string().optional().describe("The ID of the task or project to edit"),
   name: z.string().optional().describe("The name of the task or project to edit (as fallback if ID not provided)"),
@@ -22,6 +32,7 @@ export const schema = z.object({
   addTags: z.array(z.string()).optional().describe("Tags to add to the task"),
   removeTags: z.array(z.string()).optional().describe("Tags to remove from the task"),
   replaceTags: z.array(z.string()).optional().describe("Tags to replace all existing tags with"),
+  newRepetitionRule: repetitionRuleSchema.nullable().optional().describe("New repetition rule for the task. Set to null to remove repetition, or provide object to set. Examples: null (remove), {frequency: 'daily'}, {frequency: 'weekly', daysOfWeek: [1,3,5]}"),
 
   // Task movement fields
   newProjectName: z.string().optional().describe("Move task to a different project (by project name)"),

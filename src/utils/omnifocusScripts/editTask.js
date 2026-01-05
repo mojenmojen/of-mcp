@@ -1,6 +1,26 @@
 // OmniJS script to edit a task
 // This avoids AppleScript escaping issues with special characters like $
 (() => {
+  // Helper function to build iCal RRULE string from repetition rule object
+  function buildRRule(rule) {
+    let rrule = `FREQ=${rule.frequency.toUpperCase()}`;
+    if (rule.interval && rule.interval > 1) {
+      rrule += `;INTERVAL=${rule.interval}`;
+    }
+    if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
+      const dayMap = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+      const days = rule.daysOfWeek.map(d => dayMap[d]).join(',');
+      rrule += `;BYDAY=${days}`;
+    }
+    if (rule.dayOfMonth) {
+      rrule += `;BYMONTHDAY=${rule.dayOfMonth}`;
+    }
+    if (rule.month) {
+      rrule += `;BYMONTH=${rule.month}`;
+    }
+    return rrule;
+  }
+
   try {
     const args = typeof injectedArgs !== 'undefined' ? injectedArgs : {};
 
@@ -214,6 +234,33 @@
           }
         }
         changedProperties.push("tags (removed)");
+      }
+    }
+
+    // Task-specific: Set or remove repetition rule
+    if (itemType === 'task' && args.newRepetitionRule !== undefined) {
+      if (args.newRepetitionRule === null) {
+        // Remove repetition
+        foundItem.repetitionRule = null;
+        changedProperties.push("repetition (removed)");
+      } else if (args.newRepetitionRule && args.newRepetitionRule.frequency) {
+        // Set new repetition rule
+        try {
+          const rruleString = buildRRule(args.newRepetitionRule);
+          const repeatFromCompletion = args.newRepetitionRule.repeatFrom === 'completion';
+
+          if (repeatFromCompletion) {
+            foundItem.repetitionRule = new Task.RepetitionRule(rruleString, Task.RepetitionMethod.DeferUntilDate);
+          } else {
+            foundItem.repetitionRule = new Task.RepetitionRule(rruleString, Task.RepetitionMethod.DueDate);
+          }
+          changedProperties.push("repetition");
+        } catch (repError) {
+          return JSON.stringify({
+            success: false,
+            error: `Failed to set repetition rule: ${repError}`
+          });
+        }
       }
     }
 

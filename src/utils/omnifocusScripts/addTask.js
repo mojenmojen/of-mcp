@@ -1,6 +1,26 @@
 // OmniJS script to add a task
 // This avoids AppleScript issues with ISO date parsing and special characters
 (() => {
+  // Helper function to build iCal RRULE string from repetition rule object
+  function buildRRule(rule) {
+    let rrule = `FREQ=${rule.frequency.toUpperCase()}`;
+    if (rule.interval && rule.interval > 1) {
+      rrule += `;INTERVAL=${rule.interval}`;
+    }
+    if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
+      const dayMap = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+      const days = rule.daysOfWeek.map(d => dayMap[d]).join(',');
+      rrule += `;BYDAY=${days}`;
+    }
+    if (rule.dayOfMonth) {
+      rrule += `;BYMONTHDAY=${rule.dayOfMonth}`;
+    }
+    if (rule.month) {
+      rrule += `;BYMONTH=${rule.month}`;
+    }
+    return rrule;
+  }
+
   try {
     const args = typeof injectedArgs !== 'undefined' ? injectedArgs : {};
 
@@ -14,6 +34,7 @@
     const projectName = args.projectName || null;
     const parentTaskId = args.parentTaskId || null;
     const parentTaskName = args.parentTaskName || null;
+    const repetitionRule = args.repetitionRule || null;
 
     if (!taskName) {
       return JSON.stringify({
@@ -131,10 +152,34 @@
       }
     }
 
+    // Set repetition rule if provided
+    if (repetitionRule && repetitionRule.frequency) {
+      try {
+        const rruleString = buildRRule(repetitionRule);
+
+        // Determine repetition method based on repeatFrom
+        // 'due' = repeat from due date (Task.RepetitionMethod.DueDate)
+        // 'completion' = repeat from completion (Task.RepetitionMethod.DeferUntilDate)
+        const repeatFromCompletion = repetitionRule.repeatFrom === 'completion';
+
+        // Create the repetition rule
+        // OmniJS uses Task.RepetitionRule with method parameter
+        if (repeatFromCompletion) {
+          newTask.repetitionRule = new Task.RepetitionRule(rruleString, Task.RepetitionMethod.DeferUntilDate);
+        } else {
+          newTask.repetitionRule = new Task.RepetitionRule(rruleString, Task.RepetitionMethod.DueDate);
+        }
+      } catch (repError) {
+        // If repetition rule fails, task is still created, just not repeating
+        console.log(`Warning: Could not set repetition rule: ${repError}`);
+      }
+    }
+
     return JSON.stringify({
       success: true,
       taskId: newTask.id.primaryKey,
-      name: newTask.name
+      name: newTask.name,
+      isRepeating: newTask.repetitionRule !== null
     });
 
   } catch (error) {

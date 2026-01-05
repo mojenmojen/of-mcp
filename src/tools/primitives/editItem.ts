@@ -1,4 +1,5 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { RepetitionRule } from './addOmniFocusTask.js';
 
 // Status options for tasks and projects
 type TaskStatus = 'incomplete' | 'completed' | 'dropped';
@@ -24,6 +25,7 @@ export interface EditItemParams {
   addTags?: string[];           // Tags to add to the task
   removeTags?: string[];        // Tags to remove from the task
   replaceTags?: string[];       // Tags to replace all existing tags with
+  newRepetitionRule?: RepetitionRule | null; // New repetition rule (null to remove, object to set)
 
   // Task movement fields
   newProjectName?: string;      // Move task to a different project
@@ -76,6 +78,7 @@ export async function editItem(params: EditItemParams): Promise<{
       addTags: params.addTags,
       removeTags: params.removeTags,
       replaceTags: params.replaceTags,
+      newRepetitionRule: params.newRepetitionRule,
       newProjectName: params.newProjectName,
       newParentTaskId: params.newParentTaskId,
       newParentTaskName: params.newParentTaskName,

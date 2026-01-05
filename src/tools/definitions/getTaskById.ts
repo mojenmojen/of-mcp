@@ -45,7 +45,11 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
       }
       
       infoText += `• **Has Children**: ${task.hasChildren ? `Yes (${task.childrenCount} subtasks)` : 'No'}\n`;
-      
+
+      if (task.isRepeating && task.repetitionRule) {
+        infoText += `• **Repeats**: ${task.repetitionRule}\n`;
+      }
+
       return {
         content: [{
           type: "text" as const,

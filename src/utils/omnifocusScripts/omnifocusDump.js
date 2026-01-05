@@ -177,7 +177,9 @@
                 projectID: projectID,
                 parentTaskID: task.parent ? task.parent.id.primaryKey : null,
                 children: task.children.map(child => child.id.primaryKey),
-                inInbox: task.inInbox
+                inInbox: task.inInbox,
+                repetitionRule: task.repetitionRule ? task.repetitionRule.toString() : null,
+                isRepeating: task.repetitionRule !== null
               };
     
               // Add task to export

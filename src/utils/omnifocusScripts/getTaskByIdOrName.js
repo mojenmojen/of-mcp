@@ -61,7 +61,9 @@
       parentName: null,
       projectId: null,
       projectName: null,
-      tags: []
+      tags: [],
+      repetitionRule: foundTask.repetitionRule ? foundTask.repetitionRule.toString() : null,
+      isRepeating: foundTask.repetitionRule !== null
     };
 
     // Get parent info

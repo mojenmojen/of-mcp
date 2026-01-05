@@ -3,6 +3,16 @@ import { addOmniFocusTask, AddOmniFocusTaskParams } from '../primitives/addOmniF
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 
+// Schema for repetition rule
+const repetitionRuleSchema = z.object({
+  frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']).describe("How often the task repeats"),
+  interval: z.number().min(1).optional().describe("Repeat every N periods (default: 1)"),
+  daysOfWeek: z.array(z.number().min(0).max(6)).optional().describe("Days of week to repeat on (0=Sunday, 6=Saturday). Only for weekly frequency."),
+  dayOfMonth: z.number().min(1).max(31).optional().describe("Day of month to repeat on. Only for monthly frequency."),
+  month: z.number().min(1).max(12).optional().describe("Month to repeat in. Only for yearly frequency."),
+  repeatFrom: z.enum(['due', 'completion']).optional().describe("Repeat from due date or completion date (default: due)")
+}).describe("Repetition rule for recurring tasks");
+
 export const schema = z.object({
   name: z.string().describe("The name of the task"),
   note: z.string().optional().describe("Additional notes for the task"),
@@ -13,7 +23,8 @@ export const schema = z.object({
   tags: z.array(z.string()).optional().describe("Tags to assign to the task"),
   projectName: z.string().optional().describe("The name of the project to add the task to (will add to inbox if not specified)"),
   parentTaskId: z.string().optional().describe("The ID of the parent task to create this task as a subtask"),
-  parentTaskName: z.string().optional().describe("The name of the parent task to create this task as a subtask (alternative to parentTaskId)")
+  parentTaskName: z.string().optional().describe("The name of the parent task to create this task as a subtask (alternative to parentTaskId)"),
+  repetitionRule: repetitionRuleSchema.optional().describe("Repetition rule for recurring tasks. Examples: {frequency: 'daily'}, {frequency: 'weekly', daysOfWeek: [1,3,5]}, {frequency: 'monthly', dayOfMonth: 15}")
 });
 
 export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
@@ -40,11 +51,21 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
       let dueDateText = args.dueDate
         ? ` due on ${new Date(args.dueDate).toLocaleDateString()}`
         : "";
-        
+
+      let repeatText = "";
+      if (args.repetitionRule) {
+        const freq = args.repetitionRule.frequency;
+        const interval = args.repetitionRule.interval || 1;
+        repeatText = interval > 1 ? ` repeating every ${interval} ${freq.replace('ly', '')}s` : ` repeating ${freq}`;
+        if (args.repetitionRule.repeatFrom === 'completion') {
+          repeatText += ' (from completion)';
+        }
+      }
+
       return {
         content: [{
           type: "text" as const,
-          text: `✅ Task "${args.name}" created successfully ${locationText}${dueDateText}${tagText}.`
+          text: `✅ Task "${args.name}" created successfully ${locationText}${dueDateText}${tagText}${repeatText}.`
         }]
       };
     } else {

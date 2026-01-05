@@ -232,7 +232,9 @@
           tags: task.tags.map(tag => ({
             id: tag.id.primaryKey,
             name: tag.name
-          }))
+          })),
+          repetitionRule: task.repetitionRule ? task.repetitionRule.toString() : null,
+          isRepeating: task.repetitionRule !== null
         };
         
         exportData.tasks.push(taskData);

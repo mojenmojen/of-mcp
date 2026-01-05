@@ -1,5 +1,15 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 
+// Interface for repetition rule
+export interface RepetitionRule {
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  interval?: number; // defaults to 1
+  daysOfWeek?: number[]; // 0=Sunday, 1=Monday, ..., 6=Saturday
+  dayOfMonth?: number; // 1-31
+  month?: number; // 1-12
+  repeatFrom?: 'due' | 'completion'; // defaults to 'due'
+}
+
 // Interface for task creation parameters
 export interface AddOmniFocusTaskParams {
   name: string;
@@ -12,6 +22,7 @@ export interface AddOmniFocusTaskParams {
   projectName?: string; // Project name to add task to
   parentTaskId?: string; // Parent task ID for subtask creation
   parentTaskName?: string; // Parent task name for subtask creation (alternative to ID)
+  repetitionRule?: RepetitionRule; // Repetition rule for recurring tasks
 }
 
 /**
@@ -74,7 +85,8 @@ export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<
       tags: params.tags || [],
       projectName: params.projectName || null,
       parentTaskId: params.parentTaskId || null,
-      parentTaskName: params.parentTaskName || null
+      parentTaskName: params.parentTaskName || null,
+      repetitionRule: params.repetitionRule || null
     });
 
     // Parse result
