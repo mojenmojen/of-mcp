@@ -7,9 +7,15 @@
 
 > **Transform OmniFocus into an AI-powered productivity powerhouse**
 
-Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **planned date support**, **repeating task support**, **native custom perspective access**, hierarchical task display, AI-optimized tool selection, and comprehensive task management. Perfect integration with Claude AI for intelligent workflows.
+Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **project review workflow**, **planned date support**, **repeating task support**, **native custom perspective access**, hierarchical task display, AI-optimized tool selection, and comprehensive task management. Perfect integration with Claude AI for intelligent workflows.
 
 ## ✨ Key Features
+
+### 📋 **Project Review Workflow**
+- **🔍 Find Due Reviews** - Get projects that need review with `get_projects_for_review`
+- **✅ Mark Reviewed** - Mark projects as reviewed individually or in batch
+- **⏰ Set Intervals** - Configure review intervals in days
+- **📊 Track Progress** - View next review date, last reviewed, and interval for each project
 
 ### 📋 **Planned Date Support**
 - **📅 Schedule Work** - Set when you intend to work on a task (separate from due date)
@@ -255,6 +261,49 @@ Efficiently manage multiple tasks:
 }
 ```
 
+### 7. 📋 Project Review Workflow
+
+Automate your weekly review process:
+
+```bash
+# Get all projects due for review
+get_projects_for_review {
+  "includeOnHold": false,
+  "limit": 50
+}
+
+# Mark a single project as reviewed
+edit_item {
+  "id": "projectId123",
+  "itemType": "project",
+  "markReviewed": true
+}
+
+# Set a project's review interval to 14 days
+edit_item {
+  "id": "projectId123",
+  "itemType": "project",
+  "newReviewInterval": 14
+}
+
+# Batch mark multiple projects as reviewed
+batch_mark_reviewed {
+  "projectIds": ["projectId1", "projectId2", "projectId3"]
+}
+
+# View project review info
+get_project_by_id {
+  "projectName": "My Project"
+}
+# Returns: reviewInterval, nextReviewDate, lastReviewDate
+```
+
+**Review Workflow Benefits:**
+- Automate finding projects that need attention
+- Mark multiple projects reviewed in one operation
+- Track when each project was last reviewed
+- Set custom review intervals per project
+
 ## 🛠️ Complete Tool Reference
 
 ### 📊 Database & Task Management
@@ -281,10 +330,14 @@ Efficiently manage multiple tasks:
 ### 📊 Analytics & Tracking
 16. **get_today_completed_tasks** - View today's completed tasks
 
+### 📋 Project Review Tools
+17. **get_projects_for_review** - Get projects due for review
+18. **batch_mark_reviewed** - Mark multiple projects as reviewed
+
 ### 🔧 Utility Tools
-17. **get_server_version** - Get server version and build information
-18. **get_project_by_id** - Query project information by ID or name
-19. **get_folder_by_id** - Query folder information by ID or name
+19. **get_server_version** - Get server version and build information
+20. **get_project_by_id** - Query project information by ID or name (includes review data)
+21. **get_folder_by_id** - Query folder information by ID or name
 
 ## 🚀 Quick Start Examples
 
@@ -383,7 +436,7 @@ list_custom_perspectives
 - **Project Management** - Create detailed project hierarchies with subtasks
 - **GTD Workflow** - Leverage perspectives for Getting Things Done methodology
 - **Time Blocking** - Filter by estimated time for schedule planning
-- **Review Process** - Use custom perspectives for weekly/monthly reviews
+- **Weekly Reviews** - Automate project reviews with `get_projects_for_review` and `batch_mark_reviewed`
 - **Team Coordination** - Batch operations for team task assignment
 - **AI-Powered Planning** - Let Claude analyze and organize your tasks
 
