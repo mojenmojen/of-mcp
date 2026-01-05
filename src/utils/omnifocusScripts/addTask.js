@@ -44,10 +44,11 @@
         });
       }
     } else if (parentTaskName) {
-      // Find parent task by name
+      // Find parent task by name (case-insensitive)
       const allTasks = flattenedTasks;
+      const parentTaskNameLower = parentTaskName.toLowerCase();
       for (const task of allTasks) {
-        if (task.name === parentTaskName) {
+        if (task.name.toLowerCase() === parentTaskNameLower) {
           container = task;
           containerType = 'parentTask';
           break;
@@ -60,10 +61,11 @@
         });
       }
     } else if (projectName) {
-      // Find project by name
+      // Find project by name (case-insensitive)
       const allProjects = flattenedProjects;
+      const projectNameLower = projectName.toLowerCase();
       for (const proj of allProjects) {
-        if (proj.name === projectName) {
+        if (proj.name.toLowerCase() === projectNameLower) {
           container = proj;
           containerType = 'project';
           break;
@@ -115,12 +117,13 @@
       newTask.estimatedMinutes = estimatedMinutes;
     }
 
-    // Add tags
+    // Add tags (case-insensitive matching)
     if (tagNames && tagNames.length > 0) {
       const allTags = flattenedTags;
       for (const tagName of tagNames) {
+        const tagNameLower = tagName.toLowerCase();
         for (const tag of allTags) {
-          if (tag.name === tagName) {
+          if (tag.name.toLowerCase() === tagNameLower) {
             newTask.addTag(tag);
             break;
           }

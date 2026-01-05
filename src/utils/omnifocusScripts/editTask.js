@@ -36,10 +36,11 @@
       }
     }
 
-    // If not found by ID, search by name
+    // If not found by ID, search by name (case-insensitive)
     if (!foundItem && taskName) {
+      const taskNameLower = taskName.toLowerCase();
       for (const item of allItems) {
-        if (item.name === taskName) {
+        if (item.name.toLowerCase() === taskNameLower) {
           foundItem = item;
           break;
         }
@@ -127,12 +128,13 @@
       changedProperties.push("moved to inbox");
     }
 
-    // Task-specific: Move to different project
+    // Task-specific: Move to different project (case-insensitive)
     if (itemType === 'task' && args.newProjectName) {
       const allProjects = flattenedProjects;
+      const newProjectNameLower = args.newProjectName.toLowerCase();
       let targetProject = null;
       for (const proj of allProjects) {
-        if (proj.name === args.newProjectName) {
+        if (proj.name.toLowerCase() === newProjectNameLower) {
           targetProject = proj;
           break;
         }
@@ -148,7 +150,7 @@
       }
     }
 
-    // Task-specific: Move to parent task
+    // Task-specific: Move to parent task (case-insensitive for name)
     if (itemType === 'task' && (args.newParentTaskId || args.newParentTaskName)) {
       const allTasks = flattenedTasks;
       let targetParent = null;
@@ -163,8 +165,9 @@
       }
 
       if (!targetParent && args.newParentTaskName) {
+        const newParentTaskNameLower = args.newParentTaskName.toLowerCase();
         for (const t of allTasks) {
-          if (t.name === args.newParentTaskName) {
+          if (t.name.toLowerCase() === newParentTaskNameLower) {
             targetParent = t;
             break;
           }
@@ -182,7 +185,7 @@
       }
     }
 
-    // Task-specific: Replace all tags
+    // Task-specific: Replace all tags (case-insensitive)
     if (itemType === 'task' && args.replaceTags && args.replaceTags.length > 0) {
       const allTags = flattenedTags;
       // First, remove all existing tags
@@ -192,9 +195,10 @@
       }
       // Then add new tags
       for (const tagName of args.replaceTags) {
+        const tagNameLower = tagName.toLowerCase();
         let tag = null;
         for (const t of allTags) {
-          if (t.name === tagName) {
+          if (t.name.toLowerCase() === tagNameLower) {
             tag = t;
             break;
           }
@@ -205,13 +209,14 @@
       }
       changedProperties.push("tags (replaced)");
     } else {
-      // Task-specific: Add tags
+      // Task-specific: Add tags (case-insensitive)
       if (itemType === 'task' && args.addTags && args.addTags.length > 0) {
         const allTags = flattenedTags;
         for (const tagName of args.addTags) {
+          const tagNameLower = tagName.toLowerCase();
           let tag = null;
           for (const t of allTags) {
-            if (t.name === tagName) {
+            if (t.name.toLowerCase() === tagNameLower) {
               tag = t;
               break;
             }
@@ -223,13 +228,14 @@
         changedProperties.push("tags (added)");
       }
 
-      // Task-specific: Remove tags
+      // Task-specific: Remove tags (case-insensitive)
       if (itemType === 'task' && args.removeTags && args.removeTags.length > 0) {
         const allTags = flattenedTags;
         for (const tagName of args.removeTags) {
+          const tagNameLower = tagName.toLowerCase();
           let tag = null;
           for (const t of allTags) {
-            if (t.name === tagName) {
+            if (t.name.toLowerCase() === tagNameLower) {
               tag = t;
               break;
             }
@@ -262,12 +268,13 @@
       changedProperties.push("status");
     }
 
-    // Project-specific: Move to folder
+    // Project-specific: Move to folder (case-insensitive)
     if (itemType === 'project' && args.newFolderName) {
       const allFolders = flattenedFolders;
+      const newFolderNameLower = args.newFolderName.toLowerCase();
       let targetFolder = null;
       for (const folder of allFolders) {
-        if (folder.name === args.newFolderName) {
+        if (folder.name.toLowerCase() === newFolderNameLower) {
           targetFolder = folder;
           break;
         }
