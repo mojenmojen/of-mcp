@@ -9,7 +9,7 @@ const require = createRequire(import.meta.url);
 const pkg = require('../package.json');
 
 // Import tool definitions
-import * as dumpDatabaseTool from './tools/definitions/dumpDatabase.js';
+// import * as dumpDatabaseTool from './tools/definitions/dumpDatabase.js';  // Disabled - use specific query tools instead
 import * as addOmniFocusTaskTool from './tools/definitions/addOmniFocusTask.js';
 import * as addProjectTool from './tools/definitions/addProject.js';
 import * as removeItemTool from './tools/definitions/removeItem.js';
@@ -43,12 +43,14 @@ const server = new McpServer({
 });
 
 // Register tools
-server.tool(
-  "dump_database",
-  "Gets the current state of your OmniFocus database",
-  dumpDatabaseTool.schema.shape,
-  dumpDatabaseTool.handler
-);
+
+// dump_database disabled - use specific query tools (filter_tasks, get_task_by_id, etc.) instead
+// server.tool(
+//   "dump_database",
+//   "Gets the current state of your OmniFocus database",
+//   dumpDatabaseTool.schema.shape,
+//   dumpDatabaseTool.handler
+// );
 
 server.tool(
   "add_omnifocus_task",
