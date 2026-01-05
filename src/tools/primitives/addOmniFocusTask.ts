@@ -16,6 +16,7 @@ export interface AddOmniFocusTaskParams {
   note?: string;
   dueDate?: string; // ISO date string
   deferDate?: string; // ISO date string
+  plannedDate?: string; // ISO date string - when you intend to work on this
   flagged?: boolean;
   estimatedMinutes?: number;
   tags?: string[]; // Tag names
@@ -80,6 +81,7 @@ export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<
       note: params.note || null,
       dueDate: params.dueDate || null,
       deferDate: params.deferDate || null,
+      plannedDate: params.plannedDate || null,
       flagged: params.flagged || false,
       estimatedMinutes: params.estimatedMinutes || null,
       tags: params.tags || [],

@@ -125,6 +125,16 @@
       changedProperties.push("defer date");
     }
 
+    // Planned date
+    if (args.newPlannedDate !== undefined) {
+      if (args.newPlannedDate === "" || args.newPlannedDate === null) {
+        foundItem.plannedDate = null;
+      } else {
+        foundItem.plannedDate = new Date(args.newPlannedDate);
+      }
+      changedProperties.push("planned date");
+    }
+
     // Flagged
     if (args.newFlagged !== undefined) {
       foundItem.flagged = args.newFlagged;

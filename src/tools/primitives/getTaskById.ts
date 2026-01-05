@@ -11,6 +11,9 @@ export interface TaskInfo {
   id: string;
   name: string;
   note: string;
+  dueDate?: string | null;
+  deferDate?: string | null;
+  plannedDate?: string | null;
   parentId?: string;
   parentName?: string;
   projectId?: string;

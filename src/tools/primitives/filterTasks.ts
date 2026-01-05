@@ -30,7 +30,13 @@ export interface FilterTasksOptions {
   deferToday?: boolean;
   deferThisWeek?: boolean;
   deferAvailable?: boolean;
-  
+
+  // 📋 计划日期过滤
+  plannedBefore?: string;
+  plannedAfter?: string;
+  plannedToday?: boolean;
+  plannedThisWeek?: boolean;
+
   // ✅ 完成日期过滤
   completedBefore?: string;
   completedAfter?: string;
@@ -192,7 +198,10 @@ function buildFilterSummary(options: FilterTasksOptions): string {
   if (options.deferAvailable) conditions.push('Defer: Available');
   else if (options.deferToday) conditions.push('Defer: Today');
   else if (options.deferThisWeek) conditions.push('Defer: This Week');
-  
+
+  if (options.plannedToday) conditions.push('Planned: Today');
+  else if (options.plannedThisWeek) conditions.push('Planned: This Week');
+
   if (options.estimateMin !== undefined || options.estimateMax !== undefined) {
     let estimate = 'Estimate: ';
     if (options.estimateMin !== undefined && options.estimateMax !== undefined) {
@@ -255,7 +264,12 @@ function formatTask(task: any): string {
     const deferDateStr = new Date(task.deferDate).toLocaleDateString();
     dateInfo.push(`🚀 DEFER: ${deferDateStr}`);
   }
-  
+
+  if (task.plannedDate) {
+    const plannedDateStr = new Date(task.plannedDate).toLocaleDateString();
+    dateInfo.push(`📋 PLANNED: ${plannedDateStr}`);
+  }
+
   if (task.completedDate) {
     const completedDateStr = new Date(task.completedDate).toLocaleDateString();
     dateInfo.push(`✅ DONE: ${completedDateStr}`);

@@ -43,7 +43,19 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
       if (task.projectId && task.projectName) {
         infoText += `• **Project**: ${task.projectName} (${task.projectId})\n`;
       }
-      
+
+      if (task.dueDate) {
+        infoText += `• **Due Date**: ${new Date(task.dueDate).toLocaleDateString()}\n`;
+      }
+
+      if (task.deferDate) {
+        infoText += `• **Defer Date**: ${new Date(task.deferDate).toLocaleDateString()}\n`;
+      }
+
+      if (task.plannedDate) {
+        infoText += `• **Planned Date**: ${new Date(task.plannedDate).toLocaleDateString()}\n`;
+      }
+
       infoText += `• **Has Children**: ${task.hasChildren ? `Yes (${task.childrenCount} subtasks)` : 'No'}\n`;
 
       if (task.isRepeating && task.repetitionRule) {

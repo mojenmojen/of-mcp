@@ -28,6 +28,7 @@
     const taskNote = args.note || null;
     const dueDate = args.dueDate || null;
     const deferDate = args.deferDate || null;
+    const plannedDate = args.plannedDate || null;
     const flagged = args.flagged || false;
     const estimatedMinutes = args.estimatedMinutes || null;
     const tagNames = args.tags || [];
@@ -126,6 +127,11 @@
     // Set defer date
     if (deferDate) {
       newTask.deferDate = new Date(deferDate);
+    }
+
+    // Set planned date
+    if (plannedDate) {
+      newTask.plannedDate = new Date(plannedDate);
     }
 
     // Set flagged

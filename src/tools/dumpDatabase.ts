@@ -11,8 +11,10 @@ interface OmnifocusDumpTask {
   flagged: boolean;
   dueDate: string | null;
   deferDate: string | null;
+  plannedDate: string | null;
   effectiveDueDate: string | null;
   effectiveDeferDate: string | null;
+  effectivePlannedDate: string | null;
   estimatedMinutes: number | null;
   completedByChildren: boolean;
   sequential: boolean;
@@ -115,6 +117,8 @@ export async function dumpDatabase(): Promise<OmnifocusDatabase> {
           active: task.taskStatus !== "Completed" && task.taskStatus !== "Dropped",
           dueDate: task.dueDate,
           deferDate: task.deferDate,
+          plannedDate: task.plannedDate,
+          effectivePlannedDate: task.effectivePlannedDate,
           estimatedMinutes: task.estimatedMinutes ? Number(task.estimatedMinutes) : null,
           tags: task.tags || [],
           tagNames: tagNames,

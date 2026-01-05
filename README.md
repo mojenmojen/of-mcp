@@ -7,9 +7,15 @@
 
 > **Transform OmniFocus into an AI-powered productivity powerhouse**
 
-Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **repeating task support**, **native custom perspective access**, hierarchical task display, AI-optimized tool selection, and comprehensive task management. Perfect integration with Claude AI for intelligent workflows.
+Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **planned date support**, **repeating task support**, **native custom perspective access**, hierarchical task display, AI-optimized tool selection, and comprehensive task management. Perfect integration with Claude AI for intelligent workflows.
 
 ## ✨ Key Features
+
+### 📋 **Planned Date Support**
+- **📅 Schedule Work** - Set when you intend to work on a task (separate from due date)
+- **🔍 Filter by Planned** - Find tasks planned for today, this week, or date ranges
+- **📊 Sort by Planned** - Order tasks by their planned date
+- **🔄 Full CRUD** - Create, read, update, and clear planned dates
 
 ### 🔄 **Repeating Tasks**
 - **📅 Flexible Frequencies** - Daily, weekly, monthly, or yearly repetition

@@ -18,6 +18,12 @@
       completedBefore: args.completedBefore || null,
       completedAfter: args.completedAfter || null,
       
+      // 计划日期过滤器
+      plannedToday: args.plannedToday || false,
+      plannedThisWeek: args.plannedThisWeek || false,
+      plannedBefore: args.plannedBefore || null,
+      plannedAfter: args.plannedAfter || null,
+
       // 其他过滤器
       projectFilter: args.projectFilter || null,
       searchText: args.searchText || null,
@@ -65,7 +71,19 @@
       const checkDate = new Date(date);
       return checkDate >= yesterday && checkDate < today;
     }
-    
+
+    function isThisWeek(date) {
+      if (!date) return false;
+      const now = new Date();
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 7);
+      const checkDate = new Date(date);
+      return checkDate >= startOfWeek && checkDate < endOfWeek;
+    }
+
     // 获取所有任务
     const allTasks = flattenedTasks;
     
@@ -162,16 +180,36 @@
           if (filters.completedYesterday && !isYesterday(task.completionDate)) {
             return false;
           }
-          if (filters.completedBefore && task.completionDate && 
+          if (filters.completedBefore && task.completionDate &&
               new Date(task.completionDate) >= new Date(filters.completedBefore)) {
             return false;
           }
-          if (filters.completedAfter && task.completionDate && 
+          if (filters.completedAfter && task.completionDate &&
               new Date(task.completionDate) <= new Date(filters.completedAfter)) {
             return false;
           }
         }
-        
+
+        // 计划日期过滤
+        if (filters.plannedToday) {
+          if (!isToday(task.plannedDate)) {
+            return false;
+          }
+        }
+        if (filters.plannedThisWeek) {
+          if (!isThisWeek(task.plannedDate)) {
+            return false;
+          }
+        }
+        if (filters.plannedBefore && task.plannedDate &&
+            new Date(task.plannedDate) >= new Date(filters.plannedBefore)) {
+          return false;
+        }
+        if (filters.plannedAfter && task.plannedDate &&
+            new Date(task.plannedDate) <= new Date(filters.plannedAfter)) {
+          return false;
+        }
+
         return true;
       } catch (error) {
         return false;
@@ -183,6 +221,24 @@
       filteredTasks.sort((a, b) => {
         const dateA = a.completionDate || new Date('1900-01-01');
         const dateB = b.completionDate || new Date('1900-01-01');
+        return filters.sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+      });
+    } else if (filters.sortBy === "plannedDate") {
+      filteredTasks.sort((a, b) => {
+        const dateA = a.plannedDate || new Date('1900-01-01');
+        const dateB = b.plannedDate || new Date('1900-01-01');
+        return filters.sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+      });
+    } else if (filters.sortBy === "dueDate") {
+      filteredTasks.sort((a, b) => {
+        const dateA = a.dueDate || new Date('1900-01-01');
+        const dateB = b.dueDate || new Date('1900-01-01');
+        return filters.sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+      });
+    } else if (filters.sortBy === "deferDate") {
+      filteredTasks.sort((a, b) => {
+        const dateA = a.deferDate || new Date('1900-01-01');
+        const dateB = b.deferDate || new Date('1900-01-01');
         return filters.sortOrder === "desc" ? dateB - dateA : dateA - dateB;
       });
     } else {
@@ -224,6 +280,7 @@
           flagged: task.flagged,
           dueDate: formatDate(task.dueDate),
           deferDate: formatDate(task.deferDate),
+          plannedDate: formatDate(task.plannedDate),
           completedDate: formatDate(task.completionDate),
           estimatedMinutes: task.estimatedMinutes,
           projectId: task.containingProject ? task.containingProject.id.primaryKey : null,

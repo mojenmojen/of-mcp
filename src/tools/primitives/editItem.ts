@@ -16,6 +16,7 @@ export interface EditItemParams {
   newNote?: string;             // New note for the item
   newDueDate?: string;          // New due date in ISO format (empty string to clear)
   newDeferDate?: string;        // New defer date in ISO format (empty string to clear)
+  newPlannedDate?: string;      // New planned date in ISO format (empty string to clear)
   newFlagged?: boolean;         // New flagged status (false to remove flag, true to add flag)
   newEstimatedMinutes?: number; // New estimated minutes
 
@@ -71,6 +72,7 @@ export async function editItem(params: EditItemParams): Promise<{
       newNote: params.newNote,
       newDueDate: params.newDueDate,
       newDeferDate: params.newDeferDate,
+      newPlannedDate: params.newPlannedDate,
       newFlagged: params.newFlagged,
       newEstimatedMinutes: params.newEstimatedMinutes,
       newStatus: params.newStatus,

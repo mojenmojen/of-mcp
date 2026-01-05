@@ -18,6 +18,7 @@ export const schema = z.object({
   note: z.string().optional().describe("Additional notes for the task"),
   dueDate: z.string().optional().describe("The due date of the task in ISO format (YYYY-MM-DD or full ISO date)"),
   deferDate: z.string().optional().describe("The defer date of the task in ISO format (YYYY-MM-DD or full ISO date)"),
+  plannedDate: z.string().optional().describe("The planned date (when you intend to work on this) in ISO format (YYYY-MM-DD or full ISO date)"),
   flagged: z.boolean().optional().describe("Whether the task is flagged or not"),
   estimatedMinutes: z.number().optional().describe("Estimated time to complete the task, in minutes"),
   tags: z.array(z.string()).optional().describe("Tags to assign to the task"),
@@ -52,6 +53,10 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
         ? ` due on ${new Date(args.dueDate).toLocaleDateString()}`
         : "";
 
+      let plannedDateText = args.plannedDate
+        ? ` planned for ${new Date(args.plannedDate).toLocaleDateString()}`
+        : "";
+
       let repeatText = "";
       if (args.repetitionRule) {
         const freq = args.repetitionRule.frequency;
@@ -65,7 +70,7 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
       return {
         content: [{
           type: "text" as const,
-          text: `✅ Task "${args.name}" created successfully ${locationText}${dueDateText}${tagText}${repeatText}.`
+          text: `✅ Task "${args.name}" created successfully ${locationText}${dueDateText}${plannedDateText}${tagText}${repeatText}.`
         }]
       };
     } else {

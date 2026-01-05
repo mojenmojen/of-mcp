@@ -54,6 +54,7 @@
       flagged: foundTask.flagged,
       dueDate: foundTask.dueDate ? foundTask.dueDate.toISOString() : null,
       deferDate: foundTask.deferDate ? foundTask.deferDate.toISOString() : null,
+      plannedDate: foundTask.plannedDate ? foundTask.plannedDate.toISOString() : null,
       estimatedMinutes: foundTask.estimatedMinutes || null,
       hasChildren: foundTask.hasChildren,
       childrenCount: foundTask.children ? foundTask.children.length : 0,

@@ -43,7 +43,13 @@ export const schema = z.object({
   deferToday: z.boolean().optional().describe("Show tasks deferred to today"),
   deferThisWeek: z.boolean().optional().describe("Show tasks deferred to this week"),
   deferAvailable: z.boolean().optional().describe("Show tasks whose defer date has passed (now available)"),
-  
+
+  // 📋 计划日期过滤
+  plannedBefore: z.string().optional().describe("Show tasks with planned date before this date (ISO format: YYYY-MM-DD)"),
+  plannedAfter: z.string().optional().describe("Show tasks with planned date after this date (ISO format: YYYY-MM-DD)"),
+  plannedToday: z.boolean().optional().describe("Show tasks planned for today"),
+  plannedThisWeek: z.boolean().optional().describe("Show tasks planned for this week"),
+
   // ✅ 完成日期过滤
   completedBefore: z.string().optional().describe("Show tasks completed before this date (ISO format: YYYY-MM-DD)"),
   completedAfter: z.string().optional().describe("Show tasks completed after this date (ISO format: YYYY-MM-DD)"),
@@ -62,7 +68,7 @@ export const schema = z.object({
   
   // 📊 输出控制
   limit: z.number().max(1000).optional().describe("Maximum number of tasks to return (default: 100)"),
-  sortBy: z.enum(["name", "dueDate", "deferDate", "completedDate", "flagged", "project"]).optional().describe("Sort results by field"),
+  sortBy: z.enum(["name", "dueDate", "deferDate", "plannedDate", "completedDate", "flagged", "project"]).optional().describe("Sort results by field"),
   sortOrder: z.enum(["asc", "desc"]).optional().describe("Sort order (default: asc)")
 });
 
