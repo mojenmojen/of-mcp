@@ -9,6 +9,9 @@ import { existsSync } from 'fs';
 
 const execAsync = promisify(exec);
 
+// Increase maxBuffer for large OmniFocus databases (50MB)
+const EXEC_OPTIONS = { maxBuffer: 50 * 1024 * 1024 };
+
 // Helper function to execute OmniFocus scripts
 export async function executeJXA(script: string): Promise<any[]> {
   try {
@@ -19,7 +22,7 @@ export async function executeJXA(script: string): Promise<any[]> {
     writeFileSync(tempFile, script);
     
     // Execute the script using osascript
-    const { stdout, stderr } = await execAsync(`osascript -l JavaScript ${tempFile}`);
+    const { stdout, stderr } = await execAsync(`osascript -l JavaScript ${tempFile}`, EXEC_OPTIONS);
     
     if (stderr) {
       console.error("Script stderr output:", stderr);
@@ -162,7 +165,7 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
     writeFileSync(tempFile, jxaScript);
     
     // Execute the JXA script using osascript
-    const { stdout, stderr } = await execAsync(`osascript -l JavaScript ${tempFile}`);
+    const { stdout, stderr } = await execAsync(`osascript -l JavaScript ${tempFile}`, EXEC_OPTIONS);
     
     // Clean up the temporary file
     unlinkSync(tempFile);
