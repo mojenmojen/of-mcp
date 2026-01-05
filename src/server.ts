@@ -17,6 +17,8 @@ import * as editItemTool from './tools/definitions/editItem.js';
 import * as batchAddItemsTool from './tools/definitions/batchAddItems.js';
 import * as batchRemoveItemsTool from './tools/definitions/batchRemoveItems.js';
 import * as getTaskByIdTool from './tools/definitions/getTaskById.js';
+import * as getProjectByIdTool from './tools/definitions/getProjectById.js';
+import * as getFolderByIdTool from './tools/definitions/getFolderById.js';
 import * as getTodayCompletedTasksTool from './tools/definitions/getTodayCompletedTasks.js';
 // Import perspective tools
 import * as getInboxTasksTool from './tools/definitions/getInboxTasks.js';
@@ -93,6 +95,20 @@ server.tool(
   "Get information about a specific task by ID or name",
   getTaskByIdTool.schema.shape,
   getTaskByIdTool.handler
+);
+
+server.tool(
+  "get_project_by_id",
+  "Get information about a specific project by ID or name",
+  getProjectByIdTool.schema.shape,
+  getProjectByIdTool.handler
+);
+
+server.tool(
+  "get_folder_by_id",
+  "Get information about a specific folder by ID or name",
+  getFolderByIdTool.schema.shape,
+  getFolderByIdTool.handler
 );
 
 server.tool(

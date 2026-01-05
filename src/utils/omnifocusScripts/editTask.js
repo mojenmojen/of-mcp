@@ -15,35 +15,48 @@
       });
     }
 
-    // Get all items based on type
-    let allItems;
-    if (itemType === 'project') {
-      allItems = flattenedProjects;
-    } else {
-      allItems = flattenedTasks;
-    }
+    // Build lookup Maps for O(1) access (optimization for multiple lookups)
+    const projectsByName = new Map();
+    const projectsById = new Map();
+    flattenedProjects.forEach(p => {
+      projectsByName.set(p.name.toLowerCase(), p);
+      projectsById.set(p.id.primaryKey, p);
+    });
 
-    // Find the item
+    const tasksByName = new Map();
+    const tasksById = new Map();
+    flattenedTasks.forEach(t => {
+      // Only store first match for name (consistent with previous behavior)
+      if (!tasksByName.has(t.name.toLowerCase())) {
+        tasksByName.set(t.name.toLowerCase(), t);
+      }
+      tasksById.set(t.id.primaryKey, t);
+    });
+
+    const tagsByName = new Map();
+    flattenedTags.forEach(t => tagsByName.set(t.name.toLowerCase(), t));
+
+    const foldersByName = new Map();
+    flattenedFolders.forEach(f => foldersByName.set(f.name.toLowerCase(), f));
+
+    // Find the item using Maps
     let foundItem = null;
 
-    // Search by ID first
-    if (taskId) {
-      for (const item of allItems) {
-        if (item.id.primaryKey === taskId) {
-          foundItem = item;
-          break;
-        }
+    if (itemType === 'project') {
+      // Search by ID first, then by name
+      if (taskId) {
+        foundItem = projectsById.get(taskId);
       }
-    }
-
-    // If not found by ID, search by name (case-insensitive)
-    if (!foundItem && taskName) {
-      const taskNameLower = taskName.toLowerCase();
-      for (const item of allItems) {
-        if (item.name.toLowerCase() === taskNameLower) {
-          foundItem = item;
-          break;
-        }
+      if (!foundItem && taskName) {
+        foundItem = projectsByName.get(taskName.toLowerCase());
+      }
+    } else {
+      // Search by ID first, then by name
+      if (taskId) {
+        foundItem = tasksById.get(taskId);
+      }
+      if (!foundItem && taskName) {
+        foundItem = tasksByName.get(taskName.toLowerCase());
       }
     }
 
@@ -128,17 +141,9 @@
       changedProperties.push("moved to inbox");
     }
 
-    // Task-specific: Move to different project (case-insensitive)
+    // Task-specific: Move to different project (using Map lookup)
     if (itemType === 'task' && args.newProjectName) {
-      const allProjects = flattenedProjects;
-      const newProjectNameLower = args.newProjectName.toLowerCase();
-      let targetProject = null;
-      for (const proj of allProjects) {
-        if (proj.name.toLowerCase() === newProjectNameLower) {
-          targetProject = proj;
-          break;
-        }
-      }
+      const targetProject = projectsByName.get(args.newProjectName.toLowerCase());
       if (targetProject) {
         moveTasks([foundItem], targetProject);
         changedProperties.push("moved to project");
@@ -150,28 +155,16 @@
       }
     }
 
-    // Task-specific: Move to parent task (case-insensitive for name)
+    // Task-specific: Move to parent task (using Map lookup)
     if (itemType === 'task' && (args.newParentTaskId || args.newParentTaskName)) {
-      const allTasks = flattenedTasks;
       let targetParent = null;
 
       if (args.newParentTaskId) {
-        for (const t of allTasks) {
-          if (t.id.primaryKey === args.newParentTaskId) {
-            targetParent = t;
-            break;
-          }
-        }
+        targetParent = tasksById.get(args.newParentTaskId);
       }
 
       if (!targetParent && args.newParentTaskName) {
-        const newParentTaskNameLower = args.newParentTaskName.toLowerCase();
-        for (const t of allTasks) {
-          if (t.name.toLowerCase() === newParentTaskNameLower) {
-            targetParent = t;
-            break;
-          }
-        }
+        targetParent = tasksByName.get(args.newParentTaskName.toLowerCase());
       }
 
       if (targetParent) {
@@ -185,42 +178,26 @@
       }
     }
 
-    // Task-specific: Replace all tags (case-insensitive)
+    // Task-specific: Replace all tags (using Map lookup)
     if (itemType === 'task' && args.replaceTags && args.replaceTags.length > 0) {
-      const allTags = flattenedTags;
       // First, remove all existing tags
       const existingTags = foundItem.tags.slice(); // Make a copy
       for (const existingTag of existingTags) {
         foundItem.removeTag(existingTag);
       }
-      // Then add new tags
+      // Then add new tags using Map lookup
       for (const tagName of args.replaceTags) {
-        const tagNameLower = tagName.toLowerCase();
-        let tag = null;
-        for (const t of allTags) {
-          if (t.name.toLowerCase() === tagNameLower) {
-            tag = t;
-            break;
-          }
-        }
+        const tag = tagsByName.get(tagName.toLowerCase());
         if (tag) {
           foundItem.addTag(tag);
         }
       }
       changedProperties.push("tags (replaced)");
     } else {
-      // Task-specific: Add tags (case-insensitive)
+      // Task-specific: Add tags (using Map lookup)
       if (itemType === 'task' && args.addTags && args.addTags.length > 0) {
-        const allTags = flattenedTags;
         for (const tagName of args.addTags) {
-          const tagNameLower = tagName.toLowerCase();
-          let tag = null;
-          for (const t of allTags) {
-            if (t.name.toLowerCase() === tagNameLower) {
-              tag = t;
-              break;
-            }
-          }
+          const tag = tagsByName.get(tagName.toLowerCase());
           if (tag) {
             foundItem.addTag(tag);
           }
@@ -228,18 +205,10 @@
         changedProperties.push("tags (added)");
       }
 
-      // Task-specific: Remove tags (case-insensitive)
+      // Task-specific: Remove tags (using Map lookup)
       if (itemType === 'task' && args.removeTags && args.removeTags.length > 0) {
-        const allTags = flattenedTags;
         for (const tagName of args.removeTags) {
-          const tagNameLower = tagName.toLowerCase();
-          let tag = null;
-          for (const t of allTags) {
-            if (t.name.toLowerCase() === tagNameLower) {
-              tag = t;
-              break;
-            }
-          }
+          const tag = tagsByName.get(tagName.toLowerCase());
           if (tag) {
             foundItem.removeTag(tag);
           }
@@ -268,17 +237,9 @@
       changedProperties.push("status");
     }
 
-    // Project-specific: Move to folder (case-insensitive)
+    // Project-specific: Move to folder (using Map lookup)
     if (itemType === 'project' && args.newFolderName) {
-      const allFolders = flattenedFolders;
-      const newFolderNameLower = args.newFolderName.toLowerCase();
-      let targetFolder = null;
-      for (const folder of allFolders) {
-        if (folder.name.toLowerCase() === newFolderNameLower) {
-          targetFolder = folder;
-          break;
-        }
-      }
+      const targetFolder = foldersByName.get(args.newFolderName.toLowerCase());
       if (targetFolder) {
         moveSections([foundItem], targetFolder);
         changedProperties.push("moved to folder");
