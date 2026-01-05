@@ -42,6 +42,7 @@ export interface EditItemParams {
   // Project review fields
   markReviewed?: boolean;       // Mark project as reviewed (advances next review date)
   newReviewInterval?: number;   // Set new review interval in days
+  newNextReviewDate?: string;   // Set next review date directly (ISO format)
 }
 
 /**
@@ -93,7 +94,8 @@ export async function editItem(params: EditItemParams): Promise<{
       newFolderName: params.newFolderName,
       newProjectStatus: params.newProjectStatus,
       markReviewed: params.markReviewed,
-      newReviewInterval: params.newReviewInterval
+      newReviewInterval: params.newReviewInterval,
+      newNextReviewDate: params.newNextReviewDate
     });
 
     // Parse result

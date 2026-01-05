@@ -1,6 +1,23 @@
 // OmniJS script to edit a task
 // This avoids AppleScript escaping issues with special characters like $
 (() => {
+  // Helper function to parse date strings as local time
+  // Fixes issue where "2026-02-04" would be interpreted as midnight UTC
+  // which shifts the date when in timezones behind UTC
+  function parseLocalDate(dateStr) {
+    // Check if it's a date-only format (YYYY-MM-DD)
+    const dateOnlyMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateOnlyMatch) {
+      // Parse as local time by using year, month, day constructor
+      const year = parseInt(dateOnlyMatch[1], 10);
+      const month = parseInt(dateOnlyMatch[2], 10) - 1; // JS months are 0-indexed
+      const day = parseInt(dateOnlyMatch[3], 10);
+      return new Date(year, month, day);
+    }
+    // Otherwise use standard parsing (includes time component)
+    return new Date(dateStr);
+  }
+
   // Helper function to build iCal RRULE string from repetition rule object
   function buildRRule(rule) {
     let rrule = `FREQ=${rule.frequency.toUpperCase()}`;
@@ -110,7 +127,7 @@
       if (args.newDueDate === "" || args.newDueDate === null) {
         foundItem.dueDate = null;
       } else {
-        foundItem.dueDate = new Date(args.newDueDate);
+        foundItem.dueDate = parseLocalDate(args.newDueDate);
       }
       changedProperties.push("due date");
     }
@@ -120,7 +137,7 @@
       if (args.newDeferDate === "" || args.newDeferDate === null) {
         foundItem.deferDate = null;
       } else {
-        foundItem.deferDate = new Date(args.newDeferDate);
+        foundItem.deferDate = parseLocalDate(args.newDeferDate);
       }
       changedProperties.push("defer date");
     }
@@ -130,7 +147,7 @@
       if (args.newPlannedDate === "" || args.newPlannedDate === null) {
         foundItem.plannedDate = null;
       } else {
-        foundItem.plannedDate = new Date(args.newPlannedDate);
+        foundItem.plannedDate = parseLocalDate(args.newPlannedDate);
       }
       changedProperties.push("planned date");
     }
@@ -386,6 +403,24 @@
         return JSON.stringify({
           success: false,
           error: `Failed to set review interval: ${e}`
+        });
+      }
+    }
+
+    // Project-specific: Set next review date directly
+    if (itemType === 'project' && args.newNextReviewDate !== undefined) {
+      try {
+        if (args.newNextReviewDate === "" || args.newNextReviewDate === null) {
+          foundItem.nextReviewDate = null;
+          changedProperties.push("next review date (cleared)");
+        } else {
+          foundItem.nextReviewDate = parseLocalDate(args.newNextReviewDate);
+          changedProperties.push("next review date");
+        }
+      } catch (e) {
+        return JSON.stringify({
+          success: false,
+          error: `Failed to set next review date: ${e}`
         });
       }
     }

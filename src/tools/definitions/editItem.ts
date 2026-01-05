@@ -48,7 +48,8 @@ export const schema = z.object({
 
   // Project review fields
   markReviewed: z.boolean().optional().describe("Mark project as reviewed (advances next review date by interval). Only applies to projects."),
-  newReviewInterval: z.number().optional().describe("Set new review interval in days. Only applies to projects.")
+  newReviewInterval: z.number().optional().describe("Set new review interval in days. Only applies to projects."),
+  newNextReviewDate: z.string().optional().describe("Set next review date directly (ISO format YYYY-MM-DD). Only applies to projects.")
 });
 
 export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {

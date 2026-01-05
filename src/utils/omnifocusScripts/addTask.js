@@ -1,6 +1,19 @@
 // OmniJS script to add a task
 // This avoids AppleScript issues with ISO date parsing and special characters
 (() => {
+  // Helper function to parse date strings as local time
+  // Fixes issue where "2026-02-04" would be interpreted as midnight UTC
+  function parseLocalDate(dateStr) {
+    const dateOnlyMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateOnlyMatch) {
+      const year = parseInt(dateOnlyMatch[1], 10);
+      const month = parseInt(dateOnlyMatch[2], 10) - 1;
+      const day = parseInt(dateOnlyMatch[3], 10);
+      return new Date(year, month, day);
+    }
+    return new Date(dateStr);
+  }
+
   // Helper function to build iCal RRULE string from repetition rule object
   function buildRRule(rule) {
     let rrule = `FREQ=${rule.frequency.toUpperCase()}`;
@@ -119,19 +132,19 @@
       newTask.note = taskNote;
     }
 
-    // Set due date - JavaScript's Date() correctly parses ISO format
+    // Set due date - parseLocalDate handles date-only strings correctly
     if (dueDate) {
-      newTask.dueDate = new Date(dueDate);
+      newTask.dueDate = parseLocalDate(dueDate);
     }
 
     // Set defer date
     if (deferDate) {
-      newTask.deferDate = new Date(deferDate);
+      newTask.deferDate = parseLocalDate(deferDate);
     }
 
     // Set planned date
     if (plannedDate) {
-      newTask.plannedDate = new Date(plannedDate);
+      newTask.plannedDate = parseLocalDate(plannedDate);
     }
 
     // Set flagged
