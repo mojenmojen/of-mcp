@@ -15,10 +15,30 @@
       [Project.Status.OnHold]: "OnHold"
     };
 
+    // Helper to check if project is effectively dropped (including via container)
+    function isEffectivelyDropped(project) {
+      // Check direct dropped status
+      if (project.status === Project.Status.Dropped) {
+        return true;
+      }
+      // Check if containing folder is dropped ("dropped with container")
+      // Note: Use parentFolder property, not folder
+      try {
+        let folder = project.parentFolder;
+        while (folder) {
+          if (folder.status === Folder.Status.Dropped) {
+            return true;
+          }
+          folder = folder.parent; // Check parent folders too
+        }
+      } catch (e) {}
+      return false;
+    }
+
     // Filter projects that need review
     const projectsNeedingReview = flattenedProjects.filter(project => {
-      // Skip completed or dropped projects
-      if (project.status === Project.Status.Done || project.status === Project.Status.Dropped) {
+      // Skip completed or dropped projects (including dropped with container)
+      if (project.status === Project.Status.Done || isEffectivelyDropped(project)) {
         return false;
       }
       // Skip on-hold projects unless explicitly included

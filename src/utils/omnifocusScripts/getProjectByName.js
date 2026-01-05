@@ -52,12 +52,33 @@
       [Project.Status.OnHold]: "OnHold"
     };
 
+    // Helper to get effective status (including "dropped with container")
+    function getEffectiveStatus(project) {
+      // Direct dropped status
+      if (project.status === Project.Status.Dropped) {
+        return "Dropped";
+      }
+      // Check if containing folder is dropped ("dropped with container")
+      // Note: Use parentFolder property, not folder
+      try {
+        let folder = project.parentFolder;
+        while (folder) {
+          if (folder.status === Folder.Status.Dropped) {
+            return "Dropped";
+          }
+          folder = folder.parent;
+        }
+      } catch (e) {}
+      // Return the project's own status
+      return statusMap[project.status] || "Unknown";
+    }
+
     // Build project info
     const projectInfo = {
       id: foundProject.id.primaryKey,
       name: foundProject.name,
       note: foundProject.note || "",
-      status: statusMap[foundProject.status] || "Unknown",
+      status: getEffectiveStatus(foundProject),
       sequential: foundProject.sequential,
       flagged: foundProject.flagged,
       dueDate: foundProject.dueDate ? foundProject.dueDate.toISOString() : null,
