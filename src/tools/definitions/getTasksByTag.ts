@@ -4,7 +4,8 @@ import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.j
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 
 export const schema = z.object({
-  tagName: z.string().describe("Name of the tag to filter tasks by"),
+  tagName: z.union([z.string(), z.array(z.string())]).describe("Name of tag(s) to filter tasks by. Can be a single tag or array of tags (e.g., ['work', 'urgent'])"),
+  tagMatchMode: z.enum(["any", "all"]).optional().describe("How to match multiple tags: 'any' returns tasks with at least one tag (default), 'all' returns tasks with every specified tag"),
   hideCompleted: z.boolean().optional().describe("Set to false to show completed tasks with this tag (default: true)"),
   exactMatch: z.boolean().optional().describe("Set to true for exact tag name match, false for partial (default: false)")
 });
@@ -13,6 +14,7 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
   try {
     const result = await getTasksByTag({
       tagName: args.tagName,
+      tagMatchMode: args.tagMatchMode || 'any',
       hideCompleted: args.hideCompleted !== false, // Default to true
       exactMatch: args.exactMatch || false
     });

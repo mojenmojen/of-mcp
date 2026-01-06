@@ -1,22 +1,28 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 
 export interface GetTasksByTagOptions {
-  tagName: string;
+  tagName: string | string[];
+  tagMatchMode?: 'any' | 'all';
   hideCompleted?: boolean;
   exactMatch?: boolean;
 }
 
 export async function getTasksByTag(options: GetTasksByTagOptions): Promise<string> {
-  const { tagName, hideCompleted = true, exactMatch = false } = options;
-  
-  if (!tagName || tagName.trim() === '') {
-    throw new Error('Tag name is required');
+  const { tagName, tagMatchMode = 'any', hideCompleted = true, exactMatch = false } = options;
+
+  // Normalize to array
+  const tagNames = Array.isArray(tagName) ? tagName : [tagName];
+  const trimmedTagNames = tagNames.map(t => t.trim()).filter(t => t !== '');
+
+  if (trimmedTagNames.length === 0) {
+    throw new Error('At least one tag name is required');
   }
-  
+
   try {
     // Execute the tasks by tag script
-    const result = await executeOmniFocusScript('@tasksByTag.js', { 
-      tagName: tagName.trim(),
+    const result = await executeOmniFocusScript('@tasksByTag.js', {
+      tagName: trimmedTagNames,
+      tagMatchMode: tagMatchMode,
       hideCompleted: hideCompleted,
       exactMatch: exactMatch
     });
@@ -28,22 +34,41 @@ export async function getTasksByTag(options: GetTasksByTagOptions): Promise<stri
     // If result is an object, format it
     if (result && typeof result === 'object') {
       const data = result as any;
-      
+
       if (data.error) {
         throw new Error(data.error);
       }
-      
+
       // Format the tasks by tag
       const searchType = exactMatch ? 'exact match' : 'partial match';
-      let output = `# 🏷 TASKS WITH TAG: "${tagName}" (${searchType})\n\n`;
-      
-      if (data.matchedTags && data.matchedTags.length > 0) {
-        output += `**Matched tags**: ${data.matchedTags.join(', ')}\n\n`;
+      const searchTagsDisplay = trimmedTagNames.length === 1
+        ? `"${trimmedTagNames[0]}"`
+        : `[${trimmedTagNames.map(t => `"${t}"`).join(', ')}]`;
+      const modeDisplay = trimmedTagNames.length > 1 ? ` (${tagMatchMode === 'all' ? 'ALL tags' : 'ANY tag'})` : '';
+
+      let output = `# 🏷 TASKS WITH TAG: ${searchTagsDisplay}${modeDisplay} (${searchType})\n\n`;
+
+      // Show matched tags per search term
+      if (data.matchedTagsBySearchTerm && Object.keys(data.matchedTagsBySearchTerm).length > 0) {
+        const entries = Object.entries(data.matchedTagsBySearchTerm);
+        if (entries.length === 1) {
+          const [term, tags] = entries[0] as [string, string[]];
+          if (tags.length > 0) {
+            output += `**Matched tags**: ${tags.join(', ')}\n\n`;
+          }
+        } else {
+          output += `**Matched tags by search term**:\n`;
+          entries.forEach(([term, tags]) => {
+            const tagList = (tags as string[]).length > 0 ? (tags as string[]).join(', ') : '(none)';
+            output += `- "${term}": ${tagList}\n`;
+          });
+          output += '\n';
+        }
       }
       
       if (data.tasks && Array.isArray(data.tasks)) {
         if (data.tasks.length === 0) {
-          output += `No tasks found with tag "${tagName}"\n`;
+          output += `No tasks found with tag ${searchTagsDisplay}\n`;
           if (data.availableTags && data.availableTags.length > 0) {
             output += `\n**Available tags**: ${data.availableTags.slice(0, 10).join(', ')}`;
             if (data.availableTags.length > 10) {
@@ -101,7 +126,7 @@ export async function getTasksByTag(options: GetTasksByTagOptions): Promise<stri
           });
           
           // Summary
-          output += `📊 **Summary**: ${taskCount} task${taskCount === 1 ? '' : 's'} with tag "${tagName}"\n`;
+          output += `📊 **Summary**: ${taskCount} task${taskCount === 1 ? '' : 's'} with tag ${searchTagsDisplay}${modeDisplay}\n`;
         }
       } else {
         output += "No tasks data available\n";

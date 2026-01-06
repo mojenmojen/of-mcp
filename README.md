@@ -45,7 +45,7 @@ Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **project r
 - **📊 Smart Querying** - Find tasks, projects, or folders by ID or name
 - **🔄 Full CRUD Operations** - Create, read, update, delete tasks, projects, and folders
 - **📅 Time Management** - Due dates, defer dates, planned dates, estimates, and scheduling
-- **🏷️ Advanced Tagging** - Tag-based filtering with exact/partial matching
+- **🏷️ Advanced Tagging** - Multi-tag filtering with any/all matching and exact/partial search
 - **🤖 AI Integration** - Seamless Claude AI integration for intelligent workflows
 
 ## 📦 Installation
@@ -142,8 +142,14 @@ get_flagged_tasks {"projectFilter": "SEO Project"}
 # Forecast (next 7 days)
 get_forecast_tasks {"days": 7, "hideCompleted": true}
 
-# Tasks by tag
+# Tasks by single tag
 get_tasks_by_tag {"tagName": "AI", "exactMatch": false}
+
+# Tasks by multiple tags (OR - any of these tags)
+get_tasks_by_tag {"tagName": ["work", "urgent", "focus"]}
+
+# Tasks by multiple tags (AND - all of these tags)
+get_tasks_by_tag {"tagName": ["home", "errands"], "tagMatchMode": "all"}
 ```
 
 ### 4. 🚀 Ultimate Task Filter
@@ -373,7 +379,7 @@ get_project_by_id {
 11. **get_inbox_tasks** - Inbox perspective
 12. **get_flagged_tasks** - Flagged perspective
 13. **get_forecast_tasks** - Forecast perspective (due/deferred tasks)
-14. **get_tasks_by_tag** - Tag-based filtering
+14. **get_tasks_by_tag** - Tag-based filtering (single or multiple tags with any/all matching)
 15. **filter_tasks** - Ultimate filtering with unlimited combinations
 
 ### 🌟 Custom Perspective Tools
