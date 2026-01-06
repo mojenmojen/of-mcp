@@ -12,6 +12,7 @@ const pkg = require('../package.json');
 // import * as dumpDatabaseTool from './tools/definitions/dumpDatabase.js';  // Disabled - use specific query tools instead
 import * as addOmniFocusTaskTool from './tools/definitions/addOmniFocusTask.js';
 import * as addProjectTool from './tools/definitions/addProject.js';
+import * as addFolderTool from './tools/definitions/addFolder.js';
 import * as removeItemTool from './tools/definitions/removeItem.js';
 import * as editItemTool from './tools/definitions/editItem.js';
 import * as batchAddItemsTool from './tools/definitions/batchAddItems.js';
@@ -66,6 +67,13 @@ server.tool(
   "Add a new project to OmniFocus",
   addProjectTool.schema.shape,
   addProjectTool.handler
+);
+
+server.tool(
+  "add_folder",
+  "Add a new folder to OmniFocus",
+  addFolderTool.schema.shape,
+  addFolderTool.handler
 );
 
 server.tool(
