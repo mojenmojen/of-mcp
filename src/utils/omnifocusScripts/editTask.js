@@ -316,8 +316,15 @@
     if (itemType === 'project' && args.newFolderName) {
       const targetFolder = foldersByName.get(args.newFolderName.toLowerCase());
       if (targetFolder) {
-        moveSections([foundItem], targetFolder);
-        changedProperties.push("moved to folder");
+        // Check if project is already in this folder
+        const currentFolder = foundItem.parentFolder;
+        if (currentFolder && currentFolder.id.primaryKey === targetFolder.id.primaryKey) {
+          // Already in target folder - no change needed
+          changedProperties.push("already in folder");
+        } else {
+          moveSections([foundItem], targetFolder);
+          changedProperties.push("moved to folder");
+        }
       } else {
         // Create the folder if it doesn't exist
         const newFolder = new Folder(args.newFolderName);
