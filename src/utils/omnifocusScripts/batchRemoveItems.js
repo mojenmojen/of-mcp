@@ -92,12 +92,44 @@
           continue;
         }
 
-        // Store info before deletion
-        const deletedId = foundItem.id.primaryKey;
-        const deletedName = foundItem.name;
+        // Store info before deletion - may fail if already scheduled for deletion
+        let deletedId, deletedName;
+        try {
+          deletedId = foundItem.id.primaryKey;
+          deletedName = foundItem.name;
+        } catch (accessError) {
+          // Item may already be scheduled for deletion (parent was deleted)
+          const errorStr = String(accessError);
+          if (errorStr.includes('scheduled for deletion')) {
+            results.push({
+              success: true,
+              id: itemId || 'unknown',
+              name: itemName || 'unknown',
+              note: 'Already scheduled for deletion (parent deleted)'
+            });
+            continue;
+          }
+          throw accessError;
+        }
 
-        // Delete the item
-        deleteObject(foundItem);
+        // Try to delete the item
+        try {
+          deleteObject(foundItem);
+        } catch (deleteError) {
+          // Check if already scheduled for deletion (e.g., parent was deleted)
+          const errorStr = String(deleteError);
+          if (errorStr.includes('scheduled for deletion')) {
+            // Item is already being deleted - treat as success
+            results.push({
+              success: true,
+              id: deletedId,
+              name: deletedName,
+              note: 'Already scheduled for deletion (parent deleted)'
+            });
+            continue;
+          }
+          throw deleteError; // Re-throw other errors
+        }
 
         // Remove from maps so subsequent lookups don't find deleted items
         if (itemType === 'project') {
@@ -115,6 +147,17 @@
         });
 
       } catch (itemError) {
+        // Check if this is a "scheduled for deletion" error
+        const errorStr = String(itemError);
+        if (errorStr.includes('scheduled for deletion')) {
+          results.push({
+            success: true,
+            id: item.id || item.name || 'unknown',
+            name: item.name || 'unknown',
+            note: 'Already scheduled for deletion (parent deleted)'
+          });
+          continue;
+        }
         results.push({
           success: false,
           error: `Error removing item: ${itemError}`
