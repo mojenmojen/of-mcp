@@ -4,10 +4,10 @@ import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.j
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 
 export const schema = z.object({
-  perspectiveName: z.string().describe("Exact name of the OmniFocus custom perspective (e.g., '今日工作安排', '今日复盘', '本周项目'). This is NOT a tag name."),
+  perspectiveName: z.string().describe("Exact name of the OmniFocus custom perspective (e.g., 'Today', 'Daily Review', 'This Week'). This is NOT a tag name."),
   hideCompleted: z.boolean().optional().describe("Whether to hide completed tasks. Set to false to show all tasks including completed ones (default: true)"),
   limit: z.number().optional().describe("Maximum number of tasks to return in flat view mode (default: 1000, ignored in hierarchy mode)"),
-  showHierarchy: z.boolean().optional().describe("Display tasks in hierarchical tree structure showing parent-child relationships. Use this when user wants '层级显示' or 'tree view' (default: false)")
+  showHierarchy: z.boolean().optional().describe("Display tasks in hierarchical tree structure showing parent-child relationships (default: false)")
 });
 
 export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {

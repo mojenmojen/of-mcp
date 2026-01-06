@@ -1,19 +1,19 @@
 import { z } from 'zod';
 import { getPerspectiveTasksV2 } from '../primitives/getPerspectiveTasksV2.js';
 
-// 基于 OmniFocus 4.2+ 新 API 的真正透视访问工具
-// 与原有 get_custom_perspective 工具的区别：
-// - 使用新的 archivedFilterRules API，获得 100% 准确的透视筛选结果
-// - 支持所有 27 种筛选规则类型
-// - 自动处理聚合逻辑（all/any/none）
-// - 无需手动配置筛选条件
+// Native perspective access tool based on OmniFocus 4.2+ API
+// Differences from the original get_custom_perspective tool:
+// - Uses the new archivedFilterRules API for 100% accurate perspective filtering
+// - Supports all 27 filter rule types
+// - Automatically handles aggregation logic (all/any/none)
+// - No manual filter configuration needed
 
 export const schema = z.object({
-  perspectiveName: z.string().describe("透视名称。使用你在 OmniFocus 中创建的自定义透视名称，如 '今日工作安排'、'今日复盘' 等"),
-  
-  hideCompleted: z.boolean().optional().default(true).describe("是否隐藏已完成和已放弃的任务（默认: true）"),
-  
-  limit: z.number().optional().default(100).describe("返回任务的最大数量（默认: 100，设为 0 表示无限制）")
+  perspectiveName: z.string().describe("Perspective name. Use the custom perspective name you created in OmniFocus (e.g., 'Today', 'Daily Review')"),
+
+  hideCompleted: z.boolean().optional().default(true).describe("Whether to hide completed and dropped tasks (default: true)"),
+
+  limit: z.number().optional().default(100).describe("Maximum number of tasks to return (default: 100, set to 0 for unlimited)")
 });
 
 export type GetPerspectiveTasksV2Params = z.infer<typeof schema>;
@@ -34,7 +34,7 @@ export async function handler(params: GetPerspectiveTasksV2Params) {
       };
     }
 
-    // 格式化返回结果
+    // Format the return result
     const response: any = {
       success: true,
       perspective: result.perspectiveInfo,
@@ -51,7 +51,7 @@ export async function handler(params: GetPerspectiveTasksV2Params) {
       }
     };
 
-    // 如果有任务，添加汇总信息
+    // If there are tasks, add summary info
     if (result.tasks && result.tasks.length > 0) {
       const summary = {
         flaggedTasks: result.tasks.filter(t => t.flagged).length,
