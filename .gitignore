@@ -53,6 +53,5 @@ generate_*.js
 .npmignore
 
 # Personal files and reports
-CLAUDE.md
-*报告*.md
-个人文档/
+*-report*.md
+personal-docs/
