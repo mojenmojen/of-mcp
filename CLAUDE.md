@@ -27,9 +27,9 @@ This is an enhanced Model Context Protocol (MCP) server that provides AI assista
 ### Core Architecture
 
 **MCP Server Entry Point**: `src/server.ts`
-- Registers 17 tools for OmniFocus operations
+- Registers 23 tools for OmniFocus operations
 - Uses `@modelcontextprotocol/sdk` for MCP protocol handling
-- Supports both individual and batch operations
+- Supports both individual and batch operations (with true batching for 9-12x performance)
 
 **Tool Organization**: 
 - `src/tools/definitions/` - MCP tool definitions with schemas and handlers
@@ -59,15 +59,16 @@ This is an enhanced Model Context Protocol (MCP) server that provides AI assista
 
 ### Tool Categories
 
-1. **Database Operations**: `dump_database`
-2. **Task Management**: `add_omnifocus_task`, `edit_item`, `remove_item`, `get_task_by_id`
-3. **Project Management**: `add_project`
-4. **Batch Operations**: `batch_add_items`, `batch_remove_items`
+1. **Task Management**: `add_omnifocus_task`, `edit_item`, `remove_item`, `get_task_by_id`
+2. **Project Management**: `add_project`, `list_projects`, `get_project_by_id`
+3. **Folder Management**: `add_folder`, `get_folder_by_id`
+4. **Batch Operations**: `batch_add_items`, `batch_edit_items`, `batch_remove_items` (true batching - 9-12x faster)
 5. **Built-in Perspectives**: `get_inbox_tasks`, `get_flagged_tasks`, `get_forecast_tasks`, `get_tasks_by_tag`
 6. **Advanced Filtering**: `filter_tasks` (most powerful filtering engine)
 7. **Custom Perspectives**: `list_custom_perspectives`, `get_custom_perspective_tasks`
-8. **Analytics**: `get_today_completed_tasks`
-9. **Utility**: `get_server_version`
+8. **Review Workflow**: `get_projects_for_review`, `batch_mark_reviewed`
+9. **Analytics**: `get_today_completed_tasks`
+10. **Utility**: `get_server_version`
 
 ## Development Notes
 
@@ -86,6 +87,7 @@ This is an enhanced Model Context Protocol (MCP) server that provides AI assista
 
 **Version Management**:
 - **IMPORTANT**: Bump the version in `package.json` every time code changes are made
+- **IMPORTANT**: Update `README.md` when adding new tools or features
 - The version in `src/server.ts` is read automatically from `package.json` (single source of truth)
 - Use semantic versioning: patch (x.x.X) for fixes, minor (x.X.0) for new features, major (X.0.0) for breaking changes
 - The `get_server_version` tool allows verifying which version is running in a Claude session
