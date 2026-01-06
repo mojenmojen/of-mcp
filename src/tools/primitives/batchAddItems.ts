@@ -1,13 +1,14 @@
-import { addOmniFocusTask, AddOmniFocusTaskParams } from './addOmniFocusTask.js';
-import { addProject, AddProjectParams } from './addProject.js';
+import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { RepetitionRule } from './addOmniFocusTask.js';
 
-// Define the parameters for the batch operation
+// Define the parameters for a single item in the batch
 export type BatchAddItemsParams = {
   type: 'task' | 'project';
   name: string;
   note?: string;
   dueDate?: string;
   deferDate?: string;
+  plannedDate?: string;
   flagged?: boolean;
   estimatedMinutes?: number;
   tags?: string[];
@@ -16,105 +17,83 @@ export type BatchAddItemsParams = {
   parentTaskName?: string; // For subtasks (alternative to ID)
   folderName?: string; // For projects
   sequential?: boolean; // For projects
+  repetitionRule?: RepetitionRule; // For tasks
 };
 
 // Define the result type for individual operations
 type ItemResult = {
   success: boolean;
+  type?: string;
   id?: string;
+  name?: string;
   error?: string;
 };
 
 // Define the result type for the batch operation
 type BatchResult = {
   success: boolean;
+  successCount: number;
+  failureCount: number;
   results: ItemResult[];
   error?: string;
 };
 
 /**
- * Add multiple items (tasks or projects) to OmniFocus
+ * Add multiple items (tasks or projects) to OmniFocus in a single script execution
+ * This is dramatically faster than calling addTask/addProject for each item individually
  */
 export async function batchAddItems(items: BatchAddItemsParams[]): Promise<BatchResult> {
   try {
-    // Results array to track individual operation outcomes
-    const results: ItemResult[] = [];
-    
-    // Process each item in sequence
-    for (const item of items) {
-      try {
-        if (item.type === 'task') {
-          // Extract task-specific params
-          const taskParams: AddOmniFocusTaskParams = {
-            name: item.name,
-            note: item.note,
-            dueDate: item.dueDate,
-            deferDate: item.deferDate,
-            flagged: item.flagged,
-            estimatedMinutes: item.estimatedMinutes,
-            tags: item.tags,
-            projectName: item.projectName,
-            parentTaskId: item.parentTaskId,
-            parentTaskName: item.parentTaskName
-          };
-          
-          // Add task
-          const taskResult = await addOmniFocusTask(taskParams);
-          results.push({
-            success: taskResult.success,
-            id: taskResult.taskId,
-            error: taskResult.error
-          });
-        } else if (item.type === 'project') {
-          // Extract project-specific params
-          const projectParams: AddProjectParams = {
-            name: item.name,
-            note: item.note,
-            dueDate: item.dueDate,
-            deferDate: item.deferDate,
-            flagged: item.flagged,
-            estimatedMinutes: item.estimatedMinutes,
-            tags: item.tags,
-            folderName: item.folderName,
-            sequential: item.sequential
-          };
-          
-          // Add project
-          const projectResult = await addProject(projectParams);
-          results.push({
-            success: projectResult.success,
-            id: projectResult.projectId,
-            error: projectResult.error
-          });
-        } else {
-          // Invalid type
-          results.push({
-            success: false,
-            error: `Invalid item type: ${(item as any).type}`
-          });
-        }
-      } catch (itemError: any) {
-        // Handle individual item errors
-        results.push({
-          success: false,
-          error: itemError.message || "Unknown error processing item"
-        });
-      }
+    if (!items || items.length === 0) {
+      return {
+        success: false,
+        successCount: 0,
+        failureCount: 0,
+        results: [],
+        error: "No items provided"
+      };
     }
-    
-    // Determine overall success (true if at least one item was added successfully)
-    const overallSuccess = results.some(result => result.success);
-    
+
+    console.error(`Executing batch add for ${items.length} items...`);
+
+    // Execute single OmniJS script with all items
+    const result = await executeOmniFocusScript('@batchAddItems.js', { items });
+
+    // Parse result
+    let parsed;
+    if (typeof result === 'string') {
+      try {
+        parsed = JSON.parse(result);
+      } catch (e) {
+        console.error("Failed to parse result as JSON:", e);
+        return {
+          success: false,
+          successCount: 0,
+          failureCount: items.length,
+          results: [],
+          error: `Failed to parse result: ${result}`
+        };
+      }
+    } else {
+      parsed = result;
+    }
+
     return {
-      success: overallSuccess,
-      results: results
+      success: parsed.success,
+      successCount: parsed.successCount || 0,
+      failureCount: parsed.failureCount || 0,
+      results: parsed.results || [],
+      error: parsed.error
     };
+
   } catch (error: any) {
     console.error("Error in batchAddItems:", error);
     return {
       success: false,
+      successCount: 0,
+      failureCount: items.length,
       results: [],
-      error: error.message || "Unknown error in batchAddItems"
+      error: error?.message || "Unknown error in batchAddItems"
     };
   }
-} 
+}

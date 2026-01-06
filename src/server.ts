@@ -17,6 +17,7 @@ import * as removeItemTool from './tools/definitions/removeItem.js';
 import * as editItemTool from './tools/definitions/editItem.js';
 import * as batchAddItemsTool from './tools/definitions/batchAddItems.js';
 import * as batchRemoveItemsTool from './tools/definitions/batchRemoveItems.js';
+import * as batchEditItemsTool from './tools/definitions/batchEditItems.js';
 import * as getTaskByIdTool from './tools/definitions/getTaskById.js';
 import * as getProjectByIdTool from './tools/definitions/getProjectById.js';
 import * as getFolderByIdTool from './tools/definitions/getFolderById.js';
@@ -104,6 +105,12 @@ server.tool(
   batchRemoveItemsTool.handler
 );
 
+server.tool(
+  "batch_edit_items",
+  "Edit multiple tasks or projects in OmniFocus in a single operation (12x faster than individual edits)",
+  batchEditItemsTool.schema.shape,
+  batchEditItemsTool.handler
+);
 
 server.tool(
   "get_task_by_id",

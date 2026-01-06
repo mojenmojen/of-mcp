@@ -27,32 +27,26 @@ export const schema = z.object({
 
 export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
-    // Call the batchAddItems function
+    // Call the batchAddItems function (now uses true batching - single OmniJS script)
     const result = await batchAddItems(args.items as BatchAddItemsParams[]);
-    
+
     if (result.success) {
-      const successCount = result.results.filter(r => r.success).length;
-      const failureCount = result.results.filter(r => !r.success).length;
-      
-      let message = `✅ Successfully added ${successCount} items.`;
-      
-      if (failureCount > 0) {
-        message += ` ⚠️ Failed to add ${failureCount} items.`;
+      let message = `✅ Successfully added ${result.successCount} items.`;
+
+      if (result.failureCount > 0) {
+        message += ` ⚠️ Failed to add ${result.failureCount} items.`;
       }
-      
+
       // Include details about added items
       const details = result.results.map((item, index) => {
+        const inputItem = args.items[index];
         if (item.success) {
-          const itemType = args.items[index].type;
-          const itemName = args.items[index].name;
-          return `- ✅ ${itemType}: "${itemName}"`;
+          return `- ✅ ${inputItem.type}: "${inputItem.name}"`;
         } else {
-          const itemType = args.items[index].type;
-          const itemName = args.items[index].name;
-          return `- ❌ ${itemType}: "${itemName}" - Error: ${item.error}`;
+          return `- ❌ ${inputItem.type}: "${inputItem.name}" - Error: ${item.error}`;
         }
       }).join('\n');
-      
+
       return {
         content: [{
           type: "text" as const,

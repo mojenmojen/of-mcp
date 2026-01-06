@@ -26,17 +26,14 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
       }
     }
     
-    // Call the batchRemoveItems function
+    // Call the batchRemoveItems function (now uses true batching - single OmniJS script)
     const result = await batchRemoveItems(args.items as BatchRemoveItemsParams[]);
-    
+
     if (result.success) {
-      const successCount = result.results.filter(r => r.success).length;
-      const failureCount = result.results.filter(r => !r.success).length;
-      
-      let message = `✅ Successfully removed ${successCount} items.`;
-      
-      if (failureCount > 0) {
-        message += ` ⚠️ Failed to remove ${failureCount} items.`;
+      let message = `✅ Successfully removed ${result.successCount} items.`;
+
+      if (result.failureCount > 0) {
+        message += ` ⚠️ Failed to remove ${result.failureCount} items.`;
       }
       
       // Include details about removed items
