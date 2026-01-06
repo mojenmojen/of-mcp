@@ -97,7 +97,7 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
       
       // Replace any hardcoded parameters in the script with injected ones
       scriptContent = scriptContent.replace(
-        /let perspectiveName = "今日工作安排"; \/\/ Hardcode for testing/,
+        /let perspectiveName = ".*"; \/\/ (?:Hardcode for testing|Default for testing)/,
         'let perspectiveName = injectedArgs.perspectiveName || null;'
       );
       scriptContent = scriptContent.replace(

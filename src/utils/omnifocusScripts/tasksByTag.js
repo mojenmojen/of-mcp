@@ -2,7 +2,7 @@
 (() => {
   try {
     // Use default values since parameters are not easily available in JXA mode
-    const tagName = "编程"; // Default for testing
+    const tagName = "work"; // Default for testing
     const hideCompleted = true; // Default to true
     const exactMatch = false;
     
