@@ -38,12 +38,13 @@ Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **project r
 
 ### 🏗️ **Complete Task Management**
 - **🏗️ Subtask Support** - Create hierarchical tasks with parent-child relationships
+- **📁 Folder Management** - Create and nest folders for project organization
 - **🔍 Built-in Perspectives** - Access Inbox, Flagged, Forecast, and Tag-based views
 - **🚀 Ultimate Task Filter** - Advanced filtering beyond OmniFocus native capabilities
-- **🎯 Batch Operations** - Add/remove multiple tasks efficiently
+- **🎯 Batch Operations** - Add/edit/remove multiple items with true batching (9-12x faster)
 - **📊 Smart Querying** - Find tasks, projects, or folders by ID or name
-- **🔄 Full CRUD Operations** - Create, read, update, delete tasks and projects
-- **📅 Time Management** - Due dates, defer dates, estimates, and scheduling
+- **🔄 Full CRUD Operations** - Create, read, update, delete tasks, projects, and folders
+- **📅 Time Management** - Due dates, defer dates, planned dates, estimates, and scheduling
 - **🏷️ Advanced Tagging** - Tag-based filtering with exact/partial matching
 - **🤖 AI Integration** - Seamless Claude AI integration for intelligent workflows
 
@@ -104,9 +105,32 @@ Create complex task hierarchies with ease:
 }
 ```
 
-### 2. 🔍 Perspective Views
+### 2. 📁 Folder Management
 
-Access all major OmniFocus perspectives programmatically:
+Organize projects with nested folders:
+
+```bash
+# Create a top-level folder
+add_folder {
+  "name": "Work Projects"
+}
+
+# Create a nested folder
+add_folder {
+  "name": "Q1 2025",
+  "parentFolderName": "Work Projects"
+}
+
+# Create folder by parent ID
+add_folder {
+  "name": "Marketing",
+  "parentFolderId": "folderId123"
+}
+```
+
+### 3. 🔍 Perspective Views
+
+Access all major OmniFocus perspectives:
 
 ```bash
 # Inbox perspective
@@ -122,7 +146,7 @@ get_forecast_tasks {"days": 7, "hideCompleted": true}
 get_tasks_by_tag {"tagName": "AI", "exactMatch": false}
 ```
 
-### 3. 🚀 Ultimate Task Filter
+### 4. 🚀 Ultimate Task Filter
 
 Create any perspective imaginable with advanced filtering:
 
@@ -148,7 +172,7 @@ filter_tasks {
 }
 ```
 
-### 4. 🔄 Repeating Tasks
+### 5. 🔄 Repeating Tasks
 
 Create and manage recurring tasks with flexible repetition rules:
 
@@ -199,7 +223,7 @@ edit_item {
 }
 ```
 
-### 5. 🌟 Native Custom Perspective Access
+### 6. 🌟 Native Custom Perspective Access
 
 Access your OmniFocus custom perspectives with hierarchical task display:
 
@@ -232,12 +256,13 @@ get_custom_perspective_tasks {
 - ✅ **AI-Friendly** - Enhanced descriptions prevent tool selection confusion
 - ✅ **Professional Output** - Clean, readable task hierarchies
 
-### 6. 🎯 Batch Operations
+### 7. 🎯 Batch Operations
 
-Efficiently manage multiple tasks:
+Efficiently manage multiple tasks with true batching (9-12x faster than individual calls):
 
-```json
-{
+```bash
+# Batch add multiple tasks/projects
+batch_add_items {
   "items": [
     {
       "type": "task",
@@ -251,18 +276,43 @@ Efficiently manage multiple tasks:
       "parentTaskName": "Website Technical SEO",
       "estimatedMinutes": 180,
       "flagged": true
+    }
+  ]
+}
+
+# Batch edit multiple items
+batch_edit_items {
+  "edits": [
+    {
+      "id": "taskId1",
+      "itemType": "task",
+      "newStatus": "completed"
     },
     {
-      "type": "task",
-      "name": "Mobile Responsiveness",
-      "parentTaskName": "Website Technical SEO",
-      "estimatedMinutes": 90
+      "id": "taskId2",
+      "itemType": "task",
+      "newDueDate": "2025-02-01",
+      "newFlagged": true
+    },
+    {
+      "id": "projectId1",
+      "itemType": "project",
+      "newNote": "Updated via batch edit"
     }
+  ]
+}
+
+# Batch remove multiple items
+batch_remove_items {
+  "items": [
+    {"id": "taskId1", "itemType": "task"},
+    {"id": "taskId2", "itemType": "task"},
+    {"name": "Old Project", "itemType": "project"}
   ]
 }
 ```
 
-### 7. 📋 Project Review Workflow
+### 8. 📋 Project Review Workflow
 
 Automate your weekly review process:
 
@@ -308,37 +358,39 @@ get_project_by_id {
 ## 🛠️ Complete Tool Reference
 
 ### 📊 Database & Task Management
-1. **dump_database** - Get OmniFocus database state
-2. **add_omnifocus_task** - Create tasks (enhanced with subtask support)
-3. **add_project** - Create projects
+1. **add_omnifocus_task** - Create tasks (enhanced with subtask support)
+2. **add_project** - Create projects
+3. **add_folder** - Create folders (with nesting support)
 4. **remove_item** - Delete tasks or projects
 5. **edit_item** - Edit tasks or projects
-6. **batch_add_items** - Bulk add (enhanced with subtask support)
-7. **batch_remove_items** - Bulk remove
-8. **get_task_by_id** - Query task information
+6. **batch_add_items** - Bulk add tasks/projects (true batching - 9x faster)
+7. **batch_edit_items** - Bulk edit tasks/projects (true batching - 12x faster)
+8. **batch_remove_items** - Bulk remove (true batching - 9x faster)
+9. **get_task_by_id** - Query task information
+10. **list_projects** - List projects with folder/status filtering
 
 ### 🔍 Built-in Perspective Tools
-9. **get_inbox_tasks** - Inbox perspective
-10. **get_flagged_tasks** - Flagged perspective
-11. **get_forecast_tasks** - Forecast perspective (due/deferred tasks)
-12. **get_tasks_by_tag** - Tag-based filtering
-13. **filter_tasks** - Ultimate filtering with unlimited combinations
+11. **get_inbox_tasks** - Inbox perspective
+12. **get_flagged_tasks** - Flagged perspective
+13. **get_forecast_tasks** - Forecast perspective (due/deferred tasks)
+14. **get_tasks_by_tag** - Tag-based filtering
+15. **filter_tasks** - Ultimate filtering with unlimited combinations
 
 ### 🌟 Custom Perspective Tools
-14. **list_custom_perspectives** - List all custom perspectives with details
-15. **get_custom_perspective_tasks** - Access custom perspective with hierarchical display
+16. **list_custom_perspectives** - List all custom perspectives with details
+17. **get_custom_perspective_tasks** - Access custom perspective with hierarchical display
 
 ### 📊 Analytics & Tracking
-16. **get_today_completed_tasks** - View today's completed tasks
+18. **get_today_completed_tasks** - View today's completed tasks
 
 ### 📋 Project Review Tools
-17. **get_projects_for_review** - Get projects due for review
-18. **batch_mark_reviewed** - Mark multiple projects as reviewed
+19. **get_projects_for_review** - Get projects due for review
+20. **batch_mark_reviewed** - Mark multiple projects as reviewed
 
 ### 🔧 Utility Tools
-19. **get_server_version** - Get server version and build information
-20. **get_project_by_id** - Query project information by ID or name (includes review data)
-21. **get_folder_by_id** - Query folder information by ID or name
+21. **get_server_version** - Get server version and build information
+22. **get_project_by_id** - Query project information by ID or name (includes review data)
+23. **get_folder_by_id** - Query folder information by ID or name
 
 ## 🚀 Quick Start Examples
 
@@ -443,8 +495,13 @@ list_custom_perspectives
 
 ## 📈 Performance
 
-- **Fast Filtering** - Native AppleScript performance
-- **Batch Efficiency** - Single operation for multiple tasks
+- **True Batch Operations** - All batch tools execute in a single OmniFocus script call
+  - `batch_add_items`: ~138ms per item (9x faster than individual calls)
+  - `batch_edit_items`: ~76ms per item (12x faster than individual calls)
+  - `batch_remove_items`: ~65ms per item (9x faster than individual calls)
+- **Fast ID Lookups** - Direct `Task.byIdentifier()` / `Project.byIdentifier()` API calls
+- **Lazy Loading** - OmniFocus collections only loaded when needed
+- **Fast Filtering** - Native AppleScript/OmniJS performance
 - **Memory Optimized** - Minimal resource usage
 - **Scalable** - Handles large task databases efficiently
 
