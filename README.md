@@ -209,8 +209,8 @@ list_custom_perspectives {"format": "detailed"}
 
 # Get tasks from custom perspective with tree display
 get_custom_perspective_tasks {
-  "perspectiveName": "今日工作安排",  # Your custom perspective name
-  "showHierarchy": true,            # Enable tree display
+  "perspectiveName": "Today's Work",  # Your custom perspective name
+  "showHierarchy": true,              # Enable tree display
   "hideCompleted": true
 }
 
