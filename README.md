@@ -1,6 +1,7 @@
 # 🚀 OmniFocus MCP Enhanced
 
-[![npm version](https://img.shields.io/npm/v/omnifocus-mcp-enhanced.svg)](https://www.npmjs.com/package/omnifocus-mcp-enhanced)
+> **Note:** This is a personal fork of [jqlts1/omnifocus-mcp-enhanced](https://github.com/jqlts1/omnifocus-mcp-enhanced), maintained independently.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js CI](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![macOS](https://img.shields.io/badge/macOS-only-blue.svg)](https://www.apple.com/macos/)
@@ -470,8 +471,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🔗 Links
 
-- **NPM Package**: https://www.npmjs.com/package/omnifocus-mcp-enhanced
-- **GitHub Repository**: https://github.com/jqlts1/omnifocus-mcp-enhanced
+- **This Fork**: https://github.com/mojenmojen/omnifocus-mcp-enhanced
+- **Original Project**: https://github.com/jqlts1/omnifocus-mcp-enhanced
 - **OmniFocus**: https://www.omnigroup.com/omnifocus/
 - **Model Context Protocol**: https://modelcontextprotocol.io/
 - **Claude Code**: https://docs.anthropic.com/en/docs/claude-code
