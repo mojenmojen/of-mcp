@@ -73,10 +73,8 @@
     // Create the new project
     let newProject;
     if (container) {
-      // Create in folder
       newProject = new Project(projectName, container);
     } else {
-      // Create at root level
       newProject = new Project(projectName);
     }
 

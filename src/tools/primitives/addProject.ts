@@ -29,7 +29,8 @@ export async function addProject(params: AddProjectParams): Promise<{success: bo
     }
 
     console.error("Executing OmniJS script for addProject...");
-    console.error(`Project name: ${params.name}, Folder: ${params.folderName || 'root'}`);
+    const folderInfo = params.folderId ? `ID:${params.folderId}` : (params.folderName || 'root');
+    console.error(`Project name: ${params.name}, Folder: ${folderInfo}`);
 
     // Execute the OmniJS script
     const result = await executeOmniFocusScript('@addProject.js', {

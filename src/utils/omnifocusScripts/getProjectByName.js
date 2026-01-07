@@ -130,11 +130,11 @@
       // Task count not accessible
     }
 
-    // Get folder info
+    // Get folder info (use parentFolder, not folder)
     try {
-      if (foundProject.folder) {
-        projectInfo.folderId = foundProject.folder.id.primaryKey;
-        projectInfo.folderName = foundProject.folder.name;
+      if (foundProject.parentFolder) {
+        projectInfo.folderId = foundProject.parentFolder.id.primaryKey;
+        projectInfo.folderName = foundProject.parentFolder.name;
       }
     } catch (e) {
       // Folder not accessible
