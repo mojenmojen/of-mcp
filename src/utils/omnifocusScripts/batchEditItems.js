@@ -13,6 +13,30 @@
     return new Date(dateStr);
   }
 
+  // Helper function to find a tag by name (direct iteration to keep OmniJS proxy alive)
+  // If tag doesn't exist, creates it
+  function findOrCreateTag(tagName) {
+    const tagNameLower = tagName.toLowerCase();
+    for (const tag of flattenedTags) {
+      if (tag.name.toLowerCase() === tagNameLower) {
+        return tag;
+      }
+    }
+    // Tag doesn't exist - create it
+    return new Tag(tagName);
+  }
+
+  // Helper function to find a tag by name (for removal - don't create if missing)
+  function findTag(tagName) {
+    const tagNameLower = tagName.toLowerCase();
+    for (const tag of flattenedTags) {
+      if (tag.name.toLowerCase() === tagNameLower) {
+        return tag;
+      }
+    }
+    return null;
+  }
+
   // Helper function to build iCal RRULE string from repetition rule object
   function buildRRule(rule) {
     let rrule = `FREQ=${rule.frequency.toUpperCase()}`;
@@ -256,28 +280,30 @@
           }
         }
 
-        // Task-specific: Replace all tags
+        // Task-specific: Replace all tags (direct iteration to keep OmniJS proxy alive)
         if (itemType === 'task' && edit.replaceTags && edit.replaceTags.length > 0) {
           const existingTags = foundItem.tags.slice();
           for (const existingTag of existingTags) {
             foundItem.removeTag(existingTag);
           }
           for (const tagName of edit.replaceTags) {
-            const tag = getTagsByName().get(tagName.toLowerCase());
-            if (tag) foundItem.addTag(tag);
+            const tag = findOrCreateTag(tagName);
+            foundItem.addTag(tag);
           }
           changedProperties.push("tags (replaced)");
         } else {
+          // Add tags (direct iteration, creates if missing)
           if (itemType === 'task' && edit.addTags && edit.addTags.length > 0) {
             for (const tagName of edit.addTags) {
-              const tag = getTagsByName().get(tagName.toLowerCase());
-              if (tag) foundItem.addTag(tag);
+              const tag = findOrCreateTag(tagName);
+              foundItem.addTag(tag);
             }
             changedProperties.push("tags (added)");
           }
+          // Remove tags (direct iteration)
           if (itemType === 'task' && edit.removeTags && edit.removeTags.length > 0) {
             for (const tagName of edit.removeTags) {
-              const tag = getTagsByName().get(tagName.toLowerCase());
+              const tag = findTag(tagName);
               if (tag) foundItem.removeTag(tag);
             }
             changedProperties.push("tags (removed)");

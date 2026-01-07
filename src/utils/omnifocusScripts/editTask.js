@@ -18,6 +18,30 @@
     return new Date(dateStr);
   }
 
+  // Helper function to find a tag by name (direct iteration to keep OmniJS proxy alive)
+  // If tag doesn't exist, creates it
+  function findOrCreateTag(tagName) {
+    const tagNameLower = tagName.toLowerCase();
+    for (const tag of flattenedTags) {
+      if (tag.name.toLowerCase() === tagNameLower) {
+        return tag;
+      }
+    }
+    // Tag doesn't exist - create it
+    return new Tag(tagName);
+  }
+
+  // Helper function to find a tag by name (for removal - don't create if missing)
+  function findTag(tagName) {
+    const tagNameLower = tagName.toLowerCase();
+    for (const tag of flattenedTags) {
+      if (tag.name.toLowerCase() === tagNameLower) {
+        return tag;
+      }
+    }
+    return null;
+  }
+
   // Helper function to build iCal RRULE string from repetition rule object
   function buildRRule(rule) {
     let rrule = `FREQ=${rule.frequency.toUpperCase()}`;
@@ -225,37 +249,33 @@
       }
     }
 
-    // Task-specific: Replace all tags (using Map lookup)
+    // Task-specific: Replace all tags (direct iteration to keep OmniJS proxy alive)
     if (itemType === 'task' && args.replaceTags && args.replaceTags.length > 0) {
       // First, remove all existing tags
       const existingTags = foundItem.tags.slice(); // Make a copy
       for (const existingTag of existingTags) {
         foundItem.removeTag(existingTag);
       }
-      // Then add new tags using Map lookup
+      // Then add new tags (creates if missing)
       for (const tagName of args.replaceTags) {
-        const tag = tagsByName.get(tagName.toLowerCase());
-        if (tag) {
-          foundItem.addTag(tag);
-        }
+        const tag = findOrCreateTag(tagName);
+        foundItem.addTag(tag);
       }
       changedProperties.push("tags (replaced)");
     } else {
-      // Task-specific: Add tags (using Map lookup)
+      // Task-specific: Add tags (direct iteration, creates if missing)
       if (itemType === 'task' && args.addTags && args.addTags.length > 0) {
         for (const tagName of args.addTags) {
-          const tag = tagsByName.get(tagName.toLowerCase());
-          if (tag) {
-            foundItem.addTag(tag);
-          }
+          const tag = findOrCreateTag(tagName);
+          foundItem.addTag(tag);
         }
         changedProperties.push("tags (added)");
       }
 
-      // Task-specific: Remove tags (using Map lookup)
+      // Task-specific: Remove tags (direct iteration)
       if (itemType === 'task' && args.removeTags && args.removeTags.length > 0) {
         for (const tagName of args.removeTags) {
-          const tag = tagsByName.get(tagName.toLowerCase());
+          const tag = findTag(tagName);
           if (tag) {
             foundItem.removeTag(tag);
           }
