@@ -43,6 +43,7 @@ Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **project r
 - **🚀 Ultimate Task Filter** - Advanced filtering beyond OmniFocus native capabilities
 - **🎯 Batch Operations** - Add/edit/remove multiple items with true batching (9-12x faster)
 - **📊 Smart Querying** - Find tasks, projects, or folders by ID or name
+- **🔗 Consistent ID Support** - All tools accept both IDs and names (IDs take priority for reliability)
 - **🔄 Full CRUD Operations** - Create, read, update, delete tasks, projects, and folders
 - **📅 Time Management** - Due dates, defer dates, planned dates, estimates, and scheduling
 - **🏷️ Advanced Tagging** - Multi-tag filtering with any/all matching, exact/partial search, and auto-creation of missing tags
@@ -86,22 +87,29 @@ claude mcp add omnifocus-enhanced -- node "/path/to/omnifocus-mcp-enhanced/dist/
 Create complex task hierarchies with ease:
 
 ```json
-// Create subtask by parent task name
+// Create task in project (by name or ID)
 {
   "name": "Analyze competitor keywords",
-  "parentTaskName": "SEO Strategy",
+  "projectName": "SEO Strategy",
   "note": "Focus on top 10 competitors",
   "dueDate": "2025-01-15",
   "estimatedMinutes": 120,
   "tags": ["SEO", "Research"]
 }
 
-// Create subtask by parent task ID
+// Create task by project ID
 {
   "name": "Write content outline",
-  "parentTaskId": "loK2xEAY4H1",
+  "projectId": "projectId123",
   "flagged": true,
   "estimatedMinutes": 60
+}
+
+// Create subtask by parent task ID
+{
+  "name": "Research top competitors",
+  "parentTaskId": "loK2xEAY4H1",
+  "estimatedMinutes": 30
 }
 ```
 
@@ -115,16 +123,26 @@ add_folder {
   "name": "Work Projects"
 }
 
-# Create a nested folder
+# Create a nested folder (by name or ID)
 add_folder {
   "name": "Q1 2025",
   "parentFolderName": "Work Projects"
 }
 
-# Create folder by parent ID
 add_folder {
   "name": "Marketing",
   "parentFolderId": "folderId123"
+}
+
+# Create a project in a folder (by name or ID)
+add_project {
+  "name": "New Website",
+  "folderName": "Work Projects"
+}
+
+add_project {
+  "name": "Mobile App",
+  "folderId": "folderId123"
 }
 ```
 
@@ -136,17 +154,20 @@ Access all major OmniFocus perspectives:
 # Inbox perspective
 get_inbox_tasks {"hideCompleted": true}
 
-# Flagged tasks
+# Flagged tasks (filter by project name or ID)
 get_flagged_tasks {"projectFilter": "SEO Project"}
+get_flagged_tasks {"projectId": "abc123xyz"}
 
 # Forecast (next 7 days)
 get_forecast_tasks {"days": 7, "hideCompleted": true}
 
-# Tasks by single tag
+# Tasks by tag name (single or multiple)
 get_tasks_by_tag {"tagName": "AI", "exactMatch": false}
-
-# Tasks by multiple tags (OR - any of these tags)
 get_tasks_by_tag {"tagName": ["work", "urgent", "focus"]}
+
+# Tasks by tag ID (single or multiple)
+get_tasks_by_tag {"tagId": "tagId123"}
+get_tasks_by_tag {"tagId": ["tagId1", "tagId2"]}
 
 # Tasks by multiple tags (AND - all of these tags)
 get_tasks_by_tag {"tagName": ["home", "errands"], "tagMatchMode": "all"}
@@ -180,10 +201,17 @@ filter_tasks {
   "taskStatus": ["Available"]
 }
 
-# Project overdue tasks
+# Project overdue tasks (filter by name or ID)
 filter_tasks {
   "projectFilter": "Website Redesign",
   "taskStatus": ["Overdue", "DueSoon"]
+}
+
+# Filter by project ID and tag ID (for programmatic use)
+filter_tasks {
+  "projectId": "projectId123",
+  "tagId": ["tagId1", "tagId2"],
+  "taskStatus": ["Available"]
 }
 ```
 
@@ -246,11 +274,17 @@ Access your OmniFocus custom perspectives with hierarchical task display:
 # List all your custom perspectives
 list_custom_perspectives {"format": "detailed"}
 
-# Get tasks from custom perspective with tree display
+# Get tasks from custom perspective by name
 get_custom_perspective_tasks {
   "perspectiveName": "Today's Work",  # Your custom perspective name
   "showHierarchy": true,              # Enable tree display
   "hideCompleted": true
+}
+
+# Get tasks from custom perspective by ID
+get_custom_perspective_tasks {
+  "perspectiveId": "perspectiveId123",
+  "showHierarchy": true
 }
 
 # Examples with different perspectives
@@ -288,21 +322,26 @@ get_custom_perspective_tasks {
 Efficiently manage multiple tasks with true batching (9-12x faster than individual calls):
 
 ```bash
-# Batch add multiple tasks/projects
+# Batch add multiple tasks/projects (by name or ID)
 batch_add_items {
   "items": [
     {
       "type": "task",
       "name": "Website Technical SEO",
-      "projectName": "SEO Project",
+      "projectName": "SEO Project",  # or use projectId
       "note": "Optimize technical aspects"
     },
     {
       "type": "task",
       "name": "Page Speed Optimization",
-      "parentTaskName": "Website Technical SEO",
+      "parentTaskName": "Website Technical SEO",  # or use parentTaskId
       "estimatedMinutes": 180,
       "flagged": true
+    },
+    {
+      "type": "project",
+      "name": "New Project",
+      "folderId": "folderId123"  # or use folderName
     }
   ]
 }
@@ -319,12 +358,14 @@ batch_edit_items {
       "id": "taskId2",
       "itemType": "task",
       "newDueDate": "2025-02-01",
-      "newFlagged": true
+      "newFlagged": true,
+      "newProjectId": "projectId123"  # Move task to another project by ID
     },
     {
       "id": "projectId1",
       "itemType": "project",
-      "newNote": "Updated via batch edit"
+      "newNote": "Updated via batch edit",
+      "newFolderId": "folderId456"  # Move project to another folder by ID
     }
   ]
 }
@@ -381,9 +422,14 @@ edit_item {
   "newReviewInterval": 14
 }
 
-# Batch mark multiple projects as reviewed
+# Batch mark multiple projects as reviewed (by ID)
 batch_mark_reviewed {
   "projectIds": ["projectId1", "projectId2", "projectId3"]
+}
+
+# Batch mark by project names
+batch_mark_reviewed {
+  "projectNames": ["Marketing Campaign", "Website Redesign"]
 }
 
 # View project review info
