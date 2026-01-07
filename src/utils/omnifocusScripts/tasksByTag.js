@@ -10,7 +10,7 @@
     const hideCompleted = args.hideCompleted !== false; // Default to true
     const exactMatch = args.exactMatch || false;
     const matchMode = args.tagMatchMode || 'any'; // 'any' (OR) or 'all' (AND)
-    const limit = args.limit || 500; // Limit results to prevent timeout
+    const limit = (args.limit !== undefined && args.limit !== null) ? args.limit : 500; // Limit results to prevent timeout
 
     if (!tagNames || tagNames.length === 0) {
       return JSON.stringify({
@@ -105,16 +105,33 @@
 
     if (matchMode === 'any') {
       // OR logic: task has at least one matching tag from any search term
-      allMatchedTags.forEach(tag => {
+      // Use a Set for O(1) deduplication instead of O(n) find()
+      const seenTaskIds = new Set();
+      // Calculate collection limit - collect more than needed to account for completed filtering
+      const collectionLimit = hideCompleted ? limit * 3 : limit * 2;
+      let reachedCollectionLimit = false;
+
+      for (const tag of allMatchedTags) {
+        if (reachedCollectionLimit) break;
+
         const tasksWithTag = tag.tasks;
         console.log(`Tag "${tag.name}" has ${tasksWithTag.length} tasks`);
 
-        tasksWithTag.forEach(task => {
-          if (!matchingTasks.find(t => t.id.primaryKey === task.id.primaryKey)) {
+        for (const task of tasksWithTag) {
+          const taskId = task.id.primaryKey;
+          if (!seenTaskIds.has(taskId)) {
+            seenTaskIds.add(taskId);
             matchingTasks.push(task);
+
+            // Early exit once we have enough candidates
+            if (matchingTasks.length >= collectionLimit) {
+              console.log(`Reached collection limit of ${collectionLimit}, stopping early`);
+              reachedCollectionLimit = true;
+              break;
+            }
           }
-        });
-      });
+        }
+      }
     } else {
       // AND logic: task must have tags matching ALL search terms
       // First get all tasks from all matched tags
@@ -125,23 +142,44 @@
         });
       });
 
+      // Pre-compute tag ID sets for each search term for faster lookup
+      const searchTermTagIds = new Map();
+      matchingTagsBySearchTerm.forEach((matchedTags, searchTerm) => {
+        searchTermTagIds.set(searchTerm, new Set(matchedTags.map(t => t.id.primaryKey)));
+      });
+
+      // Calculate collection limit for early exit
+      const collectionLimit = hideCompleted ? limit * 3 : limit * 2;
+
       // For each task, check if it has at least one tag from each search term group
-      allTasksFromTags.forEach((task, taskId) => {
+      for (const [taskId, task] of allTasksFromTags) {
         const taskTagIds = new Set(task.tags.map(t => t.id.primaryKey));
 
         let matchesAllSearchTerms = true;
-        matchingTagsBySearchTerm.forEach((matchedTags, searchTerm) => {
+        for (const [searchTerm, tagIdSet] of searchTermTagIds) {
           // Task must have at least one of the tags from this search term's matches
-          const hasMatchForTerm = matchedTags.some(tag => taskTagIds.has(tag.id.primaryKey));
+          let hasMatchForTerm = false;
+          for (const tagId of taskTagIds) {
+            if (tagIdSet.has(tagId)) {
+              hasMatchForTerm = true;
+              break;
+            }
+          }
           if (!hasMatchForTerm) {
             matchesAllSearchTerms = false;
+            break; // No need to check other search terms
           }
-        });
+        }
 
         if (matchesAllSearchTerms) {
           matchingTasks.push(task);
+          // Early exit once we have enough candidates
+          if (matchingTasks.length >= collectionLimit) {
+            console.log(`Reached collection limit of ${collectionLimit} for ALL mode, stopping early`);
+            break;
+          }
         }
-      });
+      }
     }
 
     console.log(`Found ${matchingTasks.length} unique tasks with matching tags (mode: ${matchMode})`);

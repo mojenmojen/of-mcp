@@ -26,7 +26,7 @@ export async function getTasksByTag(options: GetTasksByTagOptions): Promise<stri
       tagMatchMode: tagMatchMode,
       hideCompleted: hideCompleted,
       exactMatch: exactMatch,
-      limit: limit || 500 // Default limit to prevent timeout with many tags
+      limit: limit ?? 500 // Default limit to prevent timeout with many tags
     });
     
     if (typeof result === 'string') {
