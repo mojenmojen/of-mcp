@@ -5,14 +5,16 @@ import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/typ
 
 export const schema = z.object({
   hideCompleted: z.boolean().optional().describe("Set to false to show completed flagged tasks (default: true)"),
-  projectFilter: z.string().optional().describe("Filter flagged tasks by project name (optional)")
+  projectFilter: z.string().optional().describe("Filter flagged tasks by project name (optional)"),
+  projectId: z.string().optional().describe("Filter flagged tasks by project ID (alternative to projectFilter)")
 });
 
 export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     const result = await getFlaggedTasks({
       hideCompleted: args.hideCompleted !== false, // Default to true
-      projectFilter: args.projectFilter
+      projectFilter: args.projectFilter,
+      projectId: args.projectId
     });
     
     return {

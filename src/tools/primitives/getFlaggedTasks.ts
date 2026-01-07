@@ -3,16 +3,18 @@ import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 export interface GetFlaggedTasksOptions {
   hideCompleted?: boolean;
   projectFilter?: string;
+  projectId?: string;
 }
 
 export async function getFlaggedTasks(options: GetFlaggedTasksOptions = {}): Promise<string> {
-  const { hideCompleted = true, projectFilter } = options;
-  
+  const { hideCompleted = true, projectFilter, projectId } = options;
+
   try {
     // Execute the flagged tasks script
-    const result = await executeOmniFocusScript('@flaggedTasks.js', { 
+    const result = await executeOmniFocusScript('@flaggedTasks.js', {
       hideCompleted: hideCompleted,
-      projectFilter: projectFilter
+      projectFilter: projectFilter,
+      projectId: projectId
     });
     
     if (typeof result === 'string') {
