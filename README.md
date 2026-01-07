@@ -264,6 +264,20 @@ edit_item {
   "itemType": "task",
   "newRepetitionRule": null
 }
+
+# Move a task to a different project (by ID)
+edit_item {
+  "id": "taskId123",
+  "itemType": "task",
+  "newProjectId": "projectId456"
+}
+
+# Move a project to a different folder (by ID)
+edit_item {
+  "id": "projectId123",
+  "itemType": "project",
+  "newFolderId": "folderId456"
+}
 ```
 
 ### 6. 🌟 Native Custom Perspective Access
