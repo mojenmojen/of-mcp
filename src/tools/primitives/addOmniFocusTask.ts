@@ -74,7 +74,8 @@ export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<
     }
 
     console.error("Executing OmniJS script for addOmniFocusTask...");
-    console.error(`Task name: ${params.name}, Project: ${params.projectName || 'inbox'}`);
+    const projectInfo = params.projectId ? `ID:${params.projectId}` : (params.projectName || 'inbox');
+    console.error(`Task name: ${params.name}, Project: ${projectInfo}`);
 
     // Execute the OmniJS script
     const result = await executeOmniFocusScript('@addTask.js', {
