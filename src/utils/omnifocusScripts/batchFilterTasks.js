@@ -61,10 +61,15 @@
       return new Date(date) < now;
     }
 
-    // Build project lookup maps
+    // Build project lookup maps (only actual projects, not action groups)
     const projectsById = new Map();
     const projectsByNameLower = new Map();
     flattenedProjects.forEach(p => {
+      // Skip action groups - they have IDs with dots like "abc123.14"
+      // Real project IDs don't have dots
+      if (p.id.primaryKey.includes('.')) {
+        return;
+      }
       projectsById.set(p.id.primaryKey, p);
       // Store by lowercase name for case-insensitive matching
       const nameLower = p.name.toLowerCase();
