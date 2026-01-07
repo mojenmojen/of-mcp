@@ -5,10 +5,11 @@ export interface GetTasksByTagOptions {
   tagMatchMode?: 'any' | 'all';
   hideCompleted?: boolean;
   exactMatch?: boolean;
+  limit?: number;
 }
 
 export async function getTasksByTag(options: GetTasksByTagOptions): Promise<string> {
-  const { tagName, tagMatchMode = 'any', hideCompleted = true, exactMatch = false } = options;
+  const { tagName, tagMatchMode = 'any', hideCompleted = true, exactMatch = false, limit } = options;
 
   // Normalize to array
   const tagNames = Array.isArray(tagName) ? tagName : [tagName];
@@ -24,7 +25,8 @@ export async function getTasksByTag(options: GetTasksByTagOptions): Promise<stri
       tagName: trimmedTagNames,
       tagMatchMode: tagMatchMode,
       hideCompleted: hideCompleted,
-      exactMatch: exactMatch
+      exactMatch: exactMatch,
+      limit: limit || 500 // Default limit to prevent timeout with many tags
     });
     
     if (typeof result === 'string') {
@@ -78,7 +80,8 @@ export async function getTasksByTag(options: GetTasksByTagOptions): Promise<stri
           }
         } else {
           const taskCount = data.tasks.length;
-          output += `Found ${taskCount} task${taskCount === 1 ? '' : 's'}:\n\n`;
+          const limitInfo = data.limitReached ? ` (limited from ${data.totalBeforeLimit})` : '';
+          output += `Found ${taskCount} task${taskCount === 1 ? '' : 's'}${limitInfo}:\n\n`;
           
           // Group tasks by project for better organization
           const tasksByProject = new Map<string, any[]>();

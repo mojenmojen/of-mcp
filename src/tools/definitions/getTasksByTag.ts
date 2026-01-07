@@ -7,7 +7,8 @@ export const schema = z.object({
   tagName: z.union([z.string(), z.array(z.string())]).describe("Name of tag(s) to filter tasks by. Can be a single tag or array of tags (e.g., ['work', 'urgent'])"),
   tagMatchMode: z.enum(["any", "all"]).optional().describe("How to match multiple tags: 'any' returns tasks with at least one tag (default), 'all' returns tasks with every specified tag"),
   hideCompleted: z.boolean().optional().describe("Set to false to show completed tasks with this tag (default: true)"),
-  exactMatch: z.boolean().optional().describe("Set to true for exact tag name match, false for partial (default: false)")
+  exactMatch: z.boolean().optional().describe("Set to true for exact tag name match, false for partial (default: false)"),
+  limit: z.number().optional().describe("Maximum number of tasks to return (default: 500). Use to prevent timeout with many tags")
 });
 
 export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
@@ -16,7 +17,8 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
       tagName: args.tagName,
       tagMatchMode: args.tagMatchMode || 'any',
       hideCompleted: args.hideCompleted !== false, // Default to true
-      exactMatch: args.exactMatch || false
+      exactMatch: args.exactMatch || false,
+      limit: args.limit
     });
     
     return {

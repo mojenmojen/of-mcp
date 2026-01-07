@@ -10,6 +10,7 @@
     const hideCompleted = args.hideCompleted !== false; // Default to true
     const exactMatch = args.exactMatch || false;
     const matchMode = args.tagMatchMode || 'any'; // 'any' (OR) or 'all' (AND)
+    const limit = args.limit || 500; // Limit results to prevent timeout
 
     if (!tagNames || tagNames.length === 0) {
       return JSON.stringify({
@@ -154,7 +155,18 @@
     }
 
     console.log(`Processing ${matchingTasks.length} tasks after filtering completed`);
-    
+
+    // Apply limit to prevent timeout
+    let limitReached = false;
+    let totalBeforeLimit = matchingTasks.length;
+    if (matchingTasks.length > limit) {
+      limitReached = true;
+      matchingTasks = matchingTasks.slice(0, limit);
+      console.log(`Limited to ${limit} tasks (was ${totalBeforeLimit})`);
+    }
+    exportData.limitReached = limitReached;
+    exportData.totalBeforeLimit = totalBeforeLimit;
+
     // Process each matching task
     matchingTasks.forEach(task => {
       try {
