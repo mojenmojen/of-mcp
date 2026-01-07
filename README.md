@@ -263,11 +263,23 @@ get_custom_perspective_tasks {
   "perspectiveName": "Weekly Planning",
   "showHierarchy": false  # Flat display
 }
+
+# Example output (flat view):
+# 1. **Review quarterly goals** [ID: j-Q4cm6ewVF]
+#    Tags: planning
+#    Due: 1/31/2025
+
+# Example output (hierarchical view):
+# ├─ **Launch Product Campaign**
+# │  ID: abc123xyz
+# │  Tags: Campaign, Priority
+# │  Due: 2/15/2025
 ```
 
 **Why This Is Powerful:**
 - ✅ **Native Integration** - Uses OmniFocus `Perspective.Custom` API directly
 - ✅ **Tree Structure** - Visual parent-child task relationships with ├─, └─ symbols
+- ✅ **Task IDs Included** - Build `omnifocus:///task/{id}` deep links directly from output
 - ✅ **AI-Friendly** - Enhanced descriptions prevent tool selection confusion
 - ✅ **Professional Output** - Clean, readable task hierarchies
 

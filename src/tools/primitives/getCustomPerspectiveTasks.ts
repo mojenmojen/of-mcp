@@ -141,6 +141,10 @@ function formatTaskName(task: any): string {
 function formatTaskDetails(task: any): string[] {
   const details: string[] = [];
 
+  if (task.id) {
+    details.push(`ID: ${task.id}`);
+  }
+
   if (task.project) {
     details.push(`Project: ${task.project}`);
   }
@@ -182,7 +186,7 @@ function formatFlatTasks(perspectiveName: string, tasks: any[], limit: number, t
 
   // Generate task list
   const taskList = displayTasks.map((task: any, index: number) => {
-    let taskText = `${index + 1}. **${task.name}**`;
+    let taskText = `${index + 1}. **${task.name}** [ID: ${task.id}]`;
 
     if (task.project) {
       taskText += `\n   Project: ${task.project}`;
