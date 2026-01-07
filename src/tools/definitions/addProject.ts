@@ -12,6 +12,7 @@ export const schema = z.object({
   estimatedMinutes: z.number().optional().describe("Estimated time to complete the project, in minutes"),
   tags: z.array(z.string()).optional().describe("Tags to assign to the project"),
   folderName: z.string().optional().describe("The name of the folder to add the project to (will add to root if not specified)"),
+  folderId: z.string().optional().describe("The ID of the folder to add the project to (alternative to folderName)"),
   sequential: z.boolean().optional().describe("Whether tasks in the project should be sequential (default: false)")
 });
 

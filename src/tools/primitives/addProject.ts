@@ -10,6 +10,7 @@ export interface AddProjectParams {
   estimatedMinutes?: number;
   tags?: string[]; // Tag names
   folderName?: string; // Folder name to add project to
+  folderId?: string; // Folder ID to add project to (alternative to folderName)
   sequential?: boolean; // Whether tasks should be sequential or parallel
 }
 
@@ -40,6 +41,7 @@ export async function addProject(params: AddProjectParams): Promise<{success: bo
       estimatedMinutes: params.estimatedMinutes || null,
       tags: params.tags || [],
       folderName: params.folderName || null,
+      folderId: params.folderId || null,
       sequential: params.sequential || false
     });
 

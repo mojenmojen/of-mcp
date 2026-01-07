@@ -25,6 +25,7 @@
     const estimatedMinutes = args.estimatedMinutes || null;
     const tagNames = args.tags || [];
     const folderName = args.folderName || null;
+    const folderId = args.folderId || null;
     const sequential = args.sequential || false;
 
     if (!projectName) {
@@ -37,19 +38,34 @@
     // Determine the container for the new project
     let container = null;
 
-    if (folderName) {
-      // Find folder by name
+    if (folderId || folderName) {
       const allFolders = flattenedFolders;
-      for (const folder of allFolders) {
-        if (folder.name === folderName) {
-          container = folder;
-          break;
+
+      // Try ID lookup first
+      if (folderId) {
+        for (const folder of allFolders) {
+          if (folder.id.primaryKey === folderId) {
+            container = folder;
+            break;
+          }
         }
       }
+
+      // Fall back to name lookup if ID not found or not provided
+      if (!container && folderName) {
+        for (const folder of allFolders) {
+          if (folder.name === folderName) {
+            container = folder;
+            break;
+          }
+        }
+      }
+
       if (!container) {
+        const searchRef = folderId ? `ID "${folderId}"` : `name "${folderName}"`;
         return JSON.stringify({
           success: false,
-          error: `Folder not found: ${folderName}`
+          error: `Folder not found with ${searchRef}`
         });
       }
     }
