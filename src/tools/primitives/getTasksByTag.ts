@@ -1,7 +1,8 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 
 export interface GetTasksByTagOptions {
-  tagName: string | string[];
+  tagName?: string | string[];
+  tagId?: string | string[];
   tagMatchMode?: 'any' | 'all';
   hideCompleted?: boolean;
   exactMatch?: boolean;
@@ -9,20 +10,21 @@ export interface GetTasksByTagOptions {
 }
 
 export async function getTasksByTag(options: GetTasksByTagOptions): Promise<string> {
-  const { tagName, tagMatchMode = 'any', hideCompleted = true, exactMatch = false, limit } = options;
+  const { tagName, tagId, tagMatchMode = 'any', hideCompleted = true, exactMatch = false, limit } = options;
 
-  // Normalize to array
-  const tagNames = Array.isArray(tagName) ? tagName : [tagName];
-  const trimmedTagNames = tagNames.map(t => t.trim()).filter(t => t !== '');
+  // Normalize to arrays
+  const tagNames = tagName ? (Array.isArray(tagName) ? tagName : [tagName]).map(t => t.trim()).filter(t => t !== '') : [];
+  const tagIds = tagId ? (Array.isArray(tagId) ? tagId : [tagId]).map(t => t.trim()).filter(t => t !== '') : [];
 
-  if (trimmedTagNames.length === 0) {
-    throw new Error('At least one tag name is required');
+  if (tagNames.length === 0 && tagIds.length === 0) {
+    throw new Error('At least one tag name or tag ID is required');
   }
 
   try {
     // Execute the tasks by tag script
     const result = await executeOmniFocusScript('@tasksByTag.js', {
-      tagName: trimmedTagNames,
+      tagName: tagNames.length > 0 ? tagNames : null,
+      tagId: tagIds.length > 0 ? tagIds : null,
       tagMatchMode: tagMatchMode,
       hideCompleted: hideCompleted,
       exactMatch: exactMatch,
@@ -43,10 +45,13 @@ export async function getTasksByTag(options: GetTasksByTagOptions): Promise<stri
 
       // Format the tasks by tag
       const searchType = exactMatch ? 'exact match' : 'partial match';
-      const searchTagsDisplay = trimmedTagNames.length === 1
-        ? `"${trimmedTagNames[0]}"`
-        : `[${trimmedTagNames.map(t => `"${t}"`).join(', ')}]`;
-      const modeDisplay = trimmedTagNames.length > 1 ? ` (${tagMatchMode === 'all' ? 'ALL tags' : 'ANY tag'})` : '';
+      // Determine what to display based on what was searched
+      const searchTerms = tagNames.length > 0 ? tagNames : tagIds;
+      const searchLabel = tagNames.length > 0 ? 'name' : 'ID';
+      const searchTagsDisplay = searchTerms.length === 1
+        ? `"${searchTerms[0]}" (by ${searchLabel})`
+        : `[${searchTerms.map(t => `"${t}"`).join(', ')}] (by ${searchLabel})`;
+      const modeDisplay = searchTerms.length > 1 ? ` (${tagMatchMode === 'all' ? 'ALL tags' : 'ANY tag'})` : '';
 
       let output = `# 🏷 TASKS WITH TAG: ${searchTagsDisplay}${modeDisplay} (${searchType})\n\n`;
 

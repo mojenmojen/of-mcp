@@ -4,18 +4,20 @@
   try {
     const args = typeof injectedArgs !== 'undefined' ? injectedArgs : {};
 
-    // Normalize tagName to array
-    const rawTagName = args.tagName || "work";
-    const tagNames = Array.isArray(rawTagName) ? rawTagName : [rawTagName];
+    // Normalize tagName and tagId to arrays
+    const rawTagName = args.tagName || null;
+    const rawTagId = args.tagId || null;
+    const tagNames = rawTagName ? (Array.isArray(rawTagName) ? rawTagName : [rawTagName]) : [];
+    const tagIds = rawTagId ? (Array.isArray(rawTagId) ? rawTagId : [rawTagId]) : [];
     const hideCompleted = args.hideCompleted !== false; // Default to true
     const exactMatch = args.exactMatch || false;
     const matchMode = args.tagMatchMode || 'any'; // 'any' (OR) or 'all' (AND)
     const limit = (args.limit !== undefined && args.limit !== null) ? args.limit : 500; // Limit results to prevent timeout
 
-    if (!tagNames || tagNames.length === 0) {
+    if (tagNames.length === 0 && tagIds.length === 0) {
       return JSON.stringify({
         success: false,
-        error: "Tag name is required"
+        error: "Tag name or tag ID is required"
       });
     }
 
@@ -42,7 +44,8 @@
 
     const exportData = {
       exportDate: new Date().toISOString(),
-      searchTags: tagNames,
+      searchTags: tagNames.length > 0 ? tagNames : tagIds,
+      searchMode: tagNames.length > 0 ? 'name' : 'id',
       matchMode: matchMode,
       exactMatch: exactMatch,
       matchedTagsBySearchTerm: {},
@@ -54,25 +57,42 @@
     const allTags = flattenedTags.filter(tag => tag.active);
     exportData.availableTags = allTags.map(tag => tag.name).sort();
 
-    console.log(`Searching for tags matching [${tagNames.join(', ')}] (exact: ${exactMatch}, mode: ${matchMode})`);
+    // Build tag ID map for ID lookups
+    const tagsById = new Map();
+    allTags.forEach(tag => tagsById.set(tag.id.primaryKey, tag));
+
+    console.log(`Searching for tags (${tagNames.length > 0 ? 'by name' : 'by ID'}): [${(tagNames.length > 0 ? tagNames : tagIds).join(', ')}] (exact: ${exactMatch}, mode: ${matchMode})`);
 
     // Find matching OmniFocus tags for each search term
     const matchingTagsBySearchTerm = new Map();
-    tagNames.forEach(searchTerm => {
-      let matches;
-      if (exactMatch) {
-        matches = allTags.filter(tag =>
-          tag.name.toLowerCase() === searchTerm.toLowerCase()
-        );
-      } else {
-        matches = allTags.filter(tag =>
-          tag.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-      matchingTagsBySearchTerm.set(searchTerm, matches);
-      exportData.matchedTagsBySearchTerm[searchTerm] = matches.map(t => t.name);
-      console.log(`Search term "${searchTerm}" matched ${matches.length} tags: ${matches.map(t => t.name).join(', ')}`);
-    });
+
+    if (tagIds.length > 0) {
+      // Search by ID - exact match only
+      tagIds.forEach(searchId => {
+        const tag = tagsById.get(searchId);
+        const matches = tag ? [tag] : [];
+        matchingTagsBySearchTerm.set(searchId, matches);
+        exportData.matchedTagsBySearchTerm[searchId] = matches.map(t => t.name);
+        console.log(`Search ID "${searchId}" matched ${matches.length} tags: ${matches.map(t => t.name).join(', ')}`);
+      });
+    } else {
+      // Search by name
+      tagNames.forEach(searchTerm => {
+        let matches;
+        if (exactMatch) {
+          matches = allTags.filter(tag =>
+            tag.name.toLowerCase() === searchTerm.toLowerCase()
+          );
+        } else {
+          matches = allTags.filter(tag =>
+            tag.name.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
+        matchingTagsBySearchTerm.set(searchTerm, matches);
+        exportData.matchedTagsBySearchTerm[searchTerm] = matches.map(t => t.name);
+        console.log(`Search term "${searchTerm}" matched ${matches.length} tags: ${matches.map(t => t.name).join(', ')}`);
+      });
+    }
 
     // Check if any search term found no tags
     const allMatchedTags = [];
