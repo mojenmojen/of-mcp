@@ -23,6 +23,7 @@ export const schema = z.object({
   estimatedMinutes: z.number().optional().describe("Estimated time to complete the task, in minutes"),
   tags: z.array(z.string()).optional().describe("Tags to assign to the task"),
   projectName: z.string().optional().describe("The name of the project to add the task to (will add to inbox if not specified)"),
+  projectId: z.string().optional().describe("The ID of the project to add the task to (alternative to projectName)"),
   parentTaskId: z.string().optional().describe("The ID of the parent task to create this task as a subtask"),
   parentTaskName: z.string().optional().describe("The name of the parent task to create this task as a subtask (alternative to parentTaskId)"),
   repetitionRule: repetitionRuleSchema.optional().describe("Repetition rule for recurring tasks. Examples: {frequency: 'daily'}, {frequency: 'weekly', daysOfWeek: [1,3,5]}, {frequency: 'monthly', dayOfMonth: 15}")

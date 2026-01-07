@@ -46,6 +46,7 @@
     const estimatedMinutes = args.estimatedMinutes || null;
     const tagNames = args.tags || [];
     const projectName = args.projectName || null;
+    const projectId = args.projectId || null;
     const parentTaskId = args.parentTaskId || null;
     const parentTaskName = args.parentTaskName || null;
     const repetitionRule = args.repetitionRule || null;
@@ -95,21 +96,38 @@
           error: `Parent task not found: ${parentTaskName}`
         });
       }
-    } else if (projectName) {
-      // Find project by name (case-insensitive)
+    } else if (projectId || projectName) {
+      // Find project by ID first (if provided), then by name
       const allProjects = flattenedProjects;
-      const projectNameLower = projectName.toLowerCase();
-      for (const proj of allProjects) {
-        if (proj.name.toLowerCase() === projectNameLower) {
-          container = proj;
-          containerType = 'project';
-          break;
+
+      // Try ID lookup first
+      if (projectId) {
+        for (const proj of allProjects) {
+          if (proj.id.primaryKey === projectId) {
+            container = proj;
+            containerType = 'project';
+            break;
+          }
         }
       }
+
+      // Fall back to name lookup if ID not found or not provided
+      if (!container && projectName) {
+        const projectNameLower = projectName.toLowerCase();
+        for (const proj of allProjects) {
+          if (proj.name.toLowerCase() === projectNameLower) {
+            container = proj;
+            containerType = 'project';
+            break;
+          }
+        }
+      }
+
       if (!container) {
+        const searchRef = projectId ? `ID "${projectId}"` : `name "${projectName}"`;
         return JSON.stringify({
           success: false,
-          error: `Project not found: ${projectName}`
+          error: `Project not found with ${searchRef}`
         });
       }
     }

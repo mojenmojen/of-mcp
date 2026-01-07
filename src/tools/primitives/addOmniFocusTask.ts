@@ -21,6 +21,7 @@ export interface AddOmniFocusTaskParams {
   estimatedMinutes?: number;
   tags?: string[]; // Tag names
   projectName?: string; // Project name to add task to
+  projectId?: string; // Project ID to add task to (alternative to projectName)
   parentTaskId?: string; // Parent task ID for subtask creation
   parentTaskName?: string; // Parent task name for subtask creation (alternative to ID)
   repetitionRule?: RepetitionRule; // Repetition rule for recurring tasks
@@ -38,8 +39,8 @@ function validateParentTaskParams(params: AddOmniFocusTaskParams): {valid: boole
     };
   }
 
-  // Check if parent task is specified along with projectName
-  if ((params.parentTaskId || params.parentTaskName) && params.projectName) {
+  // Check if parent task is specified along with project (by name or ID)
+  if ((params.parentTaskId || params.parentTaskName) && (params.projectName || params.projectId)) {
     return {
       valid: false,
       error: "Cannot specify both parent task and project. Subtasks inherit project from their parent."
@@ -86,6 +87,7 @@ export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<
       estimatedMinutes: params.estimatedMinutes || null,
       tags: params.tags || [],
       projectName: params.projectName || null,
+      projectId: params.projectId || null,
       parentTaskId: params.parentTaskId || null,
       parentTaskName: params.parentTaskName || null,
       repetitionRule: params.repetitionRule || null
