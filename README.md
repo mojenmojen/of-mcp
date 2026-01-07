@@ -150,6 +150,15 @@ get_tasks_by_tag {"tagName": ["work", "urgent", "focus"]}
 
 # Tasks by multiple tags (AND - all of these tags)
 get_tasks_by_tag {"tagName": ["home", "errands"], "tagMatchMode": "all"}
+
+# List all tags (fast - ~400ms)
+list_tags {}
+
+# List all tags with task counts (slower - ~15s)
+list_tags {"showTaskCounts": true}
+
+# Include dropped/inactive tags
+list_tags {"includeDropped": true}
 ```
 
 ### 4. 🚀 Ultimate Task Filter
