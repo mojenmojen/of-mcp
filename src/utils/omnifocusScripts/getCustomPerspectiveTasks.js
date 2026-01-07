@@ -5,15 +5,31 @@
   try {
     // Get injected parameters
     const perspectiveName = injectedArgs && injectedArgs.perspectiveName ? injectedArgs.perspectiveName : null;
+    const perspectiveId = injectedArgs && injectedArgs.perspectiveId ? injectedArgs.perspectiveId : null;
 
-    if (!perspectiveName) {
-      throw new Error("Perspective name cannot be empty");
+    if (!perspectiveName && !perspectiveId) {
+      throw new Error("Must provide either perspectiveName or perspectiveId");
     }
 
-    // Get custom perspective by name
-    let perspective = Perspective.Custom.byName(perspectiveName);
-    if (!perspective) {
-      throw new Error(`Custom perspective not found: "${perspectiveName}"`);
+    // Get custom perspective - ID takes priority over name
+    let perspective = null;
+    if (perspectiveId) {
+      // Find perspective by ID
+      const allPerspectives = Perspective.Custom.all;
+      for (const p of allPerspectives) {
+        if (p.identifier === perspectiveId) {
+          perspective = p;
+          break;
+        }
+      }
+      if (!perspective) {
+        throw new Error(`Custom perspective not found with ID: "${perspectiveId}"`);
+      }
+    } else if (perspectiveName) {
+      perspective = Perspective.Custom.byName(perspectiveName);
+      if (!perspective) {
+        throw new Error(`Custom perspective not found: "${perspectiveName}"`);
+      }
     }
 
     // Switch to the specified perspective
@@ -75,9 +91,10 @@
     const taskCount = Object.keys(taskMap).length;
 
     // Return result (including hierarchy structure)
+    // Use perspective.name to get the actual name (works for both name and ID lookup)
     const result = {
       success: true,
-      perspectiveName: perspectiveName,
+      perspectiveName: perspective.name,
       perspectiveId: perspective.identifier,
       count: taskCount,
       taskMap: taskMap
@@ -91,7 +108,7 @@
       success: false,
       error: error.message || String(error),
       perspectiveName: perspectiveName || null,
-      perspectiveId: null,
+      perspectiveId: perspectiveId || null,
       count: 0,
       taskMap: {}
     };

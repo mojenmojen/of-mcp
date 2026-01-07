@@ -1,23 +1,25 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 
 export interface GetCustomPerspectiveTasksOptions {
-  perspectiveName: string;
+  perspectiveName?: string;
+  perspectiveId?: string;
   hideCompleted?: boolean;
   limit?: number;
   showHierarchy?: boolean;
 }
 
 export async function getCustomPerspectiveTasks(options: GetCustomPerspectiveTasksOptions): Promise<string> {
-  const { perspectiveName, hideCompleted = true, limit = 1000, showHierarchy = false } = options;
-  
-  if (!perspectiveName) {
-    return "❌ **Error**: Perspective name cannot be empty";
+  const { perspectiveName, perspectiveId, hideCompleted = true, limit = 1000, showHierarchy = false } = options;
+
+  if (!perspectiveName && !perspectiveId) {
+    return "❌ **Error**: Must provide either perspectiveName or perspectiveId";
   }
 
   try {
     // Execute the get custom perspective tasks script
     const result = await executeOmniFocusScript('@getCustomPerspectiveTasks.js', {
-      perspectiveName: perspectiveName
+      perspectiveName: perspectiveName,
+      perspectiveId: perspectiveId
     });
 
     // Handle various return types
@@ -40,6 +42,9 @@ export async function getCustomPerspectiveTasks(options: GetCustomPerspectiveTas
       throw new Error(data.error || 'Unknown error occurred');
     }
 
+    // Get the actual perspective name from the result (OmniJS always returns it)
+    const actualPerspectiveName = data.perspectiveName || perspectiveName || 'Unknown Perspective';
+
     // Process taskMap data (hierarchical structure)
     const taskMap = data.taskMap || {};
     const allTasks = Object.values(taskMap);
@@ -51,14 +56,14 @@ export async function getCustomPerspectiveTasks(options: GetCustomPerspectiveTas
     }
 
     if (filteredTasks.length === 0) {
-      return `**Perspective Tasks: ${perspectiveName}**\n\nNo ${hideCompleted ? 'incomplete ' : ''}tasks.`;
+      return `**Perspective Tasks: ${actualPerspectiveName}**\n\nNo ${hideCompleted ? 'incomplete ' : ''}tasks.`;
     }
 
     // Choose output format based on hierarchy setting
     if (showHierarchy) {
-      return formatHierarchicalTasks(perspectiveName, taskMap, hideCompleted);
+      return formatHierarchicalTasks(actualPerspectiveName, taskMap, hideCompleted);
     } else {
-      return formatFlatTasks(perspectiveName, filteredTasks, limit, data.count);
+      return formatFlatTasks(actualPerspectiveName, filteredTasks, limit, data.count);
     }
 
   } catch (error) {
