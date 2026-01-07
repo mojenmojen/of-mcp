@@ -2,7 +2,8 @@ import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 
 // Interface for batch mark reviewed parameters
 export interface BatchMarkReviewedParams {
-  projectIds: string[];
+  projectIds?: string[];
+  projectNames?: string[];
 }
 
 // Interface for individual result
@@ -26,19 +27,28 @@ export async function batchMarkReviewed(params: BatchMarkReviewedParams): Promis
   error?: string;
 }> {
   try {
-    if (!params.projectIds || params.projectIds.length === 0) {
+    const hasIds = params.projectIds && params.projectIds.length > 0;
+    const hasNames = params.projectNames && params.projectNames.length > 0;
+
+    if (!hasIds && !hasNames) {
       return {
         success: false,
-        error: "No project IDs provided"
+        error: "Must provide either projectIds or projectNames"
       };
     }
 
     console.error("Executing OmniJS script for batchMarkReviewed...");
-    console.error(`Project IDs: ${params.projectIds.join(', ')}`);
+    if (hasIds) {
+      console.error(`Project IDs: ${params.projectIds!.join(', ')}`);
+    }
+    if (hasNames) {
+      console.error(`Project Names: ${params.projectNames!.join(', ')}`);
+    }
 
     // Execute the OmniJS script
     const result = await executeOmniFocusScript('@batchMarkReviewed.js', {
-      projectIds: params.projectIds
+      projectIds: params.projectIds,
+      projectNames: params.projectNames
     });
 
     // Parse result

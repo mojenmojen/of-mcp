@@ -4,23 +4,31 @@ import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.j
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 
 export const schema = z.object({
-  projectIds: z.array(z.string()).describe("Array of project IDs to mark as reviewed")
+  projectIds: z.array(z.string()).optional().describe("Array of project IDs to mark as reviewed"),
+  projectNames: z.array(z.string()).optional().describe("Array of project names to mark as reviewed (alternative to projectIds)")
 });
 
 export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
-    if (!args.projectIds || args.projectIds.length === 0) {
+    // Validate at least one identifier array is provided
+    const hasIds = args.projectIds && args.projectIds.length > 0;
+    const hasNames = args.projectNames && args.projectNames.length > 0;
+
+    if (!hasIds && !hasNames) {
       return {
         content: [{
           type: "text" as const,
-          text: "Error: No project IDs provided."
+          text: "Error: Must provide either projectIds or projectNames."
         }],
         isError: true
       };
     }
 
     // Call the batchMarkReviewed function
-    const result = await batchMarkReviewed(args as BatchMarkReviewedParams);
+    const result = await batchMarkReviewed({
+      projectIds: args.projectIds,
+      projectNames: args.projectNames
+    });
 
     if (result.success) {
       // All projects marked successfully
