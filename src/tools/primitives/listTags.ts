@@ -2,14 +2,15 @@ import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 
 export interface ListTagsOptions {
   includeDropped?: boolean;
+  showTaskCounts?: boolean;
 }
 
 interface TagInfo {
   id: string;
   name: string;
   active: boolean;
-  taskCount: number;
-  availableTaskCount: number;
+  taskCount?: number;
+  availableTaskCount?: number;
   parent: string | null;
 }
 
@@ -21,11 +22,12 @@ interface ListTagsResult {
 }
 
 export async function listTags(options: ListTagsOptions = {}): Promise<string> {
-  const { includeDropped = false } = options;
+  const { includeDropped = false, showTaskCounts = false } = options;
 
   try {
     const result = await executeOmniFocusScript('@listTags.js', {
-      includeDropped
+      includeDropped,
+      showTaskCounts
     });
 
     let parsed: ListTagsResult;
@@ -66,7 +68,9 @@ export async function listTags(options: ListTagsOptions = {}): Promise<string> {
     // Display tags
     for (const tag of topLevel) {
       const status = tag.active ? '' : ' (dropped)';
-      const tasks = tag.availableTaskCount > 0 ? ` [${tag.availableTaskCount} available]` : '';
+      const tasks = (showTaskCounts && tag.availableTaskCount && tag.availableTaskCount > 0)
+        ? ` [${tag.availableTaskCount} available]`
+        : '';
       output += `• **${tag.name}**${status}${tasks} [ID: ${tag.id}]\n`;
 
       // Show children if any
@@ -74,7 +78,9 @@ export async function listTags(options: ListTagsOptions = {}): Promise<string> {
       if (children) {
         for (const child of children) {
           const childStatus = child.active ? '' : ' (dropped)';
-          const childTasks = child.availableTaskCount > 0 ? ` [${child.availableTaskCount} available]` : '';
+          const childTasks = (showTaskCounts && child.availableTaskCount && child.availableTaskCount > 0)
+            ? ` [${child.availableTaskCount} available]`
+            : '';
           output += `  └─ ${child.name}${childStatus}${childTasks} [ID: ${child.id}]\n`;
         }
       }

@@ -4,13 +4,15 @@ import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.j
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 
 export const schema = z.object({
-  includeDropped: z.boolean().optional().describe("Include dropped (inactive) tags in the list (default: false)")
+  includeDropped: z.boolean().optional().describe("Include dropped (inactive) tags in the list (default: false)"),
+  showTaskCounts: z.boolean().optional().describe("Show task counts per tag - slower but more informative (default: false)")
 });
 
 export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     const result = await listTags({
-      includeDropped: args.includeDropped || false
+      includeDropped: args.includeDropped || false,
+      showTaskCounts: args.showTaskCounts || false
     });
 
     return {
