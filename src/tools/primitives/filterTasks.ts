@@ -13,7 +13,9 @@ export interface FilterTasksOptions {
 
   // Project/tag filter
   projectFilter?: string;
+  projectId?: string;
   tagFilter?: string | string[];
+  tagId?: string | string[];
   exactTagMatch?: boolean;
 
   // Due date filter

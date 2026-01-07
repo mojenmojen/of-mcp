@@ -26,11 +26,37 @@
 
       // Other filters
       projectFilter: args.projectFilter || null,
+      projectId: args.projectId || null,
+      tagFilter: args.tagFilter || null,
+      tagId: args.tagId || null,
+      exactTagMatch: args.exactTagMatch || false,
       searchText: args.searchText || null,
       limit: args.limit || 100,
       sortBy: args.sortBy || "name",
       sortOrder: args.sortOrder || "asc"
     };
+
+    // Normalize tag filters to arrays
+    const tagNames = filters.tagFilter
+      ? (Array.isArray(filters.tagFilter) ? filters.tagFilter : [filters.tagFilter])
+      : [];
+    const tagIds = filters.tagId
+      ? (Array.isArray(filters.tagId) ? filters.tagId : [filters.tagId])
+      : [];
+
+    // Build tag ID lookup map if needed
+    let tagsById = null;
+    if (tagIds.length > 0) {
+      tagsById = new Map();
+      flattenedTags.forEach(t => tagsById.set(t.id.primaryKey, t));
+    }
+
+    // Build project ID lookup map if needed
+    let projectsById = null;
+    if (filters.projectId) {
+      projectsById = new Map();
+      flattenedProjects.forEach(p => projectsById.set(p.id.primaryKey, p));
+    }
 
     // Helper functions
     function getTaskStatus(status) {
@@ -154,10 +180,39 @@
           return false;
         }
 
-        // Project filter
-        if (filters.projectFilter) {
+        // Project filter - ID takes priority over name
+        if (filters.projectId) {
+          const taskProjectId = task.containingProject ? task.containingProject.id.primaryKey : null;
+          if (taskProjectId !== filters.projectId) {
+            return false;
+          }
+        } else if (filters.projectFilter) {
           const projectName = task.containingProject ? task.containingProject.name : '';
           if (!projectName.toLowerCase().includes(filters.projectFilter.toLowerCase())) {
+            return false;
+          }
+        }
+
+        // Tag filter - ID takes priority over name
+        if (tagIds.length > 0) {
+          // Filter by tag ID
+          const taskTagIds = task.tags.map(t => t.id.primaryKey);
+          const hasMatchingTag = tagIds.some(id => taskTagIds.includes(id));
+          if (!hasMatchingTag) {
+            return false;
+          }
+        } else if (tagNames.length > 0) {
+          // Filter by tag name
+          const taskTagNames = task.tags.map(t => t.name.toLowerCase());
+          const hasMatchingTag = tagNames.some(name => {
+            const nameLower = name.toLowerCase();
+            if (filters.exactTagMatch) {
+              return taskTagNames.includes(nameLower);
+            } else {
+              return taskTagNames.some(tagName => tagName.includes(nameLower));
+            }
+          });
+          if (!hasMatchingTag) {
             return false;
           }
         }

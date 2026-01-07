@@ -26,7 +26,9 @@ export const schema = z.object({
 
   // Project/tag filtering
   projectFilter: z.string().optional().describe("Filter by project name (partial match)"),
+  projectId: z.string().optional().describe("Filter by project ID (alternative to projectFilter)"),
   tagFilter: z.union([z.string(), z.array(z.string())]).optional().describe("Filter by tag name(s). Can be single tag or array of tags"),
+  tagId: z.union([z.string(), z.array(z.string())]).optional().describe("Filter by tag ID(s) (alternative to tagFilter). Can be single ID or array of IDs"),
   exactTagMatch: z.boolean().optional().describe("Set to true for exact tag name match, false for partial (default: false)"),
 
   // Due date filtering
