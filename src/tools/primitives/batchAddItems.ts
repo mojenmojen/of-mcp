@@ -13,9 +13,11 @@ export type BatchAddItemsParams = {
   estimatedMinutes?: number;
   tags?: string[];
   projectName?: string; // For tasks
+  projectId?: string; // For tasks (alternative to projectName)
   parentTaskId?: string; // For subtasks
   parentTaskName?: string; // For subtasks (alternative to ID)
   folderName?: string; // For projects
+  folderId?: string; // For projects (alternative to folderName)
   sequential?: boolean; // For projects
   repetitionRule?: RepetitionRule; // For tasks
 };

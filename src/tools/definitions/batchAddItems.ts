@@ -16,11 +16,13 @@ export const schema = z.object({
     
     // Task-specific properties
     projectName: z.string().optional().describe("For tasks: The name of the project to add the task to"),
+    projectId: z.string().optional().describe("For tasks: The ID of the project to add the task to (alternative to projectName)"),
     parentTaskId: z.string().optional().describe("For tasks: The ID of the parent task to create this task as a subtask"),
     parentTaskName: z.string().optional().describe("For tasks: The name of the parent task to create this task as a subtask"),
-    
+
     // Project-specific properties
     folderName: z.string().optional().describe("For projects: The name of the folder to add the project to"),
+    folderId: z.string().optional().describe("For projects: The ID of the folder to add the project to (alternative to folderName)"),
     sequential: z.boolean().optional().describe("For projects: Whether tasks in the project should be sequential")
   })).describe("Array of items (tasks or projects) to add")
 });

@@ -46,10 +46,12 @@
 
     // Lazy-load lookup Maps only when needed
     let projectsByName = null;
+    let projectsById = null;
     let tasksByName = null;
     let tasksById = null;
     let tagsByName = null;
     let foldersByName = null;
+    let foldersById = null;
 
     function getProjectsByName() {
       if (!projectsByName) {
@@ -57,6 +59,14 @@
         flattenedProjects.forEach(p => projectsByName.set(p.name.toLowerCase(), p));
       }
       return projectsByName;
+    }
+
+    function getProjectsById() {
+      if (!projectsById) {
+        projectsById = new Map();
+        flattenedProjects.forEach(p => projectsById.set(p.id.primaryKey, p));
+      }
+      return projectsById;
     }
 
     function getTasksById() {
@@ -95,6 +105,14 @@
       return foldersByName;
     }
 
+    function getFoldersById() {
+      if (!foldersById) {
+        foldersById = new Map();
+        flattenedFolders.forEach(f => foldersById.set(f.id.primaryKey, f));
+      }
+      return foldersById;
+    }
+
     const results = [];
 
     // Process each item
@@ -121,6 +139,7 @@
           const estimatedMinutes = item.estimatedMinutes || null;
           const tagNames = item.tags || [];
           const projectName = item.projectName || null;
+          const projectId = item.projectId || null;
           const parentTaskId = item.parentTaskId || null;
           const parentTaskName = item.parentTaskName || null;
           const repetitionRule = item.repetitionRule || null;
@@ -153,15 +172,22 @@
               });
               continue;
             }
-          } else if (projectName) {
-            container = getProjectsByName().get(projectName.toLowerCase());
+          } else if (projectId || projectName) {
+            // Try ID first, then name
+            if (projectId) {
+              container = getProjectsById().get(projectId);
+            }
+            if (!container && projectName) {
+              container = getProjectsByName().get(projectName.toLowerCase());
+            }
             if (container) {
               containerType = 'project';
             } else {
+              const searchRef = projectId ? `ID "${projectId}"` : `name "${projectName}"`;
               results.push({
                 success: false,
                 name: itemName,
-                error: `Project not found: ${projectName}`
+                error: `Project not found with ${searchRef}`
               });
               continue;
             }
@@ -226,17 +252,24 @@
           const estimatedMinutes = item.estimatedMinutes || null;
           const tagNames = item.tags || [];
           const folderName = item.folderName || null;
+          const folderId = item.folderId || null;
           const sequential = item.sequential || false;
 
-          // Determine container folder (only load if needed)
+          // Determine container folder (only load if needed) - ID takes priority
           let container = null;
-          if (folderName) {
-            container = getFoldersByName().get(folderName.toLowerCase());
+          if (folderId || folderName) {
+            if (folderId) {
+              container = getFoldersById().get(folderId);
+            }
+            if (!container && folderName) {
+              container = getFoldersByName().get(folderName.toLowerCase());
+            }
             if (!container) {
+              const searchRef = folderId ? `ID "${folderId}"` : `name "${folderName}"`;
               results.push({
                 success: false,
                 name: itemName,
-                error: `Folder not found: ${folderName}`
+                error: `Folder not found with ${searchRef}`
               });
               continue;
             }
