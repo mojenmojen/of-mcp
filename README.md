@@ -599,6 +599,54 @@ get_custom_perspective_tasks {
 }
 ```
 
+## 🤖 AI Assistant Efficiency Guide
+
+### Use `batch_filter_tasks` for Multi-Project Queries
+
+Instead of making separate `filter_tasks` calls for each project:
+```bash
+# ❌ Inefficient - 5 API calls
+filter_tasks { "projectFilter": "Project A", "taskStatus": [...] }
+filter_tasks { "projectFilter": "Project B", "taskStatus": [...] }
+filter_tasks { "projectFilter": "Project C", "taskStatus": [...] }
+# ... etc
+```
+
+Use a single batch call:
+```bash
+# ✅ Efficient - 1 API call
+batch_filter_tasks {
+  "projectNames": ["Project A", "Project B", "Project C", "Project D", "Project E"],
+  "taskStatus": ["Available", "Next", "Blocked", "DueSoon", "Overdue"],
+  "limit": 100
+}
+```
+
+### Use IDs for Reliability
+
+All tools support both name and ID parameters. **IDs are more reliable** because they don't change when items are renamed.
+
+| Tool | ID Parameter | Alternative To |
+|------|--------------|----------------|
+| `add_omnifocus_task` | `projectId` | `projectName` |
+| `add_project` | `folderId` | `folderName` |
+| `edit_item` | `newProjectId`, `newFolderId` | name equivalents |
+| `batch_add_items` | `projectId`, `folderId` | name equivalents |
+| `filter_tasks` | `projectId`, `tagId` | `projectFilter`, `tagFilter` |
+| `get_tasks_by_tag` | `tagId` | `tagName` |
+| `get_flagged_tasks` | `projectId` | `projectFilter` |
+| `get_custom_perspective_tasks` | `perspectiveId` | `perspectiveName` |
+| `batch_filter_tasks` | `projectIds` | `projectNames` |
+
+**Rule:** When both ID and name are provided, ID takes priority.
+
+### Batch Operations for Writes
+
+Use batch tools for multiple write operations:
+- `batch_add_items` - Add multiple tasks/projects (9x faster)
+- `batch_edit_items` - Edit multiple items (12x faster)
+- `batch_remove_items` - Remove multiple items (9x faster)
+
 ## 🔧 Configuration
 
 ### Verify Installation
