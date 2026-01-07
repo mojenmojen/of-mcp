@@ -29,14 +29,16 @@ export interface EditItemParams {
   newRepetitionRule?: RepetitionRule | null; // New repetition rule (null to remove, object to set)
 
   // Task movement fields
-  newProjectName?: string;      // Move task to a different project
+  newProjectName?: string;      // Move task to a different project (by name)
+  newProjectId?: string;        // Move task to a different project (by ID)
   newParentTaskId?: string;     // Move task to be a subtask of another task (by ID)
   newParentTaskName?: string;   // Move task to be a subtask of another task (by name)
   moveToInbox?: boolean;        // Move task to inbox
 
   // Project-specific fields
   newSequential?: boolean;      // Whether the project should be sequential
-  newFolderName?: string;       // New folder to move the project to
+  newFolderName?: string;       // New folder to move the project to (by name)
+  newFolderId?: string;         // New folder to move the project to (by ID)
   newProjectStatus?: ProjectStatus; // New status for projects
 
   // Project review fields
@@ -87,11 +89,13 @@ export async function editItem(params: EditItemParams): Promise<{
       replaceTags: params.replaceTags,
       newRepetitionRule: params.newRepetitionRule,
       newProjectName: params.newProjectName,
+      newProjectId: params.newProjectId,
       newParentTaskId: params.newParentTaskId,
       newParentTaskName: params.newParentTaskName,
       moveToInbox: params.moveToInbox,
       newSequential: params.newSequential,
       newFolderName: params.newFolderName,
+      newFolderId: params.newFolderId,
       newProjectStatus: params.newProjectStatus,
       markReviewed: params.markReviewed,
       newReviewInterval: params.newReviewInterval,

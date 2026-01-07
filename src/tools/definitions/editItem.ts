@@ -37,13 +37,15 @@ export const schema = z.object({
 
   // Task movement fields
   newProjectName: z.string().optional().describe("Move task to a different project (by project name)"),
+  newProjectId: z.string().optional().describe("Move task to a different project (by project ID)"),
   newParentTaskId: z.string().optional().describe("Move task to be a subtask of another task (by task ID)"),
   newParentTaskName: z.string().optional().describe("Move task to be a subtask of another task (by task name)"),
   moveToInbox: z.boolean().optional().describe("Set to true to move task to inbox"),
-  
+
   // Project-specific fields
   newSequential: z.boolean().optional().describe("Whether the project should be sequential"),
-  newFolderName: z.string().optional().describe("New folder to move the project to"),
+  newFolderName: z.string().optional().describe("New folder to move the project to (by folder name)"),
+  newFolderId: z.string().optional().describe("New folder to move the project to (by folder ID)"),
   newProjectStatus: z.enum(['active', 'completed', 'dropped', 'onHold']).optional().describe("New status for projects"),
 
   // Project review fields

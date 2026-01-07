@@ -212,16 +212,28 @@
       changedProperties.push("moved to inbox");
     }
 
-    // Task-specific: Move to different project (using Map lookup)
-    if (itemType === 'task' && args.newProjectName) {
-      const targetProject = projectsByName.get(args.newProjectName.toLowerCase());
+    // Task-specific: Move to different project (using Map lookup - ID takes priority)
+    if (itemType === 'task' && (args.newProjectId || args.newProjectName)) {
+      let targetProject = null;
+
+      // Try ID first
+      if (args.newProjectId) {
+        targetProject = projectsById.get(args.newProjectId);
+      }
+
+      // Fall back to name if ID not found or not provided
+      if (!targetProject && args.newProjectName) {
+        targetProject = projectsByName.get(args.newProjectName.toLowerCase());
+      }
+
       if (targetProject) {
         moveTasks([foundItem], targetProject);
         changedProperties.push("moved to project");
       } else {
+        const searchRef = args.newProjectId ? `ID "${args.newProjectId}"` : `name "${args.newProjectName}"`;
         return JSON.stringify({
           success: false,
-          error: `Project not found: ${args.newProjectName}`
+          error: `Project not found with ${searchRef}`
         });
       }
     }
@@ -332,9 +344,23 @@
       changedProperties.push("status");
     }
 
-    // Project-specific: Move to folder (using Map lookup)
-    if (itemType === 'project' && args.newFolderName) {
-      const targetFolder = foldersByName.get(args.newFolderName.toLowerCase());
+    // Project-specific: Move to folder (using Map lookup - ID takes priority)
+    if (itemType === 'project' && (args.newFolderId || args.newFolderName)) {
+      let targetFolder = null;
+
+      // Try ID first
+      if (args.newFolderId) {
+        // Build folder ID map if not already done
+        const foldersById = new Map();
+        flattenedFolders.forEach(f => foldersById.set(f.id.primaryKey, f));
+        targetFolder = foldersById.get(args.newFolderId);
+      }
+
+      // Fall back to name if ID not found or not provided
+      if (!targetFolder && args.newFolderName) {
+        targetFolder = foldersByName.get(args.newFolderName.toLowerCase());
+      }
+
       if (targetFolder) {
         // Check if project is already in this folder
         const currentFolder = foundItem.parentFolder;
@@ -345,8 +371,14 @@
           moveSections([foundItem], targetFolder);
           changedProperties.push("moved to folder");
         }
+      } else if (args.newFolderId) {
+        // If ID was provided but not found, return error
+        return JSON.stringify({
+          success: false,
+          error: `Folder not found with ID "${args.newFolderId}"`
+        });
       } else {
-        // Create the folder if it doesn't exist
+        // Create the folder if only name was provided and not found
         const newFolder = new Folder(args.newFolderName);
         moveSections([foundItem], newFolder);
         changedProperties.push("moved to new folder");
