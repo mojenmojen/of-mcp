@@ -30,6 +30,7 @@ import * as getTasksByTagTool from './tools/definitions/getTasksByTag.js';
 import * as listTagsTool from './tools/definitions/listTags.js';
 // Import ultimate filter tool
 import * as filterTasksTool from './tools/definitions/filterTasks.js';
+import * as batchFilterTasksTool from './tools/definitions/batchFilterTasks.js';
 // Import custom perspective tools
 import * as listCustomPerspectivesTool from './tools/definitions/listCustomPerspectives.js';
 import * as getCustomPerspectiveTasksTool from './tools/definitions/getCustomPerspectiveTasks.js';
@@ -183,6 +184,13 @@ server.tool(
   "Advanced task filtering with unlimited perspective combinations - status, dates, projects, tags, search, and more",
   filterTasksTool.schema.shape,
   filterTasksTool.handler
+);
+
+server.tool(
+  "batch_filter_tasks",
+  "Filter tasks across multiple projects in a single call - much faster than calling filter_tasks multiple times. Use when you need to get tasks from several projects at once.",
+  batchFilterTasksTool.schema.shape,
+  batchFilterTasksTool.handler
 );
 
 // Custom perspective tools

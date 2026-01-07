@@ -331,7 +331,40 @@ get_custom_perspective_tasks {
 - ✅ **AI-Friendly** - Enhanced descriptions prevent tool selection confusion
 - ✅ **Professional Output** - Clean, readable task hierarchies
 
-### 7. 🎯 Batch Operations
+### 7. 🔍 Batch Filter Tasks
+
+Filter tasks across multiple projects in a single call (much faster than multiple filter_tasks calls):
+
+```bash
+# Get tasks from multiple projects at once
+batch_filter_tasks {
+  "projectNames": ["Website Redesign", "Marketing Campaign", "Q1 Planning"],
+  "taskStatus": ["Available", "Next", "Blocked"],
+  "limit": 50
+}
+
+# Filter by project IDs for reliability
+batch_filter_tasks {
+  "projectIds": ["projectId1", "projectId2", "projectId3"],
+  "taskStatus": ["Available", "Overdue"],
+  "flagged": true
+}
+
+# Combine with due date filters
+batch_filter_tasks {
+  "projectNames": ["Daily Tasks", "Weekly Review"],
+  "dueThisWeek": true,
+  "sortBy": "dueDate"
+}
+```
+
+**Benefits:**
+- Single API call instead of N calls for N projects
+- Results grouped by project with task counts
+- Supports all common filters (status, flagged, due dates)
+- Returns project IDs for follow-up operations
+
+### 8. 🎯 Batch Write Operations
 
 Efficiently manage multiple tasks with true batching (9-12x faster than individual calls):
 
@@ -411,7 +444,7 @@ batch_remove_items {
 }
 ```
 
-### 8. 📋 Project Review Workflow
+### 9. 📋 Project Review Workflow
 
 Automate your weekly review process:
 
@@ -480,22 +513,23 @@ get_project_by_id {
 14. **get_tasks_by_tag** - Tag-based filtering (single or multiple tags with any/all matching)
 15. **list_tags** - List all tags with task counts and hierarchy
 16. **filter_tasks** - Ultimate filtering with unlimited combinations
+17. **batch_filter_tasks** - Filter multiple projects in one call (faster than multiple filter_tasks)
 
 ### 🌟 Custom Perspective Tools
-17. **list_custom_perspectives** - List all custom perspectives with details
-18. **get_custom_perspective_tasks** - Access custom perspective with hierarchical display
+18. **list_custom_perspectives** - List all custom perspectives with details
+19. **get_custom_perspective_tasks** - Access custom perspective with hierarchical display
 
 ### 📊 Analytics & Tracking
-19. **get_today_completed_tasks** - View today's completed tasks
+20. **get_today_completed_tasks** - View today's completed tasks
 
 ### 📋 Project Review Tools
-20. **get_projects_for_review** - Get projects due for review
-21. **batch_mark_reviewed** - Mark multiple projects as reviewed
+21. **get_projects_for_review** - Get projects due for review
+22. **batch_mark_reviewed** - Mark multiple projects as reviewed
 
 ### 🔧 Utility Tools
-22. **get_server_version** - Get server version and build information
-23. **get_project_by_id** - Query project information by ID or name (includes review data)
-24. **get_folder_by_id** - Query folder information by ID or name
+23. **get_server_version** - Get server version and build information
+24. **get_project_by_id** - Query project information by ID or name (includes review data)
+25. **get_folder_by_id** - Query folder information by ID or name
 
 ## 🚀 Quick Start Examples
 
