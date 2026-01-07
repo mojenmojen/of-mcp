@@ -397,23 +397,24 @@ get_project_by_id {
 12. **get_flagged_tasks** - Flagged perspective
 13. **get_forecast_tasks** - Forecast perspective (due/deferred tasks)
 14. **get_tasks_by_tag** - Tag-based filtering (single or multiple tags with any/all matching)
-15. **filter_tasks** - Ultimate filtering with unlimited combinations
+15. **list_tags** - List all tags with task counts and hierarchy
+16. **filter_tasks** - Ultimate filtering with unlimited combinations
 
 ### 🌟 Custom Perspective Tools
-16. **list_custom_perspectives** - List all custom perspectives with details
-17. **get_custom_perspective_tasks** - Access custom perspective with hierarchical display
+17. **list_custom_perspectives** - List all custom perspectives with details
+18. **get_custom_perspective_tasks** - Access custom perspective with hierarchical display
 
 ### 📊 Analytics & Tracking
-18. **get_today_completed_tasks** - View today's completed tasks
+19. **get_today_completed_tasks** - View today's completed tasks
 
 ### 📋 Project Review Tools
-19. **get_projects_for_review** - Get projects due for review
-20. **batch_mark_reviewed** - Mark multiple projects as reviewed
+20. **get_projects_for_review** - Get projects due for review
+21. **batch_mark_reviewed** - Mark multiple projects as reviewed
 
 ### 🔧 Utility Tools
-21. **get_server_version** - Get server version and build information
-22. **get_project_by_id** - Query project information by ID or name (includes review data)
-23. **get_folder_by_id** - Query folder information by ID or name
+22. **get_server_version** - Get server version and build information
+23. **get_project_by_id** - Query project information by ID or name (includes review data)
+24. **get_folder_by_id** - Query folder information by ID or name
 
 ## 🚀 Quick Start Examples
 

@@ -27,7 +27,7 @@ This is an enhanced Model Context Protocol (MCP) server that provides AI assista
 ### Core Architecture
 
 **MCP Server Entry Point**: `src/server.ts`
-- Registers 23 tools for OmniFocus operations
+- Registers 24 tools for OmniFocus operations
 - Uses `@modelcontextprotocol/sdk` for MCP protocol handling
 - Supports both individual and batch operations (with true batching for 9-12x performance)
 
