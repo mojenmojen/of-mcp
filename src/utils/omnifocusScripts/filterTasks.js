@@ -271,37 +271,31 @@
       }
     });
 
-    // Sort
-    if (filters.sortBy === "completedDate") {
-      filteredTasks.sort((a, b) => {
-        const dateA = a.completionDate || new Date('1900-01-01');
-        const dateB = b.completionDate || new Date('1900-01-01');
-        return filters.sortOrder === "desc" ? dateB - dateA : dateA - dateB;
-      });
-    } else if (filters.sortBy === "plannedDate") {
-      filteredTasks.sort((a, b) => {
-        const dateA = a.plannedDate || new Date('1900-01-01');
-        const dateB = b.plannedDate || new Date('1900-01-01');
-        return filters.sortOrder === "desc" ? dateB - dateA : dateA - dateB;
-      });
-    } else if (filters.sortBy === "dueDate") {
-      filteredTasks.sort((a, b) => {
-        const dateA = a.dueDate || new Date('1900-01-01');
-        const dateB = b.dueDate || new Date('1900-01-01');
-        return filters.sortOrder === "desc" ? dateB - dateA : dateA - dateB;
-      });
-    } else if (filters.sortBy === "deferDate") {
-      filteredTasks.sort((a, b) => {
-        const dateA = a.deferDate || new Date('1900-01-01');
-        const dateB = b.deferDate || new Date('1900-01-01');
-        return filters.sortOrder === "desc" ? dateB - dateA : dateA - dateB;
-      });
+    // Sort - pre-compute timestamps to avoid creating Date objects on every comparison
+    const DEFAULT_DATE_TIMESTAMP = new Date('1900-01-01').getTime();
+    const sortMultiplier = filters.sortOrder === "desc" ? -1 : 1;
+
+    if (filters.sortBy === "completedDate" || filters.sortBy === "plannedDate" ||
+        filters.sortBy === "dueDate" || filters.sortBy === "deferDate") {
+      // Pre-compute timestamps once per task (O(n)) instead of per comparison (O(n log n))
+      const dateField = filters.sortBy === "completedDate" ? "completionDate" :
+                        filters.sortBy === "plannedDate" ? "plannedDate" :
+                        filters.sortBy === "dueDate" ? "dueDate" : "deferDate";
+
+      const tasksWithTimestamp = filteredTasks.map(task => ({
+        task: task,
+        timestamp: task[dateField] ? task[dateField].getTime() : DEFAULT_DATE_TIMESTAMP
+      }));
+
+      tasksWithTimestamp.sort((a, b) => sortMultiplier * (a.timestamp - b.timestamp));
+      filteredTasks = tasksWithTimestamp.map(item => item.task);
     } else {
+      // Sort by name (no date computation needed)
       filteredTasks.sort((a, b) => {
         const valueA = a.name || '';
         const valueB = b.name || '';
-        if (valueA < valueB) return filters.sortOrder === "desc" ? 1 : -1;
-        if (valueA > valueB) return filters.sortOrder === "desc" ? -1 : 1;
+        if (valueA < valueB) return -sortMultiplier;
+        if (valueA > valueB) return sortMultiplier;
         return 0;
       });
     }

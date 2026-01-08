@@ -95,6 +95,8 @@
     }
 
     // Check if any search term found no tags
+    // Use Set for O(1) deduplication instead of O(n) find()
+    const seenTagIds = new Set();
     const allMatchedTags = [];
     let hasEmptyMatch = false;
     matchingTagsBySearchTerm.forEach((tags, term) => {
@@ -103,7 +105,9 @@
         console.log(`No tags found for search term "${term}"`);
       }
       tags.forEach(tag => {
-        if (!allMatchedTags.find(t => t.id.primaryKey === tag.id.primaryKey)) {
+        const tagId = tag.id.primaryKey;
+        if (!seenTagIds.has(tagId)) {
+          seenTagIds.add(tagId);
           allMatchedTags.push(tag);
         }
       });

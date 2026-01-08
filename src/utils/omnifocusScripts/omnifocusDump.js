@@ -136,10 +136,11 @@
         console.log("Building relationships and processing tasks simultaneously...");
         
         // Build folder relationships and project-folder relationships as we go
-        foldersMap.forEach((folder, folderId) => {
-          if (folder.parentFolderID && foldersMap.has(folder.parentFolderID)) {
+        // Use single .get() instead of .has() + .get() for efficiency
+        foldersMap.forEach((folder) => {
+          if (folder.parentFolderID) {
             const parentFolder = foldersMap.get(folder.parentFolderID);
-            if (!parentFolder.subfolders.includes(folder.id)) {
+            if (parentFolder && !parentFolder.subfolders.includes(folder.id)) {
               parentFolder.subfolders.push(folder.id);
             }
           }
@@ -188,23 +189,28 @@
               exportData.tasks.push(taskData);
     
               // Add task ID to associated project (if it exists)
-              if (projectID && projectsMap.has(projectID)) {
-                projectsMap.get(projectID).tasks.push(taskData.id);
-                
-                // Update folder-project relationship (only once per project)
+              // Use single .get() instead of multiple .has() + .get() for efficiency
+              if (projectID) {
                 const project = projectsMap.get(projectID);
-                if (project.folderID && foldersMap.has(project.folderID)) {
-                  const folder = foldersMap.get(project.folderID);
-                  if (!folder.projects.includes(project.id)) {
-                    folder.projects.push(project.id);
+                if (project) {
+                  project.tasks.push(taskData.id);
+
+                  // Update folder-project relationship (only once per project)
+                  if (project.folderID) {
+                    const folder = foldersMap.get(project.folderID);
+                    if (folder && !folder.projects.includes(project.id)) {
+                      folder.projects.push(project.id);
+                    }
                   }
                 }
               }
-    
+
               // Add task ID to associated tags
+              // Use single .get() instead of .has() + .get() for efficiency
               taskTags.forEach(tagID => {
-                if (tagsMap.has(tagID)) {
-                  tagsMap.get(tagID).tasks.push(taskData.id);
+                const tag = tagsMap.get(tagID);
+                if (tag) {
+                  tag.tasks.push(taskData.id);
                 }
               });
             } catch (taskError) {
