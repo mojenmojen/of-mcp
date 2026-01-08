@@ -1,5 +1,9 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 import { RepetitionRule } from './addOmniFocusTask.js';
+import { queryCache } from '../../utils/cache.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('batchEditItems');
 
 // Status options for tasks and projects
 type TaskStatus = 'incomplete' | 'completed' | 'dropped';
@@ -77,7 +81,7 @@ export async function batchEditItems(edits: BatchEditItemParams[]): Promise<Batc
       };
     }
 
-    console.error(`Executing batch edit for ${edits.length} items...`);
+    log.debug(`Executing batch edit for ${edits.length} items`);
 
     // Execute single OmniJS script with all edits
     const result = await executeOmniFocusScript('@batchEditItems.js', { edits });
@@ -88,7 +92,7 @@ export async function batchEditItems(edits: BatchEditItemParams[]): Promise<Batc
       try {
         parsed = JSON.parse(result);
       } catch (e) {
-        console.error("Failed to parse result as JSON:", e);
+        log.error('Failed to parse result as JSON', { error: (e as Error).message });
         return {
           success: false,
           successCount: 0,
@@ -101,6 +105,11 @@ export async function batchEditItems(edits: BatchEditItemParams[]): Promise<Batc
       parsed = result;
     }
 
+    // Invalidate cache if any items were successfully edited
+    if (parsed.successCount > 0) {
+      queryCache.invalidateOnWrite();
+    }
+
     return {
       success: parsed.success,
       successCount: parsed.successCount || 0,
@@ -110,7 +119,7 @@ export async function batchEditItems(edits: BatchEditItemParams[]): Promise<Batc
     };
 
   } catch (error: any) {
-    console.error("Error in batchEditItems:", error);
+    log.error('Error in batchEditItems', { error: error?.message });
     return {
       success: false,
       successCount: 0,

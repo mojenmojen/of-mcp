@@ -2,6 +2,7 @@ import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 import { RepetitionRule } from './addOmniFocusTask.js';
 import { createValidationError, isStructuredError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
+import { queryCache } from '../../utils/cache.js';
 
 const log = logger.child('batchAddItems');
 
@@ -163,6 +164,11 @@ export async function batchAddItems(items: BatchAddItemsParams[]): Promise<Batch
     }
 
     log.debug('Batch add completed', { successCount: parsed.successCount, failureCount: parsed.failureCount });
+
+    // Invalidate cache if any items were successfully added
+    if (parsed.successCount > 0) {
+      queryCache.invalidateOnWrite();
+    }
 
     return {
       success: parsed.success,

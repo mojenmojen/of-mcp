@@ -1,4 +1,8 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { queryCache } from '../../utils/cache.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('addOmniFocusTask');
 
 // Interface for repetition rule
 export interface RepetitionRule {
@@ -77,9 +81,8 @@ export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<
       };
     }
 
-    console.error("Executing OmniJS script for addOmniFocusTask...");
     const projectInfo = params.projectId ? `ID:${params.projectId}` : (params.projectName || 'inbox');
-    console.error(`Task name: ${params.name}, Project: ${projectInfo}`);
+    log.debug('Executing addOmniFocusTask', { name: params.name, project: projectInfo });
 
     // Execute the OmniJS script
     const result = await executeOmniFocusScript('@addTask.js', {
@@ -104,7 +107,7 @@ export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<
       try {
         parsed = JSON.parse(result);
       } catch (e) {
-        console.error("Failed to parse result as JSON:", e);
+        log.error('Failed to parse result as JSON', { error: (e as Error).message });
         return {
           success: false,
           error: `Failed to parse result: ${result}`
@@ -115,6 +118,8 @@ export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<
     }
 
     if (parsed.success) {
+      // Invalidate cache after successful write
+      queryCache.invalidateOnWrite();
       return {
         success: true,
         taskId: parsed.taskId
@@ -127,7 +132,7 @@ export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<
     }
 
   } catch (error: any) {
-    console.error("Error in addOmniFocusTask:", error);
+    log.error('Error in addOmniFocusTask', { error: error?.message });
     return {
       success: false,
       error: error?.message || "Unknown error in addOmniFocusTask"

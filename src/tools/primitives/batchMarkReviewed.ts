@@ -1,4 +1,8 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { queryCache } from '../../utils/cache.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('batchMarkReviewed');
 
 // Interface for batch mark reviewed parameters
 export interface BatchMarkReviewedParams {
@@ -37,13 +41,10 @@ export async function batchMarkReviewed(params: BatchMarkReviewedParams): Promis
       };
     }
 
-    console.error("Executing OmniJS script for batchMarkReviewed...");
-    if (hasIds) {
-      console.error(`Project IDs: ${params.projectIds!.join(', ')}`);
-    }
-    if (hasNames) {
-      console.error(`Project Names: ${params.projectNames!.join(', ')}`);
-    }
+    log.debug('Executing batchMarkReviewed', {
+      projectIdCount: params.projectIds?.length || 0,
+      projectNameCount: params.projectNames?.length || 0
+    });
 
     // Execute the OmniJS script
     const result = await executeOmniFocusScript('@batchMarkReviewed.js', {
@@ -57,7 +58,7 @@ export async function batchMarkReviewed(params: BatchMarkReviewedParams): Promis
       try {
         parsed = JSON.parse(result);
       } catch (e) {
-        console.error("Failed to parse result as JSON:", e);
+        log.error('Failed to parse result as JSON', { error: (e as Error).message });
         return {
           success: false,
           error: `Failed to parse result: ${result}`
@@ -65,6 +66,11 @@ export async function batchMarkReviewed(params: BatchMarkReviewedParams): Promis
       }
     } else {
       parsed = result;
+    }
+
+    // Invalidate cache if any projects were successfully marked as reviewed
+    if (parsed.successCount > 0) {
+      queryCache.invalidateOnWrite();
     }
 
     return {
@@ -77,7 +83,7 @@ export async function batchMarkReviewed(params: BatchMarkReviewedParams): Promis
     };
 
   } catch (error: any) {
-    console.error("Error in batchMarkReviewed:", error);
+    log.error('Error in batchMarkReviewed', { error: error?.message });
     return {
       success: false,
       error: error?.message || "Unknown error in batchMarkReviewed"

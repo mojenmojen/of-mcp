@@ -1,4 +1,8 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { queryCache } from '../../utils/cache.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('removeItem');
 
 // Interface for item removal parameters
 export interface RemoveItemParams {
@@ -21,8 +25,7 @@ export async function removeItem(params: RemoveItemParams): Promise<{success: bo
       };
     }
 
-    console.error("Executing OmniJS script for removeItem...");
-    console.error(`Item type: ${params.itemType}, ID: ${params.id || 'not provided'}, Name: ${params.name || 'not provided'}`);
+    log.debug('Executing removeItem', { itemType: params.itemType, id: params.id, name: params.name });
 
     // Execute the OmniJS script
     const result = await executeOmniFocusScript('@removeTask.js', {
@@ -37,7 +40,7 @@ export async function removeItem(params: RemoveItemParams): Promise<{success: bo
       try {
         parsed = JSON.parse(result);
       } catch (e) {
-        console.error("Failed to parse result as JSON:", e);
+        log.error('Failed to parse result as JSON', { error: (e as Error).message });
         return {
           success: false,
           error: `Failed to parse result: ${result}`
@@ -48,6 +51,8 @@ export async function removeItem(params: RemoveItemParams): Promise<{success: bo
     }
 
     if (parsed.success) {
+      // Invalidate cache after successful write
+      queryCache.invalidateOnWrite();
       return {
         success: true,
         id: parsed.id,
@@ -61,7 +66,7 @@ export async function removeItem(params: RemoveItemParams): Promise<{success: bo
     }
 
   } catch (error: any) {
-    console.error("Error in removeItem:", error);
+    log.error('Error in removeItem', { error: error?.message });
     return {
       success: false,
       error: error?.message || "Unknown error in removeItem"

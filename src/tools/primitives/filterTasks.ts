@@ -1,4 +1,8 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { queryCache } from '../../utils/cache.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('filterTasks');
 
 export interface FilterTasksOptions {
   // Task status filter
@@ -73,16 +77,28 @@ export async function filterTasks(options: FilterTasksOptions = {}): Promise<str
       sortOrder = "asc"
     } = options;
 
-
-    // Execute filter script
-    const result = await executeOmniFocusScript('@filterTasks.js', {
+    const scriptParams = {
       ...options,
       perspective,
       exactTagMatch,
       limit,
       sortBy,
       sortOrder
-    });
+    };
+
+    // Check cache first (getWithChecksum returns checksum for race-condition-free set)
+    const { data: cached, checksum } = await queryCache.getWithChecksum<unknown>('filterTasks', scriptParams);
+    let result: unknown;
+
+    if (cached) {
+      log.debug('Using cached result');
+      result = cached;
+    } else {
+      // Execute filter script
+      result = await executeOmniFocusScript('@filterTasks.js', scriptParams);
+      // Cache the result with the same checksum used for validation
+      await queryCache.set('filterTasks', scriptParams, result, checksum);
+    }
 
     if (typeof result === 'string') {
       return result;
@@ -157,7 +173,7 @@ export async function filterTasks(options: FilterTasksOptions = {}): Promise<str
     return "Unexpected result format from OmniFocus";
 
   } catch (error) {
-    console.error("Error in filterTasks:", error);
+    log.error('Error in filterTasks', { error: error instanceof Error ? error.message : String(error) });
     throw new Error(`Failed to filter tasks: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
