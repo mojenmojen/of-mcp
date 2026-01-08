@@ -14,40 +14,39 @@ const EXEC_OPTIONS = { maxBuffer: 50 * 1024 * 1024 };
 
 // Helper function to execute OmniFocus scripts
 export async function executeJXA(script: string): Promise<any[]> {
+  // Write the script to a temporary file in the system temp directory
+  const tempFile = join(tmpdir(), `jxa_script_${Date.now()}.js`);
+
   try {
-    // Write the script to a temporary file in the system temp directory
-    const tempFile = join(tmpdir(), `jxa_script_${Date.now()}.js`);
-    
     // Write the script to the temporary file
     writeFileSync(tempFile, script);
-    
+
     // Execute the script using osascript
     const { stdout, stderr } = await execAsync(`osascript -l JavaScript ${tempFile}`, EXEC_OPTIONS);
-    
+
     if (stderr) {
       console.error("Script stderr output:", stderr);
     }
-    
-    // Clean up the temporary file
-    unlinkSync(tempFile);
-    
+
     // Parse the output as JSON
     try {
       const result = JSON.parse(stdout);
       return result;
-    } catch (e) {
-      console.error("Failed to parse script output as JSON:", e);
-      
-      // If this contains a "Found X tasks" message, treat it as a successful non-JSON response
-      if (stdout.includes("Found") && stdout.includes("tasks")) {
-        return [];
-      }
-      
-      return [];
+    } catch (parseError) {
+      // Don't silently swallow errors - throw with context
+      const preview = stdout.substring(0, 500);
+      throw new Error(`Failed to parse JXA script output as JSON. Output preview: ${preview}`);
     }
   } catch (error) {
     console.error("Failed to execute JXA script:", error);
     throw error;
+  } finally {
+    // Always clean up the temporary file
+    try {
+      unlinkSync(tempFile);
+    } catch (cleanupError) {
+      console.warn(`Failed to cleanup temp file ${tempFile}:`, cleanupError);
+    }
   }
 }
 
@@ -79,22 +78,11 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
     // Read the script file
     let scriptContent = readFileSync(actualPath, 'utf8');
 
-    // Read and prepend shared utilities (parseLocalDate, buildRRule, etc.)
-    const sharedUtilsPath = join(dirname(actualPath), 'lib', 'sharedUtils.js');
-    if (existsSync(sharedUtilsPath)) {
-      const sharedUtils = readFileSync(sharedUtilsPath, 'utf8');
-      // Inject shared utils inside the IIFE, right after the opening
-      scriptContent = scriptContent.replace(
-        '(() => {',
-        `(() => {\n  // === Shared utilities ===\n${sharedUtils}\n  // === End shared utilities ===\n`
-      );
-    }
-
-    // If arguments are provided, inject them into the script
+    // Build parameter injection string if args are provided
+    let parameterInjection = '';
     if (args && Object.keys(args).length > 0) {
       const argsJson = JSON.stringify(args);
-      // Inject parameters at the beginning of the script
-      const parameterInjection = `
+      parameterInjection = `
     // Injected parameters
     const injectedArgs = ${argsJson};
     const perspectiveName = injectedArgs.perspectiveName || null;
@@ -105,7 +93,7 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
     const includeSidebar = injectedArgs.includeSidebar !== undefined ? injectedArgs.includeSidebar : true;
     const format = injectedArgs.format || "detailed";
     `;
-      
+
       // Replace any hardcoded parameters in the script with injected ones
       scriptContent = scriptContent.replace(
         /let perspectiveName = ".*"; \/\/ (?:Hardcode for testing|Default for testing)/,
@@ -139,31 +127,39 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
         /let format = "detailed";/,
         'let format = injectedArgs.format || "detailed";'
       );
-      
-      // Inject the parameters at the beginning of the function
+    }
+
+    // Read and prepend shared utilities (parseLocalDate, buildRRule, etc.)
+    // Inject both shared utilities AND parameters in a single replacement to avoid double-match issues
+    const sharedUtilsPath = join(dirname(actualPath), 'lib', 'sharedUtils.js');
+    if (existsSync(sharedUtilsPath)) {
+      const sharedUtils = readFileSync(sharedUtilsPath, 'utf8');
+      // Inject shared utils and parameters together inside the IIFE
       scriptContent = scriptContent.replace(
         '(() => {',
-        `(() => {
-    ${parameterInjection}`
+        `(() => {\n${parameterInjection}\n  // === Shared utilities ===\n${sharedUtils}\n  // === End shared utilities ===\n`
+      );
+    } else if (parameterInjection) {
+      // No shared utils, but we have parameters to inject
+      scriptContent = scriptContent.replace(
+        '(() => {',
+        `(() => {\n${parameterInjection}`
       );
     }
     
-    // Create a temporary file for our JXA wrapper script
-    const tempFile = join(tmpdir(), `jxa_wrapper_${Date.now()}.js`);
-    
     // Escape the script content properly for use in JXA
     const escapedScript = scriptContent.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
-    
+
     // Create a JXA script that will execute our OmniJS script in OmniFocus
     const jxaScript = `
     function run() {
       try {
         const app = Application('OmniFocus');
         app.includeStandardAdditions = true;
-        
+
         // Run the OmniJS script in OmniFocus and capture the output
         const result = app.evaluateJavascript(\`${escapedScript}\`);
-        
+
         // Return the result
         return result;
       } catch (e) {
@@ -171,26 +167,36 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
       }
     }
     `;
-    
-    // Write the JXA script to the temporary file
-    writeFileSync(tempFile, jxaScript);
-    
-    // Execute the JXA script using osascript
-    const { stdout, stderr } = await execAsync(`osascript -l JavaScript ${tempFile}`, EXEC_OPTIONS);
-    
-    // Clean up the temporary file
-    unlinkSync(tempFile);
-    
-    if (stderr) {
-      console.error("Script stderr output:", stderr);
-    }
-    
-    // Parse the output as JSON
+
+    // Create a temporary file for our JXA wrapper script
+    const tempFile = join(tmpdir(), `jxa_wrapper_${Date.now()}.js`);
+
     try {
-      return JSON.parse(stdout);
-    } catch (parseError) {
-      console.error("Error parsing script output:", parseError);
-      return stdout;
+      // Write the JXA script to the temporary file
+      writeFileSync(tempFile, jxaScript);
+
+      // Execute the JXA script using osascript
+      const { stdout, stderr } = await execAsync(`osascript -l JavaScript ${tempFile}`, EXEC_OPTIONS);
+
+      if (stderr) {
+        console.error("Script stderr output:", stderr);
+      }
+
+      // Parse the output as JSON
+      try {
+        return JSON.parse(stdout);
+      } catch (parseError) {
+        // If JSON parsing fails, throw with context instead of silently returning raw stdout
+        const preview = stdout.substring(0, 500);
+        throw new Error(`Failed to parse OmniFocus script output as JSON. Output preview: ${preview}`);
+      }
+    } finally {
+      // Always clean up the temporary file
+      try {
+        unlinkSync(tempFile);
+      } catch (cleanupError) {
+        console.warn(`Failed to cleanup temp file ${tempFile}:`, cleanupError);
+      }
     }
   } catch (error) {
     console.error("Failed to execute OmniFocus script:", error);

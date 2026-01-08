@@ -3,24 +3,9 @@
   try {
     // Use default values since parameters are not easily available in JXA mode
     const hideCompleted = true; // Default to true
-    
-    // Helper function to format dates consistently
-    function formatDate(date) {
-      if (!date) return null;
-      return date.toISOString();
-    }
-    
-    // Get task status enum mapping
-    const taskStatusMap = {
-      [Task.Status.Available]: "Available",
-      [Task.Status.Blocked]: "Blocked", 
-      [Task.Status.Completed]: "Completed",
-      [Task.Status.Dropped]: "Dropped",
-      [Task.Status.DueSoon]: "DueSoon",
-      [Task.Status.Next]: "Next",
-      [Task.Status.Overdue]: "Overdue"
-    };
-    
+
+    // formatDate and taskStatusMap are provided by sharedUtils.js
+
     function getTaskStatus(status) {
       return taskStatusMap[status] || "Unknown";
     }

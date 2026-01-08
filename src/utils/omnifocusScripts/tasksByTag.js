@@ -21,22 +21,7 @@
       });
     }
 
-    // Helper function to format dates consistently
-    function formatDate(date) {
-      if (!date) return null;
-      return date.toISOString();
-    }
-
-    // Get task status enum mapping
-    const taskStatusMap = {
-      [Task.Status.Available]: "Available",
-      [Task.Status.Blocked]: "Blocked",
-      [Task.Status.Completed]: "Completed",
-      [Task.Status.Dropped]: "Dropped",
-      [Task.Status.DueSoon]: "DueSoon",
-      [Task.Status.Next]: "Next",
-      [Task.Status.Overdue]: "Overdue"
-    };
+    // formatDate and taskStatusMap are provided by sharedUtils.js
 
     function getTaskStatus(status) {
       return taskStatusMap[status] || "Unknown";
@@ -95,6 +80,8 @@
     }
 
     // Check if any search term found no tags
+    // Use Set for O(1) deduplication instead of O(n) find()
+    const seenTagIds = new Set();
     const allMatchedTags = [];
     let hasEmptyMatch = false;
     matchingTagsBySearchTerm.forEach((tags, term) => {
@@ -103,7 +90,9 @@
         console.log(`No tags found for search term "${term}"`);
       }
       tags.forEach(tag => {
-        if (!allMatchedTags.find(t => t.id.primaryKey === tag.id.primaryKey)) {
+        const tagId = tag.id.primaryKey;
+        if (!seenTagIds.has(tagId)) {
+          seenTagIds.add(tagId);
           allMatchedTags.push(tag);
         }
       });

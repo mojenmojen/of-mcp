@@ -2,28 +2,26 @@
 // This provides true batching - all edits happen in one OmniFocus session
 // Note: parseLocalDate and buildRRule are provided by sharedUtils.js
 (() => {
-  // Helper function to find a tag by name (direct iteration to keep OmniJS proxy alive)
-  // If tag doesn't exist, creates it
+  // Build tag lookup Map once for O(1) lookups (instead of O(n) per lookup)
+  const tagLookupMap = new Map();
+  flattenedTags.forEach(tag => tagLookupMap.set(tag.name.toLowerCase(), tag));
+
+  // Helper function to find a tag by name (uses cached Map for O(1) lookup)
+  // If tag doesn't exist, creates it and adds to cache
   function findOrCreateTag(tagName) {
     const tagNameLower = tagName.toLowerCase();
-    for (const tag of flattenedTags) {
-      if (tag.name.toLowerCase() === tagNameLower) {
-        return tag;
-      }
+    let tag = tagLookupMap.get(tagNameLower);
+    if (!tag) {
+      // Tag doesn't exist - create it and cache it
+      tag = new Tag(tagName);
+      tagLookupMap.set(tagNameLower, tag);
     }
-    // Tag doesn't exist - create it
-    return new Tag(tagName);
+    return tag;
   }
 
   // Helper function to find a tag by name (for removal - don't create if missing)
   function findTag(tagName) {
-    const tagNameLower = tagName.toLowerCase();
-    for (const tag of flattenedTags) {
-      if (tag.name.toLowerCase() === tagNameLower) {
-        return tag;
-      }
-    }
-    return null;
+    return tagLookupMap.get(tagName.toLowerCase()) || null;
   }
 
   try {
