@@ -31,7 +31,7 @@
       });
     }
 
-    // Find or validate target folder
+    // Find target folder (fail if not found)
     let targetFolder = null;
     if (folderId) {
       targetFolder = flattenedFolders.find(f => f.id.primaryKey === folderId);
@@ -46,8 +46,10 @@
       const nameLower = folderName.toLowerCase();
       targetFolder = flattenedFolders.find(f => f.name.toLowerCase() === nameLower);
       if (!targetFolder) {
-        // Create new folder
-        targetFolder = new Folder(folderName);
+        return JSON.stringify({
+          success: false,
+          error: 'Target folder not found: ' + folderName
+        });
       }
     }
 

@@ -1,4 +1,5 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { queryCache } from '../../utils/cache.js';
 import { logger } from '../../utils/logger.js';
 
 const log = logger.child('searchTasks');
@@ -31,18 +32,29 @@ export async function searchTasks(options: SearchTasksOptions): Promise<string> 
       limit
     };
 
+    // Check cache first
+    const { data: cached, checksum } = await queryCache.getWithChecksum<SearchResult>('searchTasks', scriptParams);
+
+    if (cached) {
+      log.debug('Using cached search result');
+      return formatSearchResults(cached, query, matchMode);
+    }
+
     const result = await executeOmniFocusScript('@searchTasks.js', scriptParams);
 
+    let parsed: SearchResult;
     if (typeof result === 'string') {
-      const parsed = JSON.parse(result);
-      return formatSearchResults(parsed, query, matchMode);
+      parsed = JSON.parse(result);
+    } else if (result && typeof result === 'object') {
+      parsed = result as SearchResult;
+    } else {
+      return "Unexpected result format from OmniFocus";
     }
 
-    if (result && typeof result === 'object') {
-      return formatSearchResults(result as SearchResult, query, matchMode);
-    }
+    // Cache the result
+    await queryCache.set('searchTasks', scriptParams, parsed, checksum);
 
-    return "Unexpected result format from OmniFocus";
+    return formatSearchResults(parsed, query, matchMode);
 
   } catch (error) {
     log.error('Error in searchTasks', { error: error instanceof Error ? error.message : String(error) });
