@@ -17,6 +17,9 @@
         id: tag.id.primaryKey,
         name: tag.name,
         active: tag.active,
+        status: tag.status === Tag.Status.Active ? 'active'
+              : tag.status === Tag.Status.OnHold ? 'onHold'
+              : 'dropped',
         parent: tag.parent ? tag.parent.name : null
       };
 
