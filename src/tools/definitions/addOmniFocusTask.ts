@@ -101,12 +101,12 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
       };
     }
   } catch (err: unknown) {
-    const error = err as Error;
-    console.error(`Tool execution error: ${error.message}`);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error(`Tool execution error: ${errorMessage}`);
     return {
       content: [{
         type: "text" as const,
-        text: `Error creating task: ${error.message}`
+        text: `Error creating task: ${errorMessage}`
       }],
       isError: true
     };
