@@ -2,7 +2,7 @@
 
 > **Last Updated**: January 8, 2026
 > **Branch**: `main`
-> **Current Version**: 1.22.0
+> **Current Version**: 1.23.0
 
 ## Completed Sprints
 
@@ -64,7 +64,7 @@ With the robustness foundation in place, development continues with the **Featur
 | **Sprint 5** | Error Handling & Reliability | 002, 003 | ✅ Done |
 | **Sprint 6** | Developer Experience | 004, 008 | ✅ Done |
 | **Sprint 7** | Performance | 009 | ✅ Done |
-| **Sprint 8** | New Tools | 007, 010, 011 | 🔜 Next |
+| **Sprint 8** | New Tools | 007, 010, 011 | ✅ Done |
 
 ### Sprint 4: Foundation Prep ✅
 | # | Feature | Effort |
@@ -90,12 +90,20 @@ With the robustness foundation in place, development continues with the **Featur
 |---|---------|--------|
 | 009 | Checksum Cache Invalidation | High |
 
-### Sprint 8: New Tools (Next)
+### Sprint 8: New Tools ✅
+**PR**: #35
+
 | # | Feature | Effort |
 |---|---------|--------|
 | 007 | Search Tasks | Low |
 | 010 | Duplicate Project | Medium |
 | 011 | Edit Tag | Medium |
+
+---
+
+## Feature Requests Roadmap Complete! 🎉
+
+All 11 feature request issues have been implemented across Sprints 4-8.
 
 **Roadmap Changes (January 2026 Review):**
 - Removed 005, 006 (JXA-only APIs, no benefit over `filter_tasks`)
