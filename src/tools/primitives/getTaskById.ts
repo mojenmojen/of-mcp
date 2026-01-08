@@ -1,4 +1,8 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { queryCache } from '../../utils/cache.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('getTaskById');
 
 // Interface for task lookup parameters
 export interface GetTaskByIdParams {
@@ -38,14 +42,23 @@ export async function getTaskById(params: GetTaskByIdParams): Promise<{success: 
       };
     }
 
-    console.error("Executing OmniJS script for getTaskById...");
-    console.error(`Parameters: taskId=${params.taskId}, taskName=${params.taskName}`);
-
-    // Execute the OmniJS script
-    const result = await executeOmniFocusScript('@getTaskByIdOrName.js', {
+    const scriptParams = {
       taskId: params.taskId || null,
       taskName: params.taskName || null
-    });
+    };
+
+    // Check cache first (getWithChecksum returns checksum for race-condition-free set)
+    type CacheResult = {success: boolean, task?: TaskInfo, error?: string};
+    const { data: cached, checksum } = await queryCache.getWithChecksum<CacheResult>('getTaskById', scriptParams);
+    if (cached) {
+      log.debug('Using cached result');
+      return cached;
+    }
+
+    log.debug('Executing OmniJS script', { taskId: params.taskId, taskName: params.taskName });
+
+    // Execute the OmniJS script
+    const result = await executeOmniFocusScript('@getTaskByIdOrName.js', scriptParams);
 
     // Parse result
     let parsed;
@@ -53,7 +66,7 @@ export async function getTaskById(params: GetTaskByIdParams): Promise<{success: 
       try {
         parsed = JSON.parse(result);
       } catch (e) {
-        console.error("Failed to parse result as JSON:", e);
+        log.error('Failed to parse result as JSON', { error: (e as Error).message });
         return {
           success: false,
           error: `Failed to parse result: ${result}`
@@ -63,20 +76,17 @@ export async function getTaskById(params: GetTaskByIdParams): Promise<{success: 
       parsed = result;
     }
 
-    if (parsed.success) {
-      return {
-        success: true,
-        task: parsed.task as TaskInfo
-      };
-    } else {
-      return {
-        success: false,
-        error: parsed.error || "Unknown error"
-      };
-    }
+    const response: CacheResult = parsed.success
+      ? { success: true, task: parsed.task as TaskInfo }
+      : { success: false, error: parsed.error || "Unknown error" };
+
+    // Cache the result with the same checksum used for validation
+    await queryCache.set('getTaskById', scriptParams, response, checksum);
+
+    return response;
 
   } catch (error: any) {
-    console.error("Error in getTaskById:", error);
+    log.error('Error in getTaskById', { error: error?.message });
     return {
       success: false,
       error: error?.message || "Unknown error in getTaskById"

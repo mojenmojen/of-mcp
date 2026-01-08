@@ -1,4 +1,8 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { queryCache } from '../../utils/cache.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('addFolder');
 
 // Interface for folder creation parameters
 export interface AddFolderParams {
@@ -20,8 +24,7 @@ export async function addFolder(params: AddFolderParams): Promise<{success: bool
       };
     }
 
-    console.error("Executing OmniJS script for addFolder...");
-    console.error(`Folder name: ${params.name}, Parent: ${params.parentFolderName || params.parentFolderId || 'root'}`);
+    log.debug('Executing addFolder', { name: params.name, parent: params.parentFolderName || params.parentFolderId || 'root' });
 
     // Execute the OmniJS script
     const result = await executeOmniFocusScript('@addFolder.js', {
@@ -36,7 +39,7 @@ export async function addFolder(params: AddFolderParams): Promise<{success: bool
       try {
         parsed = JSON.parse(result);
       } catch (e) {
-        console.error("Failed to parse result as JSON:", e);
+        log.error('Failed to parse result as JSON', { error: (e as Error).message });
         return {
           success: false,
           error: `Failed to parse result: ${result}`
@@ -47,6 +50,8 @@ export async function addFolder(params: AddFolderParams): Promise<{success: bool
     }
 
     if (parsed.success) {
+      // Invalidate cache after successful write
+      queryCache.invalidateOnWrite();
       return {
         success: true,
         folderId: parsed.folderId,
@@ -60,7 +65,7 @@ export async function addFolder(params: AddFolderParams): Promise<{success: bool
     }
 
   } catch (error: any) {
-    console.error("Error in addFolder:", error);
+    log.error('Error in addFolder', { error: error?.message });
     return {
       success: false,
       error: error?.message || "Unknown error in addFolder"

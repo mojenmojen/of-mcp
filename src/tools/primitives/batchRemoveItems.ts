@@ -1,4 +1,8 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { queryCache } from '../../utils/cache.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('batchRemoveItems');
 
 // Define the parameters for a single item removal
 export type BatchRemoveItemsParams = {
@@ -40,7 +44,7 @@ export async function batchRemoveItems(items: BatchRemoveItemsParams[]): Promise
       };
     }
 
-    console.error(`Executing batch remove for ${items.length} items...`);
+    log.debug(`Executing batch remove for ${items.length} items`);
 
     // Execute single OmniJS script with all items
     const result = await executeOmniFocusScript('@batchRemoveItems.js', { items });
@@ -51,7 +55,7 @@ export async function batchRemoveItems(items: BatchRemoveItemsParams[]): Promise
       try {
         parsed = JSON.parse(result);
       } catch (e) {
-        console.error("Failed to parse result as JSON:", e);
+        log.error('Failed to parse result as JSON', { error: (e as Error).message });
         return {
           success: false,
           successCount: 0,
@@ -64,6 +68,11 @@ export async function batchRemoveItems(items: BatchRemoveItemsParams[]): Promise
       parsed = result;
     }
 
+    // Invalidate cache if any items were successfully removed
+    if (parsed.successCount > 0) {
+      queryCache.invalidateOnWrite();
+    }
+
     return {
       success: parsed.success,
       successCount: parsed.successCount || 0,
@@ -73,7 +82,7 @@ export async function batchRemoveItems(items: BatchRemoveItemsParams[]): Promise
     };
 
   } catch (error: any) {
-    console.error("Error in batchRemoveItems:", error);
+    log.error('Error in batchRemoveItems', { error: error?.message });
     return {
       success: false,
       successCount: 0,

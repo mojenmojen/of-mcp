@@ -1,4 +1,8 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { queryCache } from '../../utils/cache.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('addProject');
 
 // Interface for project creation parameters
 export interface AddProjectParams {
@@ -28,9 +32,8 @@ export async function addProject(params: AddProjectParams): Promise<{success: bo
       };
     }
 
-    console.error("Executing OmniJS script for addProject...");
     const folderInfo = params.folderId ? `ID:${params.folderId}` : (params.folderName || 'root');
-    console.error(`Project name: ${params.name}, Folder: ${folderInfo}`);
+    log.debug('Executing addProject', { name: params.name, folder: folderInfo });
 
     // Execute the OmniJS script
     const result = await executeOmniFocusScript('@addProject.js', {
@@ -52,7 +55,7 @@ export async function addProject(params: AddProjectParams): Promise<{success: bo
       try {
         parsed = JSON.parse(result);
       } catch (e) {
-        console.error("Failed to parse result as JSON:", e);
+        log.error('Failed to parse result as JSON', { error: (e as Error).message });
         return {
           success: false,
           error: `Failed to parse result: ${result}`
@@ -63,6 +66,8 @@ export async function addProject(params: AddProjectParams): Promise<{success: bo
     }
 
     if (parsed.success) {
+      // Invalidate cache after successful write
+      queryCache.invalidateOnWrite();
       return {
         success: true,
         projectId: parsed.projectId
@@ -75,7 +80,7 @@ export async function addProject(params: AddProjectParams): Promise<{success: bo
     }
 
   } catch (error: any) {
-    console.error("Error in addProject:", error);
+    log.error('Error in addProject', { error: error?.message });
     return {
       success: false,
       error: error?.message || "Unknown error in addProject"
