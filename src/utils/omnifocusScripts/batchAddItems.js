@@ -24,7 +24,12 @@
       const days = rule.daysOfWeek.map(d => dayMap[d]).join(',');
       rrule += `;BYDAY=${days}`;
     }
-    if (rule.dayOfMonth) {
+    if (rule.weekdayOfMonth) {
+      // Weekday-of-month pattern: e.g., first Monday, last Friday
+      const dayMap = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+      const dayCode = dayMap[rule.weekdayOfMonth.day];
+      rrule += `;BYDAY=${dayCode};BYSETPOS=${rule.weekdayOfMonth.week}`;
+    } else if (rule.dayOfMonth) {
       rrule += `;BYMONTHDAY=${rule.dayOfMonth}`;
     }
     if (rule.month) {
