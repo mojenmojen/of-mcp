@@ -738,6 +738,184 @@ For simple MCP servers, Python + AppleScript is faster to prototype:
 
 ---
 
+## Transport Text and FastMCP Patterns
+*Source: omnifocus-mcp-python (FastMCP implementation)*
+
+### Transport Text Parsing
+
+OmniFocus has a built-in `Task.byParsingTransportText()` method that parses a special syntax for creating tasks with attributes in one call:
+
+```javascript
+// Transport text syntax
+const transportText = "Task name ::ProjectName @tag1 @tag2 #deferDate #dueDate !";
+
+// Syntax breakdown:
+// ::Project     - Assign to project (colon-colon prefix)
+// @tagName      - Add tag (at-sign prefix)
+// #date         - First # is defer date, second # is due date
+// !             - Flag the task
+
+// Create task from transport text
+const tasks = Task.byParsingTransportText(transportText);
+const task = tasks[0];
+task.note = "Optional note set separately";
+```
+
+**Benefits:**
+- Single API call creates task with project, tags, dates, and flag
+- OmniFocus handles natural language date parsing ("tomorrow", "next friday", "2d")
+- Cleaner than setting each property individually
+
+**Use cases:**
+- Quick task creation with multiple attributes
+- When you want OmniFocus's native date parsing
+- Building "quick entry" style interfaces
+
+### FastMCP Decorator Pattern
+
+Python's FastMCP provides a cleaner alternative to TypeScript's Zod schemas:
+
+```python
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("server-name", "Server description")
+
+@mcp.tool()
+def add_task(
+    name: str,                          # Required - type hint is required
+    note: Optional[str] = None,         # Optional with default
+    tags: Optional[List[str]] = None,   # List types work
+    flagged: bool = False               # Defaults work
+) -> str:                               # Return type is enforced
+    """
+    Brief description becomes tool description.
+
+    Args:
+        name: Parameter descriptions become schema descriptions.
+        note: Optional note for the task.
+
+    Returns:
+        Success message with task ID.
+    """
+    # Implementation
+    return f"Created task with ID: {task_id}"
+```
+
+**Key differences from TypeScript/Zod:**
+- Type hints become schema automatically
+- Docstrings become tool descriptions
+- No separate schema definition file needed
+- Less boilerplate, but less explicit validation
+
+### JXA Wrapper for OmniJS Execution
+
+Alternative to AppleScript wrapping - use JXA directly:
+
+```python
+def run_omnifocus_omnijs(omnijs_code: str) -> Any:
+    """Execute OmniJS via JXA wrapper."""
+    # Escape backticks for template literal
+    escaped_code = omnijs_code.replace('`', '\\`')
+
+    jxa_wrapper = f"""
+    const app = Application('OmniFocus');
+    const result = app.evaluateJavascript(`{escaped_code}`);
+    JSON.stringify(result);
+    """
+
+    proc = subprocess.run(
+        ["/usr/bin/osascript", "-l", "JavaScript"],
+        input=jxa_wrapper,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    return json.loads(proc.stdout.strip())
+```
+
+**Advantages over AppleScript wrapper:**
+- Native JSON handling (no string escaping issues)
+- Template literals for cleaner code injection
+- Better error messages from JXA
+
+### Content Tree Navigation for Perspectives
+
+Getting tasks from a custom perspective requires navigating the content tree:
+
+```javascript
+(() => {
+    const perspective = perspectives.byName['My Perspective'];
+    if (!perspective) return { error: "Perspective not found" };
+
+    // Set the perspective on a window to populate its content
+    const window = document.windows[0];
+    window.perspective = perspective;
+
+    // Navigate the content tree
+    const tree = window.content;
+    const tasks = [];
+
+    function extractTasks(items) {
+        items.forEach(item => {
+            if (item.object instanceof Task) {
+                tasks.push({
+                    id: item.object.id.primaryKey,
+                    name: item.object.name,
+                    project: item.object.containingProject?.name
+                });
+            }
+            // Recursively process children
+            if (item.children) {
+                extractTasks(item.children);
+            }
+        });
+    }
+
+    if (tree?.rootNode?.children) {
+        extractTasks(tree.rootNode.children);
+    }
+
+    return tasks;
+})()
+```
+
+**Important notes:**
+- Requires setting `window.perspective` first
+- Content tree contains both tasks and section headers
+- Check `item.object instanceof Task` to filter to actual tasks
+- Children may be nested arbitrarily deep
+
+### Project Task Iteration via rootTask
+
+Access project tasks through the root task's children:
+
+```javascript
+// Get all tasks in a project (including nested)
+const project = projects.byName['My Project'];
+const allTasks = project.flattenedTasks;  // All tasks, flattened
+
+// Get only top-level tasks
+const topLevelTasks = project.rootTask.children;
+
+// Recursive mapping with depth limit
+function mapTask(task, depth = 0, maxDepth = 3) {
+    if (depth >= maxDepth) return null;
+
+    return {
+        id: task.id.primaryKey,
+        name: task.name,
+        children: task.children
+            .map(child => mapTask(child, depth + 1, maxDepth))
+            .filter(c => c !== null)
+    };
+}
+
+const taskTree = project.rootTask.children.map(t => mapTask(t, 0));
+```
+
+---
+
 ## Database Safety and Query Optimization
 *Source: omnifocus-mcp (fourth implementation - Python/AppleScript)*
 
@@ -1009,6 +1187,11 @@ def get_task_details(task_id: str) -> dict:
 - `tests/fixtures.py` - UUID-based test fixtures, scoped pytest patterns
 - `src/api/tasks.py` - Union type API pattern, graceful degradation
 
+### omnifocus-mcp-python (FastMCP implementation)
+- `src/omnifocus_server.py` - Transport text parsing, JXA wrapper, content tree navigation
+- `FASTMCP_DEVELOPMENT_GUIDE.md` - FastMCP decorator patterns, testing strategy
+- `MCP_INTEGRATION_PATTERNS.md` - Claude Code/Codex integration, Python path selection
+
 ---
 
 ## Changelog
@@ -1018,3 +1201,4 @@ def get_task_details(task_id: str) -> dict:
 - 2026-01-07: Added caching and batch patterns from omnifocus-mcp (TypeScript original)
 - 2026-01-07: Added permission handling, performance optimization, logging patterns from omnifocus-mcp (third implementation)
 - 2026-01-07: Added database safety, N+1 elimination, testing patterns, API design from omnifocus-mcp (fourth implementation)
+- 2026-01-07: Added transport text parsing, FastMCP patterns, content tree navigation from omnifocus-mcp-python
