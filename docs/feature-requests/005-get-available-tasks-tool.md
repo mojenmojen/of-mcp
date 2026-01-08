@@ -1,8 +1,8 @@
 # 005: Get Available Tasks Tool
 
-## Priority: Medium
+## Priority: Low
 ## Effort: Low (1-2 hours)
-## Category: New Tool
+## Category: New Tool (Convenience)
 
 ---
 
@@ -13,21 +13,28 @@ Currently, to get tasks that can be worked on right now, users must use `filter_
 - `flagged: null` (or specific value)
 - etc.
 
-This is verbose and doesn't leverage OmniFocus's optimized `availableTasks` property, which is significantly faster than filtering `flattenedTasks`.
+This is verbose for a common use case.
 
-**Performance difference:**
-- `flattenedTasks` with filter: 3-4 seconds (2000+ tasks)
-- `availableTasks`: <1 second (pre-filtered by OmniFocus)
+**Important Clarification:**
+The `availableTasks` property mentioned in PERFORMANCE_AND_PATTERNS.md is a **JXA API only** - it is NOT available in pure OmniJS scripts. The implementation below uses `Task.Status` enum filtering on `flattenedTasks`, which is equivalent to what `filter_tasks` already does.
+
+**Primary Value:**
+- **Discoverability** - AI assistants can easily find "get available tasks"
+- **Simpler API** - Fewer parameters than `filter_tasks`
+- **Semantic clarity** - Tool name describes intent
+
+**No Performance Benefit:**
+This tool uses the same filtering approach as `filter_tasks`. The only difference is API simplicity.
 
 ---
 
 ## Proposed Solution
 
 Add a dedicated `get_available_tasks` tool that:
-1. Uses OmniFocus's native `availableTasks` property
-2. Returns tasks that are actionable right now (not deferred, not blocked, not completed)
+1. Returns tasks that are actionable right now (not deferred, not blocked, not completed)
+2. Uses `Task.Status` enum for efficient filtering
 3. Supports optional project/tag filtering
-4. Much faster than equivalent `filter_tasks` call
+4. Provides a simpler, more discoverable API than `filter_tasks`
 
 ---
 
@@ -223,10 +230,11 @@ server.tool(
 
 ## Implementation Notes
 
-- Focus on speed - this should be the fastest way to get "what can I work on now?"
+- Focus on discoverability and API simplicity
 - Task.Status enum values: Available, DueSoon, Next, Overdue are all "available"
 - Blocked, Completed, Dropped are excluded
 - Deferred tasks (deferDate in future) have status Blocked
+- **Note:** This provides no performance advantage over `filter_tasks` with `taskStatus: "available"`
 
 ---
 
@@ -236,7 +244,6 @@ server.tool(
 - [ ] Tool supports project filtering by name or ID
 - [ ] Tool supports tag filtering
 - [ ] Tool supports sorting by dueDate, name, or project
-- [ ] Tool is faster than equivalent filter_tasks call
 - [ ] Tool is registered in server.ts
 - [ ] Version bump in package.json
 

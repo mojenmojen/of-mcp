@@ -3,6 +3,19 @@
 ## Priority: Medium
 ## Effort: Medium (2-3 hours)
 ## Category: Data Integrity Improvement
+## Dependencies: 002-Phase A (Structured Error Responses)
+
+**Dependency Note:**
+This feature imports `createValidationError` from `src/utils/errors.ts`, which is created in feature 002 Phase A. Complete 002-Phase A before implementing this feature.
+
+Alternatively, implement a simple inline error response if you want to implement this before 002:
+```typescript
+// Standalone version (no dependency):
+return {
+  success: false,
+  error: `Circular parent reference detected: ${cycleNames.join(' → ')}`
+};
+```
 
 ---
 

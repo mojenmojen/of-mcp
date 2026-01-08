@@ -13,62 +13,76 @@ Features are numbered in recommended implementation order, considering:
 
 ## Quick Reference
 
+### Pre-work (P0) - Complete First
+
+| # | Feature | Priority | Effort | Category | Dependencies |
+|---|---------|----------|--------|----------|--------------|
+| P00A | [Execution Timeout](./P00A-execution-timeout.md) | Critical | Low | Reliability | - |
+| P00B | [Remove Legacy Injection](./P00B-remove-legacy-injection.md) | Critical | Low | Cleanup | - |
+
+### Main Features
+
 | # | Feature | Priority | Effort | Category | Dependencies |
 |---|---------|----------|--------|----------|--------------|
 | 001 | [Diagnose Connection Tool](./001-diagnose-connection-tool.md) | High | Low | New Tool | - |
-| 002 | [Structured Error Responses](./002-structured-error-responses.md) | High | Medium | Infrastructure | - |
+| 002 | [Structured Error Responses](./002-structured-error-responses.md) | High | Medium | Infrastructure | P00A, P00B |
 | 003 | [Retry with Exponential Backoff](./003-retry-logic-exponential-backoff.md) | High | Medium | Infrastructure | 002 |
 | 004 | [Structured Logging](./004-structured-logging.md) | Medium | Low | Infrastructure | - |
-| 005 | [Get Available Tasks Tool](./005-get-available-tasks-tool.md) | Medium | Low | New Tool | - |
-| 006 | [Get Overdue Tasks Tool](./006-get-overdue-tasks-tool.md) | Medium | Low | New Tool | - |
+| 005 | [Get Available Tasks Tool](./005-get-available-tasks-tool.md) | Low | Low | Convenience | - |
+| 006 | [Get Overdue Tasks Tool](./006-get-overdue-tasks-tool.md) | Low | Low | Convenience | - |
 | 007 | [Search Tasks Tool](./007-search-tasks-tool.md) | Medium | Low | New Tool | - |
-| 008 | [Cycle Detection in Batch Ops](./008-cycle-detection-batch-operations.md) | Medium | Medium | Data Integrity | 002 |
-| 009 | [Checksum Cache Invalidation](./009-checksum-cache-invalidation.md) | Low | High | Performance | - |
+| 008 | [Cycle Detection in Batch Ops](./008-cycle-detection-batch-operations.md) | Medium | Medium | Data Integrity | 002-A |
+| 009 | [Checksum Cache Invalidation](./009-checksum-cache-invalidation.md) | Medium | High | Performance | - |
 | 010 | [Duplicate Project Tool](./010-duplicate-project-tool.md) | Low | Medium | New Tool | - |
+
+**Priority Changes from Original:**
+- 005, 006: Medium → Low (convenience wrappers, no performance benefit)
+- 009: Low → Medium (biggest actual performance gain available)
 
 ---
 
 ## Suggested Implementation Phases
 
+### Phase 0: Pre-work (Critical)
+
+1. **P00A - Execution Timeout** - Prevents server hangs, required for error categorization
+2. **P00B - Remove Legacy Injection** - Cleanup before modifying scriptExecution.ts
+
+After Phase 0: Safe foundation for infrastructure changes.
+
 ### Phase 1: Foundation (Infrastructure)
-_Estimated: 1-2 sessions_
 
 1. **001 - Diagnose Connection Tool** - Immediate support value
-2. **002 - Structured Error Responses** - Foundation for everything else
-3. **003 - Retry Logic** - Reliability improvement
+2. **002-A - Structured Errors (Types)** - Create error types and factories
+3. **002-B - Structured Errors (Core)** - Update scriptExecution.ts
+4. **003 - Retry Logic** - Reliability improvement
+5. **002-C - Structured Errors (Migration)** - Migrate tools incrementally
 
 After Phase 1: Users get better error messages and more reliable connections.
 
 ### Phase 2: Developer Experience
-_Estimated: 1 session_
 
-4. **004 - Structured Logging** - Better debugging for developers
+6. **004 - Structured Logging** - Better debugging for developers
 
 After Phase 2: Easier to debug issues in production.
 
-### Phase 3: New Tools (Quick Wins)
-_Estimated: 1-2 sessions_
+### Phase 3: Performance & Data Integrity
 
-5. **005 - Get Available Tasks** - Performance + convenience
-6. **006 - Get Overdue Tasks** - Convenience
-7. **007 - Search Tasks** - Natural text search
+7. **008 - Cycle Detection** - Prevent data corruption in batch ops
+8. **009 - Checksum Caching** - Major performance gain for repeated queries
 
-After Phase 3: More intuitive tool surface for AI assistants.
+After Phase 3: Faster and safer operations.
 
-### Phase 4: Data Integrity
-_Estimated: 1 session_
+### Phase 4: New Tools
 
-8. **008 - Cycle Detection** - Prevent data corruption
+9. **007 - Search Tasks** - Natural text search (most useful)
+10. **005 - Get Available Tasks** - Convenience wrapper
+11. **006 - Get Overdue Tasks** - Convenience wrapper
+12. **010 - Duplicate Project** - Template workflows
 
-After Phase 4: Safer batch operations.
+After Phase 4: More intuitive tool surface for AI assistants.
 
-### Phase 5: Advanced (Optional)
-_Estimated: 2+ sessions_
-
-9. **009 - Checksum Caching** - Performance for repeated queries
-10. **010 - Duplicate Project** - Template workflows
-
-After Phase 5: Full feature parity with best implementations.
+**Note:** 005 and 006 were deprioritized because the `availableTasks()` API is JXA-only, not available in pure OmniJS. They provide no performance benefit over `filter_tasks`.
 
 ---
 

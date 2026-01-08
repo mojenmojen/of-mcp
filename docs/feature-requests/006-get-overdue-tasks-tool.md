@@ -1,8 +1,8 @@
 # 006: Get Overdue Tasks Tool
 
-## Priority: Medium
+## Priority: Low
 ## Effort: Low (1 hour)
-## Category: New Tool
+## Category: New Tool (Convenience)
 
 ---
 

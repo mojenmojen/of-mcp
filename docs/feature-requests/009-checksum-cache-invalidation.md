@@ -1,8 +1,14 @@
 # 009: Checksum-Based Cache Invalidation
 
-## Priority: Low
+## Priority: Medium (Upgraded from Low)
 ## Effort: High (4-6 hours)
 ## Category: Performance Optimization
+
+**Priority Upgrade Rationale:**
+This is the single biggest performance improvement available. While `availableTasks()` optimization is JXA-only (not usable in pure OmniJS), caching provides real performance gains:
+- Repeated identical queries: 3-4s → <100ms
+- Common in AI conversations where the assistant reviews the same data multiple times
+- No API limitations since it's a server-side optimization
 
 ---
 

@@ -3,6 +3,27 @@
 ## Priority: High
 ## Effort: Medium (2-4 hours)
 ## Category: Infrastructure Improvement
+## Dependencies: P00A (Execution Timeout), P00B (Remove Legacy Injection)
+
+---
+
+## IMPORTANT: Phased Implementation
+
+This feature modifies core infrastructure (`scriptExecution.ts`). To minimize risk:
+
+**Phase A** (Safe, additive):
+- Create `src/utils/errors.ts` with all types and factory functions
+- No changes to existing files
+
+**Phase B** (Focused change):
+- Add `categorizeError` call to `scriptExecution.ts` catch block
+- Single point of modification
+
+**Phase C** (Gradual rollout):
+- Migrate tool primitives one at a time
+- Each tool can be tested independently
+
+Complete P00A and P00B first to ensure `scriptExecution.ts` is clean before modification.
 
 ---
 
@@ -229,12 +250,27 @@ return createNotFoundError('Task', taskId);
 
 ## Acceptance Criteria
 
+### Phase A (Safe)
 - [ ] `src/utils/errors.ts` created with all error types and factories
-- [ ] `scriptExecution.ts` updated to categorize errors
+- [ ] Types exported and importable
+- [ ] No changes to existing functionality
+
+### Phase B (Core Change)
+- [ ] P00A (Execution Timeout) completed first
+- [ ] P00B (Remove Legacy Injection) completed first
+- [ ] `scriptExecution.ts` updated to use `categorizeError`
+- [ ] Timeout errors categorized correctly
+- [ ] All existing tools still work
+
+### Phase C (Migration)
 - [ ] At least 3 tool primitives migrated to use structured errors
 - [ ] Error responses include actionable instructions where applicable
-- [ ] Tests pass (if any exist)
 - [ ] Version bump in package.json
+
+### Rollback Plan
+- Phase A: Delete `errors.ts`
+- Phase B: Revert single commit to `scriptExecution.ts`
+- Phase C: Each tool migration is a separate commit that can be reverted independently
 
 ---
 
