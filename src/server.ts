@@ -41,6 +41,10 @@ import * as listProjectsTool from './tools/definitions/listProjects.js';
 // Import utility tools
 import * as getServerVersionTool from './tools/definitions/getServerVersion.js';
 import * as diagnoseConnectionTool from './tools/definitions/diagnoseConnection.js';
+// Import Sprint 8 tools
+import * as searchTasksTool from './tools/definitions/searchTasks.js';
+import * as duplicateProjectTool from './tools/definitions/duplicateProject.js';
+import * as editTagTool from './tools/definitions/editTag.js';
 import { logger } from './utils/logger.js';
 
 // Create an MCP server
@@ -237,6 +241,28 @@ server.tool(
   "Check OmniFocus connectivity, permissions, and server status. Run this first if experiencing issues.",
   diagnoseConnectionTool.schema.shape,
   diagnoseConnectionTool.handler
+);
+
+// Sprint 8: New Tools
+server.tool(
+  "search_tasks",
+  "Full-text search across task names and notes. Simpler than filter_tasks for finding tasks by text. Supports match modes: contains, anyWord, allWords, exact.",
+  searchTasksTool.schema.shape,
+  searchTasksTool.handler
+);
+
+server.tool(
+  "duplicate_project",
+  "Create a copy of a project including all its tasks. Useful for templates and recurring workflows. Supports date shifting and hierarchy preservation.",
+  duplicateProjectTool.schema.shape,
+  duplicateProjectTool.handler
+);
+
+server.tool(
+  "edit_tag",
+  "Edit a tag's properties: rename, change status (active/onHold/dropped), move to different parent, or set allowsNextAction. Use to reactivate dropped tags or reorganize tag hierarchy.",
+  editTagTool.schema.shape,
+  editTagTool.handler
 );
 
 // Start the MCP server

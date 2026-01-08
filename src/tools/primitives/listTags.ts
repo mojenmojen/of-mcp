@@ -9,6 +9,7 @@ interface TagInfo {
   id: string;
   name: string;
   active: boolean;
+  status: 'active' | 'onHold' | 'dropped';
   taskCount?: number;
   availableTaskCount?: number;
   parent: string | null;
@@ -66,8 +67,16 @@ export async function listTags(options: ListTagsOptions = {}): Promise<string> {
     }
 
     // Display tags
+    const getStatusDisplay = (status: string) => {
+      switch (status) {
+        case 'onHold': return ' ⏸️ (on hold)';
+        case 'dropped': return ' 🚫 (dropped)';
+        default: return '';
+      }
+    };
+
     for (const tag of topLevel) {
-      const status = tag.active ? '' : ' (dropped)';
+      const status = getStatusDisplay(tag.status);
       const tasks = (showTaskCounts && tag.availableTaskCount && tag.availableTaskCount > 0)
         ? ` [${tag.availableTaskCount} available]`
         : '';
@@ -77,7 +86,7 @@ export async function listTags(options: ListTagsOptions = {}): Promise<string> {
       const children = byParent.get(tag.name);
       if (children) {
         for (const child of children) {
-          const childStatus = child.active ? '' : ' (dropped)';
+          const childStatus = getStatusDisplay(child.status);
           const childTasks = (showTaskCounts && child.availableTaskCount && child.availableTaskCount > 0)
             ? ` [${child.availableTaskCount} available]`
             : '';

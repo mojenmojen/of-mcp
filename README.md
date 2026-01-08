@@ -572,6 +572,12 @@ get_project_by_id {
 23. **get_server_version** - Get server version and build information
 24. **get_project_by_id** - Query project information by ID or name (includes review data)
 25. **get_folder_by_id** - Query folder information by ID or name
+26. **diagnose_connection** - Check OmniFocus connectivity and permissions
+
+### 🆕 New Tools (v1.23.0)
+27. **search_tasks** - Full-text search across task names and notes (simpler than filter_tasks)
+28. **duplicate_project** - Create a copy of a project including all tasks (great for templates)
+29. **edit_tag** - Edit tag properties: rename, change status, move to parent, or set allowsNextAction
 
 ## 🚀 Quick Start Examples
 
@@ -638,6 +644,94 @@ get_custom_perspective_tasks {
 get_custom_perspective_tasks {
   "perspectiveName": "Weekly Planning",
   "showHierarchy": false
+}
+```
+
+### 🔍 Search Tasks (New in v1.23.0)
+```bash
+# Simple text search across names and notes
+search_tasks {
+  "query": "budget report"
+}
+
+# Search with match modes
+search_tasks {
+  "query": "meeting budget",
+  "matchMode": "anyWord"  # matches either "meeting" or "budget"
+}
+
+search_tasks {
+  "query": "quarterly review",
+  "matchMode": "allWords",  # must contain both words
+  "includeCompleted": true
+}
+
+# Search within a specific project
+search_tasks {
+  "query": "design",
+  "projectName": "Website Redesign",
+  "searchIn": "name"  # only search task names, not notes
+}
+```
+
+### 📋 Duplicate Project (New in v1.23.0)
+```bash
+# Create a copy of a template project
+duplicate_project {
+  "sourceProjectName": "Sprint Template",
+  "newName": "Sprint 15"
+}
+
+# Duplicate with date shifting (great for recurring workflows)
+duplicate_project {
+  "sourceProjectName": "Weekly Review Checklist",
+  "newName": "Week 3 Review",
+  "shiftDates": {
+    "referenceDate": "2026-01-20",
+    "basedOn": "defer"
+  }
+}
+
+# Duplicate into a specific folder
+duplicate_project {
+  "sourceProjectId": "templateProjectId123",
+  "newName": "Q1 Marketing Campaign",
+  "folderName": "2026 Projects",
+  "clearCompleted": true,
+  "copyTags": true
+}
+```
+
+### 🏷️ Edit Tag (New in v1.23.0)
+```bash
+# Reactivate a dropped tag
+edit_tag {
+  "tagName": "prep",
+  "newStatus": "active"
+}
+
+# Put a tag on hold (tasks with this tag become blocked)
+edit_tag {
+  "tagName": "office",
+  "newStatus": "onHold"
+}
+
+# Rename a tag
+edit_tag {
+  "tagId": "tagId123",
+  "newName": "high-priority"
+}
+
+# Move tag to a different parent
+edit_tag {
+  "tagName": "errands",
+  "newParentTagName": "personal"
+}
+
+# Make a tag top-level (remove from parent)
+edit_tag {
+  "tagName": "urgent",
+  "newParentTagId": ""
 }
 ```
 
