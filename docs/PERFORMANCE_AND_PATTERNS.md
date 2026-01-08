@@ -1509,6 +1509,91 @@ function scheduleWithDependencies(tasks: TaskScheduleInfo[]): ScheduledTask[] {
 
 ---
 
+## Tool Gap Analysis
+
+This section compares of-mcp's current tool set against tools found in other OmniFocus MCP implementations. Use this as a reference for potential future enhancements.
+
+### Current of-mcp Tools (27 tools)
+
+| Category | Tools |
+|----------|-------|
+| **Task** | `add_omnifocus_task`, `edit_item`, `remove_item`, `get_task_by_id`, `get_tasks_by_tag` |
+| **Project** | `add_project`, `list_projects`, `get_project_by_id`, `get_projects_for_review` |
+| **Folder** | `add_folder`, `get_folder_by_id` |
+| **Tags** | `list_tags` |
+| **Batch** | `batch_add_items`, `batch_edit_items`, `batch_remove_items`, `batch_mark_reviewed`, `batch_filter_tasks` |
+| **Views** | `get_inbox_tasks`, `get_flagged_tasks`, `get_forecast_tasks`, `get_today_completed_tasks` |
+| **Perspectives** | `list_custom_perspectives`, `get_custom_perspective_tasks`, `get_perspective_tasks_v2` |
+| **Filter** | `filter_tasks` |
+| **Utility** | `dump_database`, `get_server_version` |
+
+### Tools From Other Implementations (Not in of-mcp)
+
+#### High Value - Recommended for Implementation
+
+| Tool | Source | Description | Implementation Notes |
+|------|--------|-------------|---------------------|
+| `diagnose_connection` | focus-pocus | Check OmniFocus connectivity, permissions, and automation status | Very useful for debugging user setup issues |
+| `search_tasks` | focus-pocus | Full-text search across task names and notes | More intuitive than `filter_tasks` for simple searches |
+| `get_overdue_tasks` | omnifocus-mcp | Dedicated tool for overdue items | Common query; could be a convenience wrapper around `filter_tasks` |
+| `get_available_tasks` | omnifocus-mcp | Tasks that are actionable now (not deferred, not blocked) | Uses `availableTasks` property which is faster than filtering |
+
+#### Medium Value - Nice to Have
+
+| Tool | Source | Description | Implementation Notes |
+|------|--------|-------------|---------------------|
+| `duplicate_project` | focus-pocus | Clone a project with all its tasks | Useful for templates; requires recursive task copying |
+| `move_task` | focus-pocus | Move task to different project or parent | `edit_item` supports this via `newProjectId`/`newParentTaskId`, but explicit tool is clearer |
+| `move_project` | focus-pocus | Move project to different folder | `edit_item` supports this via `newFolderId`, but explicit tool is clearer |
+| `archive_task` | focus-pocus | Archive completed tasks | OmniFocus handles archiving automatically; manual trigger may not be needed |
+| `parse_natural_date` | focus-pocus | Expose date parsing as standalone tool | Useful for AI to validate date understanding before creating tasks |
+| `adjust_dates_bulk` | focus-pocus | Shift all dates on selected tasks by X days/weeks | Useful for project rescheduling |
+
+#### Specialized - Consider Based on Use Case
+
+| Tool | Source | Description | Implementation Notes |
+|------|--------|-------------|---------------------|
+| `schedule_tasks_optimally` | focus-pocus | AI-assisted workload distribution with progressive deadlines | Unique differentiator; complex implementation |
+| `create_subtask` | focus-pocus | Direct subtask creation | `add_omnifocus_task` supports `parentTaskId`; dedicated tool may be clearer |
+| `complete_task` / `uncomplete_task` | focus-pocus | Toggle task completion status | `edit_item` handles this via `newStatus`; separate tools may be more discoverable |
+| `get_all_tasks` | focus-pocus | Paginated retrieval of all tasks | `filter_tasks` with no filters achieves this |
+| `get_project_tasks` | focus-pocus | Get all tasks in a specific project | `filter_tasks` with `projectName` achieves this |
+
+### Tools of-mcp Has That Others Don't
+
+| Tool | Description | Unique Value |
+|------|-------------|--------------|
+| `batch_filter_tasks` | Filter tasks with multiple filter sets in one call | Reduces round-trips for complex queries |
+| `get_perspective_tasks_v2` | Enhanced perspective task retrieval | Better hierarchy handling |
+| `batch_mark_reviewed` | Mark multiple projects as reviewed | Efficient review workflow |
+| `get_projects_for_review` | Projects due for review | Native review workflow support |
+
+### Implementation Priority Recommendation
+
+If implementing new tools, consider this order:
+
+1. **`diagnose_connection`** - Highest support value; helps users debug setup issues
+2. **`search_tasks`** - Natural interface for "find tasks about X" queries
+3. **`get_overdue_tasks`** - Very common query, simple to implement
+4. **`get_available_tasks`** - Performance benefit from using native `availableTasks`
+5. **`duplicate_project`** - Enables template-based workflows
+
+### Notes on Tool Design Philosophy
+
+**of-mcp's approach:**
+- Fewer, more powerful tools (e.g., `filter_tasks` handles many query types)
+- Batch operations for performance
+- `edit_item` as Swiss Army knife for modifications
+
+**focus-pocus approach:**
+- More granular, single-purpose tools (35+ tools)
+- Explicit tools for common operations
+- More discoverable but larger API surface
+
+Both approaches are valid. of-mcp's approach reduces the number of tools an AI needs to learn, while focus-pocus's approach makes tool selection more obvious.
+
+---
+
 ## References
 
 ### omnifocus-mcp-archive (development journey documentation)
@@ -1558,3 +1643,4 @@ function scheduleWithDependencies(tasks: TaskScheduleInfo[]): ScheduledTask[] {
 - 2026-01-07: Added database safety, N+1 elimination, testing patterns, API design from omnifocus-mcp (fourth implementation)
 - 2026-01-07: Added transport text parsing, FastMCP patterns, content tree navigation from omnifocus-mcp-python
 - 2026-01-07: Added OmniFocus 4 JXA API quirks, safeGet pattern, natural language dates, smart scheduling from focus-pocus
+- 2026-01-07: Added Tool Gap Analysis comparing of-mcp against other implementations
