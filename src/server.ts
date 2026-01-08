@@ -57,14 +57,14 @@ const server = new McpServer({
 
 server.tool(
   "add_omnifocus_task",
-  "Add a new task to OmniFocus",
+  "Add a SINGLE task to OmniFocus. IMPORTANT: For adding 2+ tasks, use batch_add_items instead (9x faster, single API call).",
   addOmniFocusTaskTool.schema.shape,
   addOmniFocusTaskTool.handler
 );
 
 server.tool(
   "add_project",
-  "Add a new project to OmniFocus",
+  "Add a SINGLE project to OmniFocus. For adding multiple projects, use batch_add_items instead.",
   addProjectTool.schema.shape,
   addProjectTool.handler
 );
@@ -78,35 +78,35 @@ server.tool(
 
 server.tool(
   "remove_item",
-  "Remove a task or project from OmniFocus",
+  "Remove a SINGLE task or project from OmniFocus. For removing 2+ items, use batch_remove_items instead (9x faster).",
   removeItemTool.schema.shape,
   removeItemTool.handler
 );
 
 server.tool(
   "edit_item",
-  "Edit a task or project in OmniFocus",
+  "Edit a SINGLE task or project in OmniFocus. For editing 2+ items, use batch_edit_items instead (12x faster).",
   editItemTool.schema.shape,
   editItemTool.handler
 );
 
 server.tool(
   "batch_add_items",
-  "Add multiple tasks or projects to OmniFocus in a single operation",
+  "PREFERRED: Add multiple tasks/projects in ONE call. 9x faster than individual add_omnifocus_task calls. Always use this for 2+ items.",
   batchAddItemsTool.schema.shape,
   batchAddItemsTool.handler
 );
 
 server.tool(
   "batch_remove_items",
-  "Remove multiple tasks or projects from OmniFocus in a single operation",
+  "PREFERRED: Remove multiple tasks/projects in ONE call. 9x faster than individual remove_item calls. Always use this for 2+ items.",
   batchRemoveItemsTool.schema.shape,
   batchRemoveItemsTool.handler
 );
 
 server.tool(
   "batch_edit_items",
-  "Edit multiple tasks or projects in OmniFocus in a single operation (12x faster than individual edits)",
+  "PREFERRED: Edit multiple tasks/projects in ONE call. 12x faster than individual edit_item calls. Always use this for 2+ items.",
   batchEditItemsTool.schema.shape,
   batchEditItemsTool.handler
 );
@@ -178,14 +178,14 @@ server.tool(
 // Ultimate filter tool - The most powerful task perspective engine
 server.tool(
   "filter_tasks",
-  "Advanced task filtering with unlimited perspective combinations - status, dates, projects, tags, search, and more",
+  "Advanced task filtering for ONE project. For filtering across 2+ projects, use batch_filter_tasks instead (single API call). Supports status, dates, tags, search, and more.",
   filterTasksTool.schema.shape,
   filterTasksTool.handler
 );
 
 server.tool(
   "batch_filter_tasks",
-  "Filter tasks across multiple projects in a single call - much faster than calling filter_tasks multiple times. Use when you need to get tasks from several projects at once.",
+  "PREFERRED: Filter tasks across multiple projects in ONE call. Always use this instead of multiple filter_tasks calls when querying 2+ projects.",
   batchFilterTasksTool.schema.shape,
   batchFilterTasksTool.handler
 );
