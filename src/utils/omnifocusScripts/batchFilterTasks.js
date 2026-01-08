@@ -14,23 +14,10 @@
     const sortBy = args.sortBy || "name";
     const sortOrder = args.sortOrder || "asc";
 
-    // Helper functions
-    function getTaskStatus(status) {
-      const taskStatusMap = {
-        [Task.Status.Available]: "Available",
-        [Task.Status.Blocked]: "Blocked",
-        [Task.Status.Completed]: "Completed",
-        [Task.Status.Dropped]: "Dropped",
-        [Task.Status.DueSoon]: "DueSoon",
-        [Task.Status.Next]: "Next",
-        [Task.Status.Overdue]: "Overdue"
-      };
-      return taskStatusMap[status] || "Unknown";
-    }
+    // formatDate and taskStatusMap are provided by sharedUtils.js
 
-    function formatDate(date) {
-      if (!date) return null;
-      return date.toISOString();
+    function getTaskStatus(status) {
+      return taskStatusMap[status] || "Unknown";
     }
 
     function isToday(date) {

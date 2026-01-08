@@ -55,3 +55,27 @@ function buildRRule(rule) {
   }
   return rrule;
 }
+
+/**
+ * Format a Date object to ISO string, safely handling null/undefined.
+ * @param {Date|null|undefined} date - The date to format
+ * @returns {string|null} - ISO string or null if date is falsy
+ */
+function formatDate(date) {
+  if (!date) return null;
+  return date.toISOString();
+}
+
+/**
+ * Map of OmniFocus Task.Status enum values to human-readable strings.
+ * Used for serializing task status in JSON responses.
+ */
+const taskStatusMap = {
+  [Task.Status.Available]: "Available",
+  [Task.Status.Blocked]: "Blocked",
+  [Task.Status.Completed]: "Completed",
+  [Task.Status.Dropped]: "Dropped",
+  [Task.Status.DueSoon]: "DueSoon",
+  [Task.Status.Next]: "Next",
+  [Task.Status.Overdue]: "Overdue"
+};

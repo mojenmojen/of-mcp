@@ -5,13 +5,9 @@
     const days = 7;
     const hideCompleted = true; // Default to true
     const includeDeferredOnly = false;
-    
-    // Helper function to format dates consistently
-    function formatDate(date) {
-      if (!date) return null;
-      return date.toISOString();
-    }
-    
+
+    // formatDate and taskStatusMap are provided by sharedUtils.js
+
     // Helper function to get date without time for grouping
     function getDateKey(date) {
       if (!date) return null;
@@ -19,18 +15,7 @@
       d.setHours(0, 0, 0, 0);
       return d.toISOString().split('T')[0];
     }
-    
-    // Get task status enum mapping
-    const taskStatusMap = {
-      [Task.Status.Available]: "Available",
-      [Task.Status.Blocked]: "Blocked", 
-      [Task.Status.Completed]: "Completed",
-      [Task.Status.Dropped]: "Dropped",
-      [Task.Status.DueSoon]: "DueSoon",
-      [Task.Status.Next]: "Next",
-      [Task.Status.Overdue]: "Overdue"
-    };
-    
+
     function getTaskStatus(status) {
       return taskStatusMap[status] || "Unknown";
     }

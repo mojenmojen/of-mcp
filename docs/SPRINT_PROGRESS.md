@@ -2,7 +2,7 @@
 
 > **Last Updated**: January 2026
 > **Branch**: `docs/feature-requests`
-> **Current Version**: 1.18.3
+> **Current Version**: 1.18.4
 
 ## Completed Sprints
 
@@ -26,43 +26,34 @@
 | #11 | HP-07: Pre-compute timestamps for sorting | ✅ Done |
 | #12 | HP-08: Fix redundant Map.has()+get() | ✅ Done |
 
----
-
-## Remaining Sprints
-
-### Sprint 3: "Reduce Maintenance Burden" (Next)
-**Estimated Time**: ~1 hour
+### Sprint 3: "Reduce Maintenance Burden" ✅
 
 | Issue | Title | Status |
 |-------|-------|--------|
-| #13 | CR-07: Move taskStatusMap to sharedUtils.js | ⏳ Pending |
-| #14 | CR-08: Extract repetitionRuleSchema to shared module | ⏳ Pending |
-| #15 | HP-11: Move formatDate to sharedUtils.js | ⏳ Pending |
-| #16 | HP-01: Remove dump_database dead code | ⏳ Pending |
-| #17 | HP-02: Delete unused yesterdayCompletedTasks.js | ⏳ Pending |
+| #13 | CR-07: Move taskStatusMap to sharedUtils.js | ✅ Done |
+| #14 | CR-08: Extract repetitionRuleSchema to shared module | ✅ Done |
+| #15 | HP-11: Move formatDate to sharedUtils.js | ✅ Done |
+| #16 | HP-01: Remove dump_database dead code | ✅ Done |
+| #17 | HP-02: Delete unused yesterdayCompletedTasks.js | ✅ Done |
 
-**Key files to modify**:
-- `src/utils/omnifocusScripts/lib/sharedUtils.js` (add taskStatusMap, formatDate)
-- `src/schemas/repetitionRule.ts` (create new)
-- 7+ OmniJS scripts (remove duplicated code)
-- 3 definition files (import shared schema)
-- Delete: `dumpDatabase.ts`, `yesterdayCompletedTasks.js`, commented code in `server.ts`
+**Changes made**:
+- Added `formatDate()` and `taskStatusMap` to `src/utils/omnifocusScripts/lib/sharedUtils.js`
+- Created `src/schemas/repetitionRule.ts` with shared Zod schema
+- Removed duplicate code from 7 OmniJS scripts (inboxTasks, flaggedTasks, forecastTasks, tasksByTag, filterTasks, batchFilterTasks, omnifocusDump)
+- Updated 3 definition files to import shared schema (addOmniFocusTask, editItem, batchEditItems)
+- Deleted dead code: `dumpDatabase.ts` (both locations), `yesterdayCompletedTasks.js`
+- Removed commented dump_database code from `server.ts`
 
 ---
+
+## All Sprints Complete! 🎉
+
+The Codebase Robustness Initiative is now complete. All 13 issues from the prioritized list have been addressed across 3 sprints.
 
 ## Reference Documents
 
 - **Full Review**: `docs/CODEBASE_REVIEW.md` - Complete 57-issue analysis
 - **GitHub Issues**: #5-#17 created with detailed descriptions
-
-## Resume Instructions
-
-To continue Sprint 3, tell Claude:
-
-```
-Continue with Sprint 3 from docs/SPRINT_PROGRESS.md.
-The issues are #13-#17 on GitHub.
-```
 
 ## Git State
 
@@ -71,7 +62,8 @@ The issues are #13-#17 on GitHub.
 git branch  # docs/feature-requests
 
 # Recent commits
-git log --oneline -3
+git log --oneline -4
+# [Sprint 3 commit - pending]
 # 950ce0a perf: Sprint 2 performance optimizations
 # b024844 fix: Sprint 1 robustness improvements
 # a87ebef 📝 Add critical review corrections to feature requests
