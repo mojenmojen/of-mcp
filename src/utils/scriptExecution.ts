@@ -78,22 +78,11 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
     // Read the script file
     let scriptContent = readFileSync(actualPath, 'utf8');
 
-    // Read and prepend shared utilities (parseLocalDate, buildRRule, etc.)
-    const sharedUtilsPath = join(dirname(actualPath), 'lib', 'sharedUtils.js');
-    if (existsSync(sharedUtilsPath)) {
-      const sharedUtils = readFileSync(sharedUtilsPath, 'utf8');
-      // Inject shared utils inside the IIFE, right after the opening
-      scriptContent = scriptContent.replace(
-        '(() => {',
-        `(() => {\n  // === Shared utilities ===\n${sharedUtils}\n  // === End shared utilities ===\n`
-      );
-    }
-
-    // If arguments are provided, inject them into the script
+    // Build parameter injection string if args are provided
+    let parameterInjection = '';
     if (args && Object.keys(args).length > 0) {
       const argsJson = JSON.stringify(args);
-      // Inject parameters at the beginning of the script
-      const parameterInjection = `
+      parameterInjection = `
     // Injected parameters
     const injectedArgs = ${argsJson};
     const perspectiveName = injectedArgs.perspectiveName || null;
@@ -104,7 +93,7 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
     const includeSidebar = injectedArgs.includeSidebar !== undefined ? injectedArgs.includeSidebar : true;
     const format = injectedArgs.format || "detailed";
     `;
-      
+
       // Replace any hardcoded parameters in the script with injected ones
       scriptContent = scriptContent.replace(
         /let perspectiveName = ".*"; \/\/ (?:Hardcode for testing|Default for testing)/,
@@ -138,12 +127,23 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
         /let format = "detailed";/,
         'let format = injectedArgs.format || "detailed";'
       );
-      
-      // Inject the parameters at the beginning of the function
+    }
+
+    // Read and prepend shared utilities (parseLocalDate, buildRRule, etc.)
+    // Inject both shared utilities AND parameters in a single replacement to avoid double-match issues
+    const sharedUtilsPath = join(dirname(actualPath), 'lib', 'sharedUtils.js');
+    if (existsSync(sharedUtilsPath)) {
+      const sharedUtils = readFileSync(sharedUtilsPath, 'utf8');
+      // Inject shared utils and parameters together inside the IIFE
       scriptContent = scriptContent.replace(
         '(() => {',
-        `(() => {
-    ${parameterInjection}`
+        `(() => {\n${parameterInjection}\n  // === Shared utilities ===\n${sharedUtils}\n  // === End shared utilities ===\n`
+      );
+    } else if (parameterInjection) {
+      // No shared utils, but we have parameters to inject
+      scriptContent = scriptContent.replace(
+        '(() => {',
+        `(() => {\n${parameterInjection}`
       );
     }
     

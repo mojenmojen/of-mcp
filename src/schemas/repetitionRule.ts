@@ -15,7 +15,7 @@ import { z } from 'zod';
 export const repetitionRuleSchema = z.object({
   frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']).describe("How often the task repeats"),
   interval: z.number().min(1).optional().describe("Repeat every N periods (default: 1)"),
-  daysOfWeek: z.array(z.number().min(0).max(6)).optional().describe("Days of week to repeat on (0=Sunday, 6=Saturday). Only for weekly frequency."),
+  daysOfWeek: z.array(z.number().min(0).max(6)).min(1).optional().describe("Days of week to repeat on (0=Sunday, 6=Saturday). Only for weekly frequency. Must contain at least one day."),
   dayOfMonth: z.number().min(1).max(31).optional().describe("Day of month to repeat on. Only for monthly frequency. Mutually exclusive with weekdayOfMonth."),
   weekdayOfMonth: z.object({
     week: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(-1)]).describe("Week of month: 1=first, 2=second, 3=third, 4=fourth, 5=fifth, -1=last. Note: week 5 may not exist in all months (e.g., 5th Monday) - OmniFocus skips months without that occurrence."),
@@ -33,6 +33,12 @@ export const repetitionRuleSchema = z.object({
   data => !data.dayOfMonth || data.frequency === 'monthly',
   { message: "dayOfMonth can only be used with monthly frequency" }
 ).refine(
-  data => !data.daysOfWeek || data.daysOfWeek.length === 0 || data.frequency === 'weekly',
+  data => !data.daysOfWeek || data.frequency === 'weekly',
   { message: "daysOfWeek can only be used with weekly frequency" }
+).refine(
+  data => !data.month || data.frequency === 'yearly',
+  { message: "month can only be used with yearly frequency" }
 );
+
+/** TypeScript type inferred from the repetition rule schema */
+export type RepetitionRule = z.infer<typeof repetitionRuleSchema>;

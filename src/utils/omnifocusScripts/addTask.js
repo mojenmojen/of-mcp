@@ -158,6 +158,7 @@
     }
 
     // Set repetition rule if provided
+    let repetitionWarning = null;
     if (repetitionRule && repetitionRule.frequency) {
       try {
         const rruleString = buildRRule(repetitionRule);
@@ -176,16 +177,22 @@
         }
       } catch (repError) {
         // If repetition rule fails, task is still created, just not repeating
-        console.log(`Warning: Could not set repetition rule: ${repError}`);
+        // Capture warning to return to user instead of silently logging
+        repetitionWarning = `Could not set repetition rule: ${repError}`;
+        console.log(`Warning: ${repetitionWarning}`);
       }
     }
 
-    return JSON.stringify({
+    const result = {
       success: true,
       taskId: newTask.id.primaryKey,
       name: newTask.name,
       isRepeating: newTask.repetitionRule !== null
-    });
+    };
+    if (repetitionWarning) {
+      result.warning = repetitionWarning;
+    }
+    return JSON.stringify(result);
 
   } catch (error) {
     return JSON.stringify({

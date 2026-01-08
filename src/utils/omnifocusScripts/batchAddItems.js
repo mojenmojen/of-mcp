@@ -191,6 +191,7 @@
           }
 
           // Set repetition rule
+          let repetitionWarning = null;
           if (repetitionRule && repetitionRule.frequency) {
             try {
               const rruleString = buildRRule(repetitionRule);
@@ -201,16 +202,21 @@
                 newTask.repetitionRule = new Task.RepetitionRule(rruleString, Task.RepetitionMethod.DueDate);
               }
             } catch (repError) {
-              // Task created, just not repeating
+              // Task created, just not repeating - capture warning for user
+              repetitionWarning = `Could not set repetition rule: ${repError}`;
             }
           }
 
-          results.push({
+          const taskResult = {
             success: true,
             type: 'task',
             id: newTask.id.primaryKey,
             name: newTask.name
-          });
+          };
+          if (repetitionWarning) {
+            taskResult.warning = repetitionWarning;
+          }
+          results.push(taskResult);
 
         } else if (itemType === 'project') {
           // Add project
