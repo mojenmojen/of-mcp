@@ -7,7 +7,7 @@ export interface RepetitionRule {
   daysOfWeek?: number[]; // 0=Sunday, 1=Monday, ..., 6=Saturday
   dayOfMonth?: number; // 1-31, mutually exclusive with weekdayOfMonth
   weekdayOfMonth?: { // Weekday-of-month pattern, mutually exclusive with dayOfMonth
-    week: 1 | 2 | 3 | 4 | 5 | -1; // 1=first, 2=second, 3=third, 4=fourth, 5=fifth, -1=last
+    week: 1 | 2 | 3 | 4 | 5 | -1; // 1=first, 2=second, 3=third, 4=fourth, 5=fifth, -1=last. Note: week 5 may not exist in all months
     day: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
   };
   month?: number; // 1-12
