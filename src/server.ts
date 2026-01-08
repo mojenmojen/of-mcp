@@ -40,6 +40,7 @@ import * as batchMarkReviewedTool from './tools/definitions/batchMarkReviewed.js
 import * as listProjectsTool from './tools/definitions/listProjects.js';
 // Import utility tools
 import * as getServerVersionTool from './tools/definitions/getServerVersion.js';
+import * as diagnoseConnectionTool from './tools/definitions/diagnoseConnection.js';
 
 // Create an MCP server
 const server = new McpServer({
@@ -228,6 +229,13 @@ server.tool(
   "Get OmniFocus MCP server version and build information",
   getServerVersionTool.schema.shape,
   getServerVersionTool.handler
+);
+
+server.tool(
+  "diagnose_connection",
+  "Check OmniFocus connectivity, permissions, and server status. Run this first if experiencing issues.",
+  diagnoseConnectionTool.schema.shape,
+  diagnoseConnectionTool.handler
 );
 
 // Start the MCP server

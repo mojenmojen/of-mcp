@@ -10,7 +10,11 @@ import { existsSync } from 'fs';
 const execAsync = promisify(exec);
 
 // Increase maxBuffer for large OmniFocus databases (50MB)
-const EXEC_OPTIONS = { maxBuffer: 50 * 1024 * 1024 };
+// Add 30s timeout to prevent server hangs if OmniFocus is unresponsive
+const EXEC_OPTIONS = {
+  maxBuffer: 50 * 1024 * 1024,
+  timeout: 30000
+};
 
 // Helper function to execute OmniFocus scripts
 export async function executeJXA(script: string): Promise<any[]> {
@@ -37,7 +41,11 @@ export async function executeJXA(script: string): Promise<any[]> {
       const preview = stdout.substring(0, 500);
       throw new Error(`Failed to parse JXA script output as JSON. Output preview: ${preview}`);
     }
-  } catch (error) {
+  } catch (error: any) {
+    // Check for timeout (subprocess killed after timeout)
+    if (error.killed && error.signal === 'SIGTERM') {
+      throw new Error('Script execution timed out after 30 seconds. OmniFocus may be unresponsive.');
+    }
     console.error("Failed to execute JXA script:", error);
     throw error;
   } finally {
@@ -93,40 +101,6 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
     const includeSidebar = injectedArgs.includeSidebar !== undefined ? injectedArgs.includeSidebar : true;
     const format = injectedArgs.format || "detailed";
     `;
-
-      // Replace any hardcoded parameters in the script with injected ones
-      scriptContent = scriptContent.replace(
-        /let perspectiveName = ".*"; \/\/ (?:Hardcode for testing|Default for testing)/,
-        'let perspectiveName = injectedArgs.perspectiveName || null;'
-      );
-      scriptContent = scriptContent.replace(
-        /let perspectiveName = null;/,
-        'let perspectiveName = injectedArgs.perspectiveName || null;'
-      );
-      scriptContent = scriptContent.replace(
-        /let perspectiveId = null;/,
-        'let perspectiveId = injectedArgs.perspectiveId || null;'
-      );
-      scriptContent = scriptContent.replace(
-        /let hideCompleted = true;/,
-        'let hideCompleted = injectedArgs.hideCompleted !== undefined ? injectedArgs.hideCompleted : true;'
-      );
-      scriptContent = scriptContent.replace(
-        /let limit = 100;/,
-        'let limit = injectedArgs.limit || 100;'
-      );
-      scriptContent = scriptContent.replace(
-        /let includeBuiltIn = false;/,
-        'let includeBuiltIn = injectedArgs.includeBuiltIn !== undefined ? injectedArgs.includeBuiltIn : false;'
-      );
-      scriptContent = scriptContent.replace(
-        /let includeSidebar = true;/,
-        'let includeSidebar = injectedArgs.includeSidebar !== undefined ? injectedArgs.includeSidebar : true;'
-      );
-      scriptContent = scriptContent.replace(
-        /let format = "detailed";/,
-        'let format = injectedArgs.format || "detailed";'
-      );
     }
 
     // Read and prepend shared utilities (parseLocalDate, buildRRule, etc.)
@@ -198,7 +172,11 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
         console.warn(`Failed to cleanup temp file ${tempFile}:`, cleanupError);
       }
     }
-  } catch (error) {
+  } catch (error: any) {
+    // Check for timeout (subprocess killed after timeout)
+    if (error.killed && error.signal === 'SIGTERM') {
+      throw new Error('Script execution timed out after 30 seconds. OmniFocus may be unresponsive.');
+    }
     console.error("Failed to execute OmniFocus script:", error);
     throw error;
   }
