@@ -1,11 +1,11 @@
 {
-  "name": "omnifocus-mcp-enhanced",
+  "name": "of-mcp",
   "type": "module",
   "version": "1.17.1",
-  "description": "Enhanced MCP server for OmniFocus with support for custom perspectives, hierarchical tasks, and comprehensive task management",
+  "description": "MCP server for OmniFocus with batch operations, custom perspectives, hierarchical tasks, and comprehensive task management",
   "main": "dist/server.js",
   "bin": {
-    "omnifocus-mcp-enhanced": "./cli.cjs"
+    "of-mcp": "./cli.cjs"
   },
   "scripts": {
     "build": "tsc && npm run copy-files && chmod 755 dist/server.js",
@@ -25,9 +25,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mojenmojen/omnifocus-mcp-enhanced.git"
+    "url": "https://github.com/mojenmojen/of-mcp.git"
   },
-  "homepage": "https://github.com/mojenmojen/omnifocus-mcp-enhanced",
+  "homepage": "https://github.com/mojenmojen/of-mcp",
   "keywords": [
     "omnifocus",
     "mcp",

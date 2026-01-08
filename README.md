@@ -1,6 +1,6 @@
-# 🚀 OmniFocus MCP Enhanced
+# of-mcp
 
-> **Note:** This is a personal fork of [jqlts1/omnifocus-mcp-enhanced](https://github.com/jqlts1/omnifocus-mcp-enhanced), maintained independently.
+> An MCP server for OmniFocus. Originally forked from [jqlts1/omnifocus-mcp-enhanced](https://github.com/jqlts1/omnifocus-mcp-enhanced), now maintained independently with additional features.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js CI](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
