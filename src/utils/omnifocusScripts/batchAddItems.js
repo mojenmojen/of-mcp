@@ -84,8 +84,19 @@
 
     const results = [];
 
+    // Track created items by tempId for intra-batch parent references
+    const tempIdMap = new Map();
+
+    // Sort items: those without parentTempId first, then those with parentTempId
+    // This ensures parents are created before children within the batch
+    const sortedItems = [...items].sort((a, b) => {
+      const aHasParentTemp = a.parentTempId ? 1 : 0;
+      const bHasParentTemp = b.parentTempId ? 1 : 0;
+      return aHasParentTemp - bHasParentTemp;
+    });
+
     // Process each item
-    for (const item of items) {
+    for (const item of sortedItems) {
       try {
         const itemType = item.type || 'task';
         const itemName = item.name;
@@ -111,13 +122,32 @@
           const projectId = item.projectId || null;
           const parentTaskId = item.parentTaskId || null;
           const parentTaskName = item.parentTaskName || null;
+          const parentTempId = item.parentTempId || null;
           const repetitionRule = item.repetitionRule || null;
 
           // Determine container (only load collections if needed)
           let container = null;
           let containerType = 'inbox';
 
-          if (parentTaskId) {
+          // Check parentTempId first (intra-batch reference)
+          if (parentTempId) {
+            container = tempIdMap.get(parentTempId);
+            if (container) {
+              // Check if it's a Project or a Task
+              if (container.constructor && container.constructor.name === 'Project') {
+                containerType = 'project';
+              } else {
+                containerType = 'parentTask';
+              }
+            } else {
+              results.push({
+                success: false,
+                name: itemName,
+                error: `Parent item with tempId "${parentTempId}" not found in batch. Ensure the parent item is defined before the child.`
+              });
+              continue;
+            }
+          } else if (parentTaskId) {
             container = Task.byIdentifier(parentTaskId);
             if (container) {
               containerType = 'parentTask';
@@ -207,12 +237,20 @@
             }
           }
 
+          // Store in tempIdMap for intra-batch references
+          if (item.tempId) {
+            tempIdMap.set(item.tempId, newTask);
+          }
+
           const taskResult = {
             success: true,
             type: 'task',
             id: newTask.id.primaryKey,
             name: newTask.name
           };
+          if (item.tempId) {
+            taskResult.tempId = item.tempId;
+          }
           if (repetitionWarning) {
             taskResult.warning = repetitionWarning;
           }
@@ -275,12 +313,21 @@
             }
           }
 
-          results.push({
+          // Store in tempIdMap for intra-batch references (tasks can reference project)
+          if (item.tempId) {
+            tempIdMap.set(item.tempId, newProject);
+          }
+
+          const projectResult = {
             success: true,
             type: 'project',
             id: newProject.id.primaryKey,
             name: newProject.name
-          });
+          };
+          if (item.tempId) {
+            projectResult.tempId = item.tempId;
+          }
+          results.push(projectResult);
 
         } else {
           results.push({
