@@ -85,6 +85,37 @@ This is an enhanced Model Context Protocol (MCP) server that provides AI assista
 
 **Testing**: Manual testing required with OmniFocus application. No automated test suite due to AppleScript/OmniFocus dependency.
 
+## Performance Guidelines
+
+See `docs/PERFORMANCE_AND_PATTERNS.md` for comprehensive documentation. Key rules:
+
+**Avoid `whose()` for complex queries** - Use manual iteration instead:
+```javascript
+// BAD (25+ seconds)
+doc.flattenedTasks.whose({completed: false, dueDate: {">": start}})
+
+// GOOD (sub-second)
+flattenedTasks.filter(t => !t.completed && t.dueDate > start)
+```
+
+**Use pure OmniJS for bulk operations** - 13-67x faster than JXA:
+```javascript
+app.evaluateJavascript(`(() => {
+  // All logic in OmniJS context
+  return JSON.stringify(flattenedTasks.map(t => ({...})));
+})()`)
+```
+
+**Shared utilities** - `lib/sharedUtils.js` is auto-injected into scripts at runtime. Available functions:
+- `parseLocalDate(dateStr)` - Parse dates as local time
+- `buildRRule(rule)` - Build iCal RRULE strings
+
+**Bridge-only operations** - These require `evaluateJavascript()`:
+- Tag assignment
+- Repetition rules (`Task.RepetitionRule`)
+- Planned date setting
+- Moving tasks between projects
+
 **Version Management**:
 - **IMPORTANT**: Bump the version in `package.json` every time code changes are made
 - **IMPORTANT**: Update `README.md` when adding new tools or features
