@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { batchAddItems, BatchAddItemsParams } from '../primitives/batchAddItems.js';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('batchAddItems:handler');
 
 export const schema = z.object({
   items: z.array(z.object({
@@ -10,10 +13,15 @@ export const schema = z.object({
     note: z.string().optional().describe("Additional notes for the item"),
     dueDate: z.string().optional().describe("The due date in ISO format (YYYY-MM-DD or full ISO date)"),
     deferDate: z.string().optional().describe("The defer date in ISO format (YYYY-MM-DD or full ISO date)"),
+    plannedDate: z.string().optional().describe("The planned date in ISO format (YYYY-MM-DD or full ISO date)"),
     flagged: z.boolean().optional().describe("Whether the item is flagged or not"),
     estimatedMinutes: z.number().optional().describe("Estimated time to complete the item, in minutes"),
     tags: z.array(z.string()).optional().describe("Tags to assign to the item"),
-    
+
+    // Intra-batch references for hierarchical creation
+    tempId: z.string().optional().describe("Temporary ID for this item within the batch - used to reference this item as a parent for other items"),
+    parentTempId: z.string().optional().describe("Reference to another item's tempId to create this as a child/subtask of that item"),
+
     // Task-specific properties
     projectName: z.string().optional().describe("For tasks: The name of the project to add the task to"),
     projectId: z.string().optional().describe("For tasks: The ID of the project to add the task to (alternative to projectName)"),
@@ -39,13 +47,12 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
         message += ` ⚠️ Failed to add ${result.failureCount} items.`;
       }
 
-      // Include details about added items
-      const details = result.results.map((item, index) => {
-        const inputItem = args.items[index];
+      // Include details about added items (use result.name since items may be reordered)
+      const details = result.results.map((item) => {
         if (item.success) {
-          return `- ✅ ${inputItem.type}: "${inputItem.name}"`;
+          return `- ✅ ${item.type}: "${item.name}"`;
         } else {
-          return `- ❌ ${inputItem.type}: "${inputItem.name}" - Error: ${item.error}`;
+          return `- ❌ ${item.type || 'item'}: "${item.name || 'unknown'}" - Error: ${item.error}`;
         }
       }).join('\n');
 
@@ -67,7 +74,7 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
     }
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    console.error(`Tool execution error: ${errorMessage}`);
+    log.error('Tool execution error', { error: errorMessage });
     return {
       content: [{
         type: "text" as const,

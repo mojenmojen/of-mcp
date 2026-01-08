@@ -41,6 +41,7 @@ import * as listProjectsTool from './tools/definitions/listProjects.js';
 // Import utility tools
 import * as getServerVersionTool from './tools/definitions/getServerVersion.js';
 import * as diagnoseConnectionTool from './tools/definitions/diagnoseConnection.js';
+import { logger } from './utils/logger.js';
 
 // Create an MCP server
 const server = new McpServer({
@@ -241,12 +242,15 @@ server.tool(
 // Start the MCP server
 const transport = new StdioServerTransport();
 
+logger.info(`OmniFocus MCP server v${pkg.version} starting`);
+
 // Use await with server.connect to ensure proper connection
 (async function() {
   try {
     await server.connect(transport);
+    logger.info('MCP server connected');
   } catch (err) {
-    console.error(`Failed to start MCP server: ${err}`);
+    logger.error('Failed to start MCP server', { error: (err as Error).message });
   }
 })();
 

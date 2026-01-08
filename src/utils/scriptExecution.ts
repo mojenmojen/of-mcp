@@ -7,8 +7,10 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { existsSync } from 'fs';
 import { categorizeError, StructuredError, isStructuredError } from './errors.js';
+import { logger } from './logger.js';
 
 const execAsync = promisify(exec);
+const log = logger.child('scriptExecution');
 
 // Increase maxBuffer for large OmniFocus databases (50MB)
 // Add 30s timeout to prevent server hangs if OmniFocus is unresponsive
@@ -43,7 +45,7 @@ export async function executeJXA(script: string): Promise<any[]> {
     const { stdout, stderr } = await execAsync(`osascript -l JavaScript ${tempFile}`, EXEC_OPTIONS);
 
     if (stderr) {
-      console.error("Script stderr output:", stderr);
+      log.warn('Script stderr output', { stderr });
     }
 
     // Parse the output as JSON
@@ -60,14 +62,14 @@ export async function executeJXA(script: string): Promise<any[]> {
     if (error.killed && error.signal === 'SIGTERM') {
       throw new Error('Script execution timed out after 30 seconds. OmniFocus may be unresponsive.');
     }
-    console.error("Failed to execute JXA script:", error);
+    log.error('Failed to execute JXA script', { error: error.message });
     throw error;
   } finally {
     // Always clean up the temporary file
     try {
       unlinkSync(tempFile);
     } catch (cleanupError) {
-      console.warn(`Failed to cleanup temp file ${tempFile}:`, cleanupError);
+      log.warn('Failed to cleanup temp file', { tempFile, error: (cleanupError as Error).message });
     }
   }
 }
@@ -171,7 +173,7 @@ export async function executeOmniFocusScript(
       const { stdout, stderr } = await execAsync(`osascript -l JavaScript ${tempFile}`, EXEC_OPTIONS);
 
       if (stderr) {
-        console.error("Script stderr output:", stderr);
+        log.warn('Script stderr output', { stderr });
       }
 
       // Parse the output as JSON
@@ -187,7 +189,7 @@ export async function executeOmniFocusScript(
       try {
         unlinkSync(tempFile);
       } catch (cleanupError) {
-        console.warn(`Failed to cleanup temp file ${tempFile}:`, cleanupError);
+        log.warn('Failed to cleanup temp file', { tempFile, error: (cleanupError as Error).message });
       }
     }
   } catch (error: any) {
@@ -197,20 +199,21 @@ export async function executeOmniFocusScript(
     // Check if we should retry
     if (shouldRetry(structuredError, retryCount)) {
       const delayMs = INITIAL_DELAY_MS * Math.pow(2, retryCount);
-      console.error(
-        `[RETRY] Attempt ${retryCount + 1}/${MAX_RETRIES} failed, ` +
-        `retrying in ${delayMs}ms: ${structuredError.error.message}`
-      );
+      log.warn(`Retry attempt ${retryCount + 1}/${MAX_RETRIES}, retrying in ${delayMs}ms`, {
+        error: structuredError.error.message,
+        code: structuredError.error.code
+      });
 
       await delay(delayMs);
       return executeOmniFocusScript(scriptPath, args, retryCount + 1);
     }
 
     // Log final failure
-    console.error(
-      `[ERROR] ${structuredError.error.code}: ${structuredError.error.message}` +
-      (retryCount > 0 ? ` (after ${retryCount} retries)` : '')
-    );
+    log.error('Script execution failed', {
+      code: structuredError.error.code,
+      message: structuredError.error.message,
+      retries: retryCount > 0 ? retryCount : undefined
+    });
 
     throw structuredError;
   }
