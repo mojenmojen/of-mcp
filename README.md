@@ -55,21 +55,21 @@ Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **project r
 
 ```bash
 # One-line installation
-claude mcp add omnifocus-enhanced -- npx -y omnifocus-mcp-enhanced
+claude mcp add omnifocus-enhanced -- npx -y of-mcp
 ```
 
 ### Alternative Installation Methods
 
 ```bash
 # Global installation
-npm install -g omnifocus-mcp-enhanced
-claude mcp add omnifocus-enhanced -- omnifocus-mcp-enhanced
+npm install -g of-mcp
+claude mcp add omnifocus-enhanced -- of-mcp
 
 # Local project installation
-git clone https://github.com/jqlts1/omnifocus-mcp-enhanced.git
-cd omnifocus-mcp-enhanced
+git clone https://github.com/mojenmojen/of-mcp.git
+cd of-mcp
 npm install && npm run build
-claude mcp add omnifocus-enhanced -- node "/path/to/omnifocus-mcp-enhanced/dist/server.js"
+claude mcp add omnifocus-enhanced -- node "/path/to/of-mcp/dist/server.js"
 ```
 
 ## 📋 Requirements
@@ -715,7 +715,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🔗 Links
 
-- **This Fork**: https://github.com/mojenmojen/omnifocus-mcp-enhanced
+- **This Fork**: https://github.com/mojenmojen/of-mcp
 - **Original Project**: https://github.com/jqlts1/omnifocus-mcp-enhanced
 - **OmniFocus**: https://www.omnigroup.com/omnifocus/
 - **Model Context Protocol**: https://modelcontextprotocol.io/
