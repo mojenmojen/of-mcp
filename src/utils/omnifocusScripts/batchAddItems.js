@@ -1,38 +1,7 @@
 // OmniJS script to add multiple items in a single execution
 // This provides true batching - all adds happen in one OmniFocus session
+// Note: parseLocalDate and buildRRule are provided by sharedUtils.js
 (() => {
-  // Helper function to parse date strings as local time
-  function parseLocalDate(dateStr) {
-    const dateOnlyMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (dateOnlyMatch) {
-      const year = parseInt(dateOnlyMatch[1], 10);
-      const month = parseInt(dateOnlyMatch[2], 10) - 1;
-      const day = parseInt(dateOnlyMatch[3], 10);
-      return new Date(year, month, day);
-    }
-    return new Date(dateStr);
-  }
-
-  // Helper function to build iCal RRULE string from repetition rule object
-  function buildRRule(rule) {
-    let rrule = `FREQ=${rule.frequency.toUpperCase()}`;
-    if (rule.interval && rule.interval > 1) {
-      rrule += `;INTERVAL=${rule.interval}`;
-    }
-    if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
-      const dayMap = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
-      const days = rule.daysOfWeek.map(d => dayMap[d]).join(',');
-      rrule += `;BYDAY=${days}`;
-    }
-    if (rule.dayOfMonth) {
-      rrule += `;BYMONTHDAY=${rule.dayOfMonth}`;
-    }
-    if (rule.month) {
-      rrule += `;BYMONTH=${rule.month}`;
-    }
-    return rrule;
-  }
-
   try {
     const args = typeof injectedArgs !== 'undefined' ? injectedArgs : {};
     const items = args.items || [];

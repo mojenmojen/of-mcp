@@ -78,7 +78,18 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
     
     // Read the script file
     let scriptContent = readFileSync(actualPath, 'utf8');
-    
+
+    // Read and prepend shared utilities (parseLocalDate, buildRRule, etc.)
+    const sharedUtilsPath = join(dirname(actualPath), 'lib', 'sharedUtils.js');
+    if (existsSync(sharedUtilsPath)) {
+      const sharedUtils = readFileSync(sharedUtilsPath, 'utf8');
+      // Inject shared utils inside the IIFE, right after the opening
+      scriptContent = scriptContent.replace(
+        '(() => {',
+        `(() => {\n  // === Shared utilities ===\n${sharedUtils}\n  // === End shared utilities ===\n`
+      );
+    }
+
     // If arguments are provided, inject them into the script
     if (args && Object.keys(args).length > 0) {
       const argsJson = JSON.stringify(args);

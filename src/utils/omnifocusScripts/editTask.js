@@ -1,23 +1,7 @@
 // OmniJS script to edit a task
 // This avoids AppleScript escaping issues with special characters like $
+// Note: parseLocalDate and buildRRule are provided by sharedUtils.js
 (() => {
-  // Helper function to parse date strings as local time
-  // Fixes issue where "2026-02-04" would be interpreted as midnight UTC
-  // which shifts the date when in timezones behind UTC
-  function parseLocalDate(dateStr) {
-    // Check if it's a date-only format (YYYY-MM-DD)
-    const dateOnlyMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (dateOnlyMatch) {
-      // Parse as local time by using year, month, day constructor
-      const year = parseInt(dateOnlyMatch[1], 10);
-      const month = parseInt(dateOnlyMatch[2], 10) - 1; // JS months are 0-indexed
-      const day = parseInt(dateOnlyMatch[3], 10);
-      return new Date(year, month, day);
-    }
-    // Otherwise use standard parsing (includes time component)
-    return new Date(dateStr);
-  }
-
   // Helper function to find a tag by name (direct iteration to keep OmniJS proxy alive)
   // If tag doesn't exist, creates it
   function findOrCreateTag(tagName) {
@@ -40,26 +24,6 @@
       }
     }
     return null;
-  }
-
-  // Helper function to build iCal RRULE string from repetition rule object
-  function buildRRule(rule) {
-    let rrule = `FREQ=${rule.frequency.toUpperCase()}`;
-    if (rule.interval && rule.interval > 1) {
-      rrule += `;INTERVAL=${rule.interval}`;
-    }
-    if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
-      const dayMap = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
-      const days = rule.daysOfWeek.map(d => dayMap[d]).join(',');
-      rrule += `;BYDAY=${days}`;
-    }
-    if (rule.dayOfMonth) {
-      rrule += `;BYMONTHDAY=${rule.dayOfMonth}`;
-    }
-    if (rule.month) {
-      rrule += `;BYMONTH=${rule.month}`;
-    }
-    return rrule;
   }
 
   try {

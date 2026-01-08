@@ -28,6 +28,7 @@ Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **project r
 - **📅 Flexible Frequencies** - Daily, weekly, monthly, or yearly repetition
 - **🎯 Custom Intervals** - Repeat every N days/weeks/months
 - **📆 Specific Days** - Weekly tasks on specific days (e.g., Mon/Wed/Fri)
+- **📅 Weekday-of-Month** - First Monday, last Friday, third Wednesday patterns
 - **🔁 Repeat From** - Choose to repeat from due date or completion date
 
 ### 🌟 **Native Custom Perspective Access**
@@ -248,6 +249,47 @@ add_omnifocus_task {
     "frequency": "monthly",
     "dayOfMonth": 15,
     "repeatFrom": "completion"
+  }
+}
+
+# First Monday of every month (weekday-of-month pattern)
+add_omnifocus_task {
+  "name": "Prepare for monthly HOA meeting",
+  "dueDate": "2026-02-02",
+  "repetitionRule": {
+    "frequency": "monthly",
+    "weekdayOfMonth": {
+      "week": 1,
+      "day": 1
+    },
+    "repeatFrom": "due"
+  }
+}
+
+# Last Friday of every month
+add_omnifocus_task {
+  "name": "Monthly expense report",
+  "dueDate": "2026-01-31",
+  "repetitionRule": {
+    "frequency": "monthly",
+    "weekdayOfMonth": {
+      "week": -1,
+      "day": 5
+    }
+  }
+}
+
+# Third Wednesday of every 2 months
+add_omnifocus_task {
+  "name": "Quarterly planning prep",
+  "dueDate": "2026-01-21",
+  "repetitionRule": {
+    "frequency": "monthly",
+    "interval": 2,
+    "weekdayOfMonth": {
+      "week": 3,
+      "day": 3
+    }
   }
 }
 
