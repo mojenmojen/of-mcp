@@ -6,6 +6,7 @@ import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { existsSync } from 'fs';
+import { categorizeError, StructuredError, isStructuredError } from './errors.js';
 
 const execAsync = promisify(exec);
 
@@ -15,6 +16,19 @@ const EXEC_OPTIONS = {
   maxBuffer: 50 * 1024 * 1024,
   timeout: 30000
 };
+
+// Retry configuration
+const MAX_RETRIES = 3;
+const INITIAL_DELAY_MS = 1000;
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function shouldRetry(error: StructuredError, attempt: number): boolean {
+  if (attempt >= MAX_RETRIES) return false;
+  return error.error.retryable;
+}
 
 // Helper function to execute OmniFocus scripts
 export async function executeJXA(script: string): Promise<any[]> {
@@ -59,8 +73,12 @@ export async function executeJXA(script: string): Promise<any[]> {
 }
 
 // Function to execute scripts in OmniFocus using the URL scheme
-// Update src/utils/scriptExecution.ts
-export async function executeOmniFocusScript(scriptPath: string, args?: any): Promise<any> {
+// Includes retry logic with exponential backoff for transient errors
+export async function executeOmniFocusScript(
+  scriptPath: string,
+  args?: any,
+  retryCount = 0
+): Promise<any> {
   try {
     // Get the actual script path (existing code remains the same)
     let actualPath;
@@ -173,12 +191,28 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
       }
     }
   } catch (error: any) {
-    // Check for timeout (subprocess killed after timeout)
-    if (error.killed && error.signal === 'SIGTERM') {
-      throw new Error('Script execution timed out after 30 seconds. OmniFocus may be unresponsive.');
+    // If it's already a structured error, use it directly
+    const structuredError = isStructuredError(error) ? error : categorizeError(error);
+
+    // Check if we should retry
+    if (shouldRetry(structuredError, retryCount)) {
+      const delayMs = INITIAL_DELAY_MS * Math.pow(2, retryCount);
+      console.error(
+        `[RETRY] Attempt ${retryCount + 1}/${MAX_RETRIES} failed, ` +
+        `retrying in ${delayMs}ms: ${structuredError.error.message}`
+      );
+
+      await delay(delayMs);
+      return executeOmniFocusScript(scriptPath, args, retryCount + 1);
     }
-    console.error("Failed to execute OmniFocus script:", error);
-    throw error;
+
+    // Log final failure
+    console.error(
+      `[ERROR] ${structuredError.error.code}: ${structuredError.error.message}` +
+      (retryCount > 0 ? ` (after ${retryCount} retries)` : '')
+    );
+
+    throw structuredError;
   }
 }
     
