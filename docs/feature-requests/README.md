@@ -25,19 +25,20 @@ Features are numbered in recommended implementation order, considering:
 | # | Feature | Priority | Effort | Category | Dependencies |
 |---|---------|----------|--------|----------|--------------|
 | 001 | [Diagnose Connection Tool](./001-diagnose-connection-tool.md) | High | Low | New Tool | - |
-| 002 | [Structured Error Responses](./002-structured-error-responses.md) | High | Medium | Infrastructure | P00A, P00B |
+| 002 | [Error Handling Consolidation](./002-structured-error-responses.md) | High | Medium | Infrastructure | P00A, P00B |
 | 003 | [Retry with Exponential Backoff](./003-retry-logic-exponential-backoff.md) | High | Medium | Infrastructure | 002 |
-| 004 | [Structured Logging](./004-structured-logging.md) | Medium | Low | Infrastructure | - |
-| 005 | [Get Available Tasks Tool](./005-get-available-tasks-tool.md) | Low | Low | Convenience | - |
-| 006 | [Get Overdue Tasks Tool](./006-get-overdue-tasks-tool.md) | Low | Low | Convenience | - |
+| 004 | [Logging Cleanup](./004-structured-logging.md) | Medium | Low | Infrastructure | - |
 | 007 | [Search Tasks Tool](./007-search-tasks-tool.md) | Medium | Low | New Tool | - |
-| 008 | [Cycle Detection in Batch Ops](./008-cycle-detection-batch-operations.md) | Medium | Medium | Data Integrity | 002-A |
+| 008 | [Cycle Detection in Batch Ops](./008-cycle-detection-batch-operations.md) | Medium | Medium | Data Integrity | 002 |
 | 009 | [Checksum Cache Invalidation](./009-checksum-cache-invalidation.md) | Medium | High | Performance | - |
 | 010 | [Duplicate Project Tool](./010-duplicate-project-tool.md) | Low | Medium | New Tool | - |
+| 011 | [Edit Tag Tool](./011-edit-tag-tool.md) | Medium | Medium | New Tool | - |
 
-**Priority Changes from Original:**
-- 005, 006: Medium → Low (convenience wrappers, no performance benefit)
-- 009: Low → Medium (biggest actual performance gain available)
+**Changes from Original Roadmap (January 2026 Review):**
+- 002: Renamed "Structured Error Responses" → "Error Handling Consolidation" (Sprint 1 already fixed error swallowing; remaining work is CR-06 + HP-06)
+- 004: Renamed "Structured Logging" → "Logging Cleanup" (aligns with HP-04: remove debug noise, add levels)
+- 005, 006: **Removed** - `availableTasks()` API is JXA-only, provides no benefit over `filter_tasks`
+- 009: Low → Medium priority (biggest actual performance gain available)
 
 ---
 
@@ -53,36 +54,31 @@ After Phase 0: Safe foundation for infrastructure changes.
 ### Phase 1: Foundation (Infrastructure)
 
 1. **001 - Diagnose Connection Tool** - Immediate support value
-2. **002-A - Structured Errors (Types)** - Create error types and factories
-3. **002-B - Structured Errors (Core)** - Update scriptExecution.ts
-4. **003 - Retry Logic** - Reliability improvement
-5. **002-C - Structured Errors (Migration)** - Migrate tools incrementally
+2. **002 - Error Handling Consolidation** - Create error utilities, consolidate JSON parsing boilerplate (CR-06, HP-06)
+3. **003 - Retry Logic** - Reliability improvement with exponential backoff
 
 After Phase 1: Users get better error messages and more reliable connections.
 
-### Phase 2: Developer Experience
+### Phase 2: Logging Cleanup
 
-6. **004 - Structured Logging** - Better debugging for developers
+4. **004 - Logging Cleanup** - Remove debug noise, implement proper log levels (addresses HP-04)
 
-After Phase 2: Easier to debug issues in production.
+After Phase 2: Cleaner output, easier debugging.
 
 ### Phase 3: Performance & Data Integrity
 
-7. **008 - Cycle Detection** - Prevent data corruption in batch ops
-8. **009 - Checksum Caching** - Major performance gain for repeated queries
+5. **008 - Cycle Detection** - Prevent data corruption in batch ops
+6. **009 - Checksum Caching** - Major performance gain for repeated queries
 
 After Phase 3: Faster and safer operations.
 
 ### Phase 4: New Tools
 
-9. **007 - Search Tasks** - Natural text search (most useful)
-10. **005 - Get Available Tasks** - Convenience wrapper
-11. **006 - Get Overdue Tasks** - Convenience wrapper
-12. **010 - Duplicate Project** - Template workflows
+7. **007 - Search Tasks** - Natural text search (most useful)
+8. **010 - Duplicate Project** - Template workflows
+9. **011 - Edit Tag** - Tag status/rename/hierarchy management
 
 After Phase 4: More intuitive tool surface for AI assistants.
-
-**Note:** 005 and 006 were deprioritized because the `availableTasks()` API is JXA-only, not available in pure OmniJS. They provide no performance benefit over `filter_tasks`.
 
 ---
 

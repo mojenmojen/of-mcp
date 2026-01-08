@@ -46,25 +46,86 @@
 
 ---
 
-## All Sprints Complete! 🎉
+## Codebase Robustness Initiative Complete! 🎉
 
-The Codebase Robustness Initiative is now complete. All 13 issues from the prioritized list have been addressed across 3 sprints.
+All 13 issues from the prioritized list have been addressed across 3 sprints.
+
+---
+
+## Next: Feature Requests Roadmap
+
+With the robustness foundation in place, development continues with the **Feature Requests Roadmap** in `docs/feature-requests/README.md`.
+
+### Planned Sprints
+
+| Sprint | Theme | Features | Status |
+|--------|-------|----------|--------|
+| **Sprint 4** | Foundation Prep | P00A, P00B, 001 | 🔜 Next |
+| **Sprint 5** | Error Handling & Reliability | 002, 003 | Planned |
+| **Sprint 6** | Developer Experience | 004, 008 | Planned |
+| **Sprint 7** | Performance | 009 | Planned |
+| **Sprint 8** | New Tools | 007, 010, 011 | Planned |
+
+### Sprint 4: Foundation Prep (Next)
+| # | Feature | Effort |
+|---|---------|--------|
+| P00A | Execution Timeout | Low |
+| P00B | Remove Legacy Injection | Low |
+| 001 | Diagnose Connection Tool | Low |
+
+### Sprint 5: Error Handling & Reliability
+| # | Feature | Effort |
+|---|---------|--------|
+| 002 | Error Handling Consolidation | Medium |
+| 003 | Retry with Exponential Backoff | Medium |
+
+### Sprint 6: Developer Experience
+| # | Feature | Effort |
+|---|---------|--------|
+| 004 | Logging Cleanup | Low |
+| 008 | Cycle Detection | Medium |
+
+### Sprint 7: Performance
+| # | Feature | Effort |
+|---|---------|--------|
+| 009 | Checksum Cache Invalidation | High |
+
+### Sprint 8: New Tools
+| # | Feature | Effort |
+|---|---------|--------|
+| 007 | Search Tasks | Low |
+| 010 | Duplicate Project | Medium |
+| 011 | Edit Tag | Medium |
+
+**Roadmap Changes (January 2026 Review):**
+- Removed 005, 006 (JXA-only APIs, no benefit over `filter_tasks`)
+- Renamed 002 → "Error Handling Consolidation" (Sprint 1 already fixed error swallowing)
+- Renamed 004 → "Logging Cleanup" (aligns with HP-04)
+
+---
+
+## GitHub Issues Created ✅
+
+All feature request issues have been created:
+
+| Issue | Title | Sprint | Labels |
+|-------|-------|--------|--------|
+| [#18](https://github.com/mojenmojen/of-mcp/issues/18) | P00A: Execution Timeout | Sprint 4 | quick-fix, robustness |
+| [#19](https://github.com/mojenmojen/of-mcp/issues/19) | P00B: Remove Legacy Injection | Sprint 4 | quick-fix |
+| [#20](https://github.com/mojenmojen/of-mcp/issues/20) | 001: Diagnose Connection Tool | Sprint 4 | enhancement, quick-fix |
+| [#21](https://github.com/mojenmojen/of-mcp/issues/21) | 002: Error Handling Consolidation | Sprint 5 | robustness |
+| [#22](https://github.com/mojenmojen/of-mcp/issues/22) | 003: Retry with Exponential Backoff | Sprint 5 | robustness |
+| [#23](https://github.com/mojenmojen/of-mcp/issues/23) | 004: Logging Cleanup | Sprint 6 | quick-fix |
+| [#24](https://github.com/mojenmojen/of-mcp/issues/24) | 008: Cycle Detection | Sprint 6 | robustness |
+| [#25](https://github.com/mojenmojen/of-mcp/issues/25) | 009: Checksum Cache Invalidation | Sprint 7 | performance |
+| [#26](https://github.com/mojenmojen/of-mcp/issues/26) | 007: Search Tasks | Sprint 8 | enhancement |
+| [#27](https://github.com/mojenmojen/of-mcp/issues/27) | 010: Duplicate Project | Sprint 8 | enhancement |
+| [#28](https://github.com/mojenmojen/of-mcp/issues/28) | 011: Edit Tag | Sprint 8 | enhancement |
+
+---
 
 ## Reference Documents
 
 - **Full Review**: `docs/CODEBASE_REVIEW.md` - Complete 57-issue analysis
+- **Feature Roadmap**: `docs/feature-requests/README.md` - Prioritized feature requests
 - **GitHub Issues**: #5-#17 created with detailed descriptions
-
-## Git State
-
-```bash
-# Current branch
-git branch  # docs/feature-requests
-
-# Recent commits
-git log --oneline -4
-# [Sprint 3 commit - pending]
-# 950ce0a perf: Sprint 2 performance optimizations
-# b024844 fix: Sprint 1 robustness improvements
-# a87ebef 📝 Add critical review corrections to feature requests
-```
