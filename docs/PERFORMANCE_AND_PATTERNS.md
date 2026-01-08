@@ -1160,6 +1160,355 @@ def get_task_details(task_id: str) -> dict:
 
 ---
 
+## OmniFocus 4 JXA API Quirks and Workarounds
+*Source: focus-pocus (comprehensive MCP implementation)*
+
+### Critical: Project Status String Format
+
+OmniFocus 4's JXA API has specific requirements for project status that cause **silent failures** if not followed:
+
+```javascript
+// ❌ WRONG - These are silently ignored, defaulting to "active status"
+project.status = "active";
+project.status = "on-hold";
+project.status = "done";
+
+// ✅ CORRECT - Must use full format with " status" suffix
+project.status = "active status";
+project.status = "on hold status";  // Note: "on hold" not "on-hold"
+project.status = "done status";
+project.status = "dropped status";
+
+// ✅ ALSO CORRECT - Use methods for completed/dropped
+project.markComplete();  // For "done" status
+project.markDropped();   // For "dropped" status
+```
+
+**Why this matters:** Setting `project.status = "on-hold"` won't throw an error - it just does nothing. Your code appears to work but projects never change status.
+
+### Critical: Tag Assignment API
+
+Direct tag assignment causes "Can't convert types" errors in OmniFocus 4:
+
+```javascript
+// ❌ WRONG - Causes "Can't convert types" error
+task.tags = [myTag];
+task.tags.push(newTag);
+
+// ✅ CORRECT - Use Application methods
+const app = Application('OmniFocus');
+
+// Add a tag
+app.add(tagObject, { to: task.tags });
+
+// Remove a tag
+app.delete(tagObject, { from: task.tags });
+```
+
+**Source:** Omni Group forums (discourse.omnigroup.com/t/request-automate-adding-and-removing-tags-to-multiple-tasks-solved/44180)
+
+### Standardized safeGet Function
+
+OmniFocus 4 JXA has inconsistent property access - some properties require function calls, others don't:
+
+```javascript
+// Standardized safeGet utility for all JXA scripts
+function safeGet(obj, prop, defaultValue = null) {
+  try {
+    // OmniFocus 4 often requires function call syntax
+    const value = obj[prop]();
+    return value !== undefined ? value : defaultValue;
+  } catch (e) {
+    // Fallback to direct property access for compatibility
+    try {
+      const directValue = obj[prop];
+      return directValue !== undefined ? directValue : defaultValue;
+    } catch (e2) {
+      return defaultValue;
+    }
+  }
+}
+
+// Usage
+const taskName = safeGet(task, 'name', 'Untitled');
+const dueDate = safeGet(task, 'dueDate', null);
+const projectId = safeGet(project, 'id', null)?.primaryKey;
+```
+
+**Benefits:**
+- Handles OmniFocus 4 API inconsistencies reliably
+- Graceful fallback prevents script crashes
+- Consistent pattern across all scripts
+
+### JXA Object Creation Pattern
+
+The correct pattern for creating OmniFocus objects via JXA:
+
+```javascript
+const app = Application('OmniFocus');
+const doc = app.defaultDocument;
+
+// ✅ CORRECT - Constructor + push pattern
+// Projects
+const project = app.Project({ name: 'My Project' });
+doc.projects.push(project);
+// project is now fully functional with all methods
+
+// Inbox Tasks
+const inboxTask = app.InboxTask({ name: 'My Task' });
+doc.inboxTasks.push(inboxTask);
+
+// Tasks in a container (project/parent task)
+const task = app.Task({ name: 'Subtask' });
+container.tasks.push(task);
+
+// Tags
+const tag = app.Tag({ name: 'Important' });
+doc.tags.push(tag);
+
+// ❌ WRONG - Returns incomplete object
+container.push(app.Task({ name: 'Bad' }));  // Object may lack methods
+```
+
+**Key insight:** The object must be created first, then pushed. Chaining `push(app.Object())` returns an incomplete proxy.
+
+### Custom Perspectives API Limitation
+
+OmniFocus 4 JXA cannot enumerate custom perspective details:
+
+```javascript
+// What works:
+const perspectives = app.defaultDocument.perspectives;
+const count = perspectives.length;  // ✅ Can count
+const exists = perspectives.byName['My Perspective'] !== null;  // ✅ Can check existence
+
+// What DOESN'T work reliably:
+perspectives.forEach(p => {
+  console.log(p.name());  // ❌ May fail or return undefined
+  console.log(p.id());    // ❌ May fail or return undefined
+});
+
+// Built-in perspectives work normally:
+// Inbox, Projects, Tags, Forecast, Flagged, Review, Completed
+```
+
+**Workaround:** Use the content tree navigation pattern (documented in Transport Text section) to get tasks from custom perspectives by setting `window.perspective`.
+
+### JXA Bridge with Retry and Error Categorization
+
+Robust JXA execution pattern with exponential backoff:
+
+```typescript
+interface JXAError extends Error {
+  code: string;
+  type: 'permission' | 'app_unavailable' | 'script_error' | 'unknown';
+  originalMessage: string;
+}
+
+async function execJXA<T>(script: string, retryCount = 0): Promise<JXAResponse<T>> {
+  const TIMEOUT_MS = 45000;  // JXA is slow - 45s timeout
+  const MAX_RETRIES = 3;
+
+  try {
+    // Write to temp file to avoid escaping issues
+    const tmpFile = `/tmp/omnifocus-mcp-${Date.now()}.jxa`;
+    await fs.writeFile(tmpFile, script);
+
+    const result = execSync(`osascript -l JavaScript "${tmpFile}"`, {
+      timeout: TIMEOUT_MS,
+      encoding: 'utf8'
+    });
+
+    await fs.unlink(tmpFile);  // Cleanup
+    return { success: true, data: JSON.parse(result) };
+
+  } catch (error) {
+    const jxaError = categorizeError(error);
+
+    // Retry on app_unavailable with exponential backoff
+    if (jxaError.type === 'app_unavailable' && retryCount < MAX_RETRIES) {
+      await delay(1000 * (retryCount + 1));
+      return execJXA(script, retryCount + 1);
+    }
+
+    return { success: false, error: jxaError };
+  }
+}
+
+function categorizeError(error: any): JXAError {
+  const message = error.message?.toLowerCase() || '';
+
+  if (message.includes('not authorized') || message.includes('permission')) {
+    return { type: 'permission', code: 'PERMISSION_DENIED', ... };
+  }
+  if (message.includes('application is not running')) {
+    return { type: 'app_unavailable', code: 'APP_UNAVAILABLE', ... };
+  }
+  if (message.includes('syntax error') || message.includes('execution error')) {
+    return { type: 'script_error', code: 'SCRIPT_ERROR', ... };
+  }
+  return { type: 'unknown', code: 'UNKNOWN_ERROR', ... };
+}
+```
+
+**Why temp file execution?** Inline scripts with `-e` flag have escaping issues with complex code. Writing to temp file eliminates this.
+
+---
+
+## Natural Language Date Parsing
+*Source: focus-pocus DateHandler utility*
+
+### Comprehensive Date Pattern Support
+
+```typescript
+class DateHandler {
+  parseNaturalDate(input: string, baseDate: Date = new Date()): Date | null {
+    const lower = input.toLowerCase().trim();
+
+    // Relative dates
+    if (lower === 'today') return startOfDay(baseDate);
+    if (lower === 'tomorrow') return startOfDay(addDays(baseDate, 1));
+    if (lower === 'yesterday') return startOfDay(addDays(baseDate, -1));
+
+    // Time-of-day modifiers: "tomorrow morning"
+    // morning=9AM, afternoon=2PM, evening=6PM, night=8PM
+    const timeOfDayMatch = lower.match(/^(today|tomorrow)\s+(morning|afternoon|evening|night)$/);
+
+    // Specific time: "tomorrow at 2pm", "next Monday at 10am"
+    const timeMatch = lower.match(/at\s+(\d{1,2}):?(\d{2})?\s*(am|pm)?$/);
+
+    // Next weekday: "next Monday", "next Friday"
+    const nextMatch = lower.match(/^next\s+(monday|tuesday|...)/);
+
+    // Relative periods: "in 3 days", "2 weeks from now"
+    const inMatch = lower.match(/^(in|within)\s+(\d+)\s+(day|week|month)/);
+    const fromNowMatch = lower.match(/^(\d+)\s+(day|week)\s+from\s+now$/);
+
+    // End of period: "end of week", "end of next month"
+    const endOfMatch = lower.match(/^end\s+of\s+(next\s+)?(week|month|year)$/);
+
+    // Fallback to ISO and common formats
+    // ...
+  }
+}
+```
+
+**Default time assumptions:** If no meridiem specified and hour < 8, assume PM (e.g., "at 2" = 2PM, not 2AM).
+
+### Duration Parsing
+
+```typescript
+parseDuration(duration: string): number | null {
+  // Single unit: "2h", "90m", "1.5 hours"
+  const singleMatch = duration.match(/^(\d+(?:\.\d+)?)\s*(h|hour|m|min)/);
+
+  // Compound: "2h 30m", "1 hour 15 minutes"
+  const compoundMatch = duration.match(/^(?:(\d+)\s*h(?:ours?)?)?\s*(?:(\d+)\s*m(?:ins?)?)?$/);
+
+  // Returns total minutes
+}
+```
+
+---
+
+## Smart Task Scheduling
+*Source: focus-pocus SchedulingUtilities*
+
+### Progressive Deadline Generation
+
+Distributes tasks proportionally across a project timeline:
+
+```typescript
+function generateProgressiveDeadlines(
+  projectStart: Date,
+  projectEnd: Date,
+  tasks: TaskScheduleInfo[],
+  options: SchedulingOptions
+): ScheduledTask[] {
+  const totalDuration = differenceInDays(projectEnd, projectStart);
+  const totalEffort = tasks.reduce((sum, t) => sum + (t.estimatedMinutes || 60), 0);
+
+  // 20% buffer for overruns
+  const workingDuration = totalDuration * 0.8;
+
+  const sortedTasks = sortByPriorityAndDependencies(tasks);
+  let cumulativeEffort = 0;
+
+  return sortedTasks.map(task => {
+    cumulativeEffort += task.estimatedMinutes || 60;
+
+    // Position in timeline proportional to effort completed
+    const progressRatio = cumulativeEffort / totalEffort;
+    const targetDayOffset = Math.floor(workingDuration * progressRatio);
+
+    const targetDate = options.workDaysOnly
+      ? addBusinessDays(projectStart, targetDayOffset)
+      : addDays(projectStart, targetDayOffset);
+
+    return { ...task, scheduledDate: targetDate };
+  });
+}
+```
+
+**Result:** A 10-task project spanning 20 days gets deadlines distributed as: Day 2, 4, 6, 8, 10, 12, 14, 16 (with 20% buffer at end).
+
+### Workload Balancing
+
+Rebalances overloaded days by moving excess tasks:
+
+```typescript
+function balanceWorkload(
+  tasks: ScheduledTask[],
+  maxHoursPerDay: number = 8
+): ScheduledTask[] {
+  const dailyWorkload = new Map<string, { tasks: Task[], totalMinutes: number }>();
+
+  // Group by day
+  for (const task of tasks) {
+    const dateKey = task.scheduledDate.toDateString();
+    // ... accumulate
+  }
+
+  const maxMinutesPerDay = maxHoursPerDay * 60;
+
+  // Redistribute overloaded days
+  for (const [dateKey, dayData] of dailyWorkload) {
+    if (dayData.totalMinutes > maxMinutesPerDay) {
+      // Sort by priority, keep high-priority tasks on original day
+      // Move lower-priority tasks to next available day
+    }
+  }
+}
+```
+
+### Dependency-Aware Scheduling
+
+```typescript
+function scheduleWithDependencies(tasks: TaskScheduleInfo[]): ScheduledTask[] {
+  const scheduled: ScheduledTask[] = [];
+
+  for (const task of sortByPriority(tasks)) {
+    let earliestDate = startDate;
+
+    // Can't start until all dependencies complete
+    if (task.dependencies?.length) {
+      const dependencyDates = task.dependencies
+        .map(depId => scheduled.find(s => s.taskId === depId)?.scheduledDate)
+        .filter(Boolean);
+
+      if (dependencyDates.length > 0) {
+        earliestDate = addDays(max(dependencyDates), 1);
+      }
+    }
+
+    // Find optimal date from earliestDate forward
+    // ...
+  }
+}
+```
+
+---
+
 ## References
 
 ### omnifocus-mcp-archive (development journey documentation)
@@ -1192,6 +1541,12 @@ def get_task_details(task_id: str) -> dict:
 - `FASTMCP_DEVELOPMENT_GUIDE.md` - FastMCP decorator patterns, testing strategy
 - `MCP_INTEGRATION_PATTERNS.md` - Claude Code/Codex integration, Python path selection
 
+### focus-pocus (comprehensive MCP implementation)
+- `CLAUDE.md` - OmniFocus 4 JXA API limitations, safeGet pattern, object creation patterns
+- `src/omnifocus/jxa-bridge.ts` - Retry logic, error categorization, temp file execution
+- `src/utils/date-handler.ts` - Natural language date parsing, duration parsing, recurrence
+- `src/utils/scheduling.ts` - Progressive deadlines, workload balancing, dependency scheduling
+
 ---
 
 ## Changelog
@@ -1202,3 +1557,4 @@ def get_task_details(task_id: str) -> dict:
 - 2026-01-07: Added permission handling, performance optimization, logging patterns from omnifocus-mcp (third implementation)
 - 2026-01-07: Added database safety, N+1 elimination, testing patterns, API design from omnifocus-mcp (fourth implementation)
 - 2026-01-07: Added transport text parsing, FastMCP patterns, content tree navigation from omnifocus-mcp-python
+- 2026-01-07: Added OmniFocus 4 JXA API quirks, safeGet pattern, natural language dates, smart scheduling from focus-pocus
