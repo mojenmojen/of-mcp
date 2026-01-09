@@ -74,7 +74,7 @@ export async function editItem(params: EditItemParams): Promise<{
     log.debug('Executing editItem', { itemType: params.itemType, id: params.id, name: params.name });
 
     // Execute the OmniJS script with all parameters
-    const result = await executeOmniFocusScript('@editTask.js', {
+    const result = await executeOmniFocusScript('@editItem.js', {
       id: params.id || null,
       name: params.name || null,
       itemType: params.itemType,

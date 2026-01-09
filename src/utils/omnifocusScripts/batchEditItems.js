@@ -137,7 +137,7 @@
         const originalName = foundItem.name;
         const originalId = foundItem.id.primaryKey;
 
-        // Apply changes (same logic as editTask.js)
+        // Apply changes (same logic as editItem.js)
 
         if (edit.newName !== undefined) {
           foundItem.name = edit.newName;
