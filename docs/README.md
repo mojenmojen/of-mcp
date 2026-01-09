@@ -16,6 +16,7 @@ docs/
 │   └── features/                # Feature requests
 └── archive/                     # RESOLVED items
     ├── bugs/                    # Fixed bugs
+    ├── features/                # Implemented feature requests
     └── sprint-specs/            # Implemented feature specs
 ```
 
@@ -81,5 +82,8 @@ How it should work.
 ## Archiving Resolved Issues
 
 When an issue is resolved:
-1. Move the file to `docs/archive/bugs/` or `docs/archive/sprint-specs/`
+1. Move the file to the appropriate archive folder:
+   - `docs/archive/bugs/` - Fixed bug reports
+   - `docs/archive/features/` - Implemented feature requests
+   - `docs/archive/sprint-specs/` - Sprint feature specifications
 2. Add a note at the top: `**Resolved**: YYYY-MM-DD - [brief resolution note]`
