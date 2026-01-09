@@ -593,6 +593,10 @@ get_project_by_id {
 28. **duplicate_project** - Create a copy of a project including all tasks (great for templates)
 29. **edit_tag** - Edit tag properties: rename, change status, move to parent, or set allowsNextAction
 
+### 🆕 New Tools (v1.27.0) - AI Assistant Optimizations
+30. **get_system_health** - Get all health metrics in ONE call (inbox, projects, tasks, tags, flagged, untagged)
+31. **get_completion_stats** - Get completion counts grouped by project/tag/folder for a date range
+
 ## 🚀 Quick Start Examples
 
 ### Basic Task Creation
@@ -812,6 +816,32 @@ get_inbox_tasks
 
 # Test custom perspective features
 list_custom_perspectives
+```
+
+### Analytics & Health Checks (v1.27.0)
+```bash
+# Get all health metrics in ONE call (replaces 6+ separate calls)
+get_system_health
+
+# Get completion stats by project for last month
+get_completion_stats {
+  "completedAfter": "2026-01-01",
+  "completedBefore": "2026-02-01",
+  "groupBy": "project"
+}
+
+# Get completion stats by tag
+get_completion_stats {
+  "completedAfter": "2026-01-01",
+  "completedBefore": "2026-02-01",
+  "groupBy": "tag"
+}
+
+# Fast count-only query (no task data returned)
+filter_tasks {
+  "taskStatus": ["Available", "Next"],
+  "countOnly": true
+}
 ```
 
 ### Troubleshooting

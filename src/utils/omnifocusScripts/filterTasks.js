@@ -34,7 +34,8 @@
       searchText: args.searchText || null,
       limit: args.limit || 100,
       sortBy: args.sortBy || "name",
-      sortOrder: args.sortOrder || "asc"
+      sortOrder: args.sortOrder || "asc",
+      countOnly: args.countOnly === true
     };
 
     // Normalize tag filters to arrays
@@ -295,6 +296,25 @@
 
     // Capture count after filtering but before limit
     const totalMatchingCount = filteredTasks.length;
+
+    // countOnly mode - return just the count without task data
+    if (filters.countOnly) {
+      return JSON.stringify({
+        count: totalMatchingCount,
+        countOnly: true,
+        filters: {
+          taskStatus: filters.taskStatus,
+          perspective: filters.perspective,
+          projectFilter: filters.projectFilter,
+          projectId: filters.projectId,
+          tagFilter: filters.tagFilter,
+          tagId: filters.tagId,
+          untagged: filters.untagged,
+          flagged: filters.flagged,
+          inInbox: filters.inInbox
+        }
+      });
+    }
 
     // Limit results
     if (filters.limit && filteredTasks.length > filters.limit) {

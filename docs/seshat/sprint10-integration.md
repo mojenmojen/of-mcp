@@ -1,11 +1,12 @@
-# Seshat Integration: Sprint 10 Features (Future)
+# Seshat Integration: Sprint 10 Features
 
-> How seshat skills can leverage upcoming of-mcp Sprint 10 features.
-> **Status:** Planned - implement after of-mcp Sprint 10 ships.
+> **Status: ✅ Ready** (of-mcp v1.27.0)
+
+How seshat skills can leverage of-mcp Sprint 10 features.
 
 ---
 
-## Upcoming Features
+## Available Features
 
 ### 1. `get_system_health` Tool (#54)
 
