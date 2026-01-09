@@ -1,6 +1,6 @@
-# OmniFocus MCP Server - What's New (v1.23.1)
+# OmniFocus MCP Server - What's New (v1.24.0)
 
-> Summary of changes from Sprints 1-8 for AI assistants using this MCP server.
+> Summary of changes from Sprints 1-9 for AI assistants using this MCP server.
 
 ## Efficiency Guidelines (IMPORTANT)
 
@@ -65,6 +65,15 @@
 ### list_tags Enhancement
 - Now shows tag status: active, (on hold), (dropped)
 - Use `edit_tag` to reactivate dropped tags
+
+---
+
+## Bug Fixes
+
+### Sprint 9A: Project Tag Operations
+- **Fixed**: Tag operations (`addTags`, `removeTags`, `replaceTags`) now work on **both tasks and projects**
+- Previously, using `itemType: "project"` with tag operations would silently succeed without making changes
+- Now you can properly add/remove tags from projects using `edit_item` and `batch_edit_items`
 
 ---
 

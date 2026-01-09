@@ -18,12 +18,14 @@ export const schema = z.object({
   newFlagged: z.boolean().optional().describe("Set flagged status (set to false for no flag, true for flag)"),
   newEstimatedMinutes: z.number().optional().describe("New estimated minutes"),
   
+  // Tag operations (work on both tasks and projects)
+  addTags: z.array(z.string()).optional().describe("Tags to add (works on both tasks and projects)"),
+  removeTags: z.array(z.string()).optional().describe("Tags to remove (works on both tasks and projects)"),
+  replaceTags: z.array(z.string()).optional().describe("Replace all existing tags (works on both tasks and projects)"),
+
   // Task-specific fields
   newStatus: z.enum(['incomplete', 'completed', 'dropped']).optional().describe("New status for tasks (incomplete, completed, dropped)"),
   dropCompletely: z.boolean().optional().describe("When dropping a repeating task, set to true to drop completely (stop all future occurrences). Default false drops only the current occurrence."),
-  addTags: z.array(z.string()).optional().describe("Tags to add to the task"),
-  removeTags: z.array(z.string()).optional().describe("Tags to remove from the task"),
-  replaceTags: z.array(z.string()).optional().describe("Tags to replace all existing tags with"),
   newRepetitionRule: repetitionRuleSchema.nullable().optional().describe("New repetition rule for the task. Set to null to remove repetition, or provide object to set. Examples: null (remove), {frequency: 'daily'}, {frequency: 'weekly', daysOfWeek: [1,3,5]}"),
 
   // Task movement fields

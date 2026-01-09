@@ -162,7 +162,7 @@ Based on open issues in `docs/issues/`, Sprint 9 addresses critical tag bugs and
 
 | Item | Issue | File | Effort |
 |------|-------|------|--------|
-| B | Fix project tag editing | `batchEditItems.js`, `editTask.js` | Low |
+| B | Fix project tag editing | `batchEditItems.js`, `editItem.js` | Low |
 | A | Verify tag operations work after B | Testing | Low |
 
 **Root cause for B**: Lines 251, 263, 271 in `batchEditItems.js` have `if (itemType === 'task')` guards that skip tag operations for projects.
@@ -187,7 +187,7 @@ Based on open issues in `docs/issues/`, Sprint 9 addresses critical tag bugs and
 
 | Item | Issue | File | Effort |
 |------|-------|------|--------|
-| G | Add "already in folder" check | `editTask.js` | Low |
+| G | Add "already in folder" check | `editItem.js` | Low |
 
 #### Dependencies
 
