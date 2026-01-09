@@ -49,10 +49,19 @@ export async function getSystemHealth(): Promise<string> {
     }
 
     if (typeof result === 'string') {
+      const rawString = result;
       try {
-        result = JSON.parse(result);
-      } catch {
-        return result as string;
+        result = JSON.parse(rawString);
+      } catch (parseError) {
+        log.warn('Failed to parse OmniFocus response as JSON', {
+          parseError: parseError instanceof Error ? parseError.message : String(parseError),
+          rawOutputPreview: rawString.substring(0, 200)
+        });
+        // Check if it looks like an error message from OmniFocus
+        if (rawString.toLowerCase().includes('error')) {
+          throw new Error(`OmniFocus returned an error: ${rawString.substring(0, 500)}`);
+        }
+        throw new Error(`Failed to parse OmniFocus response: ${rawString.substring(0, 200)}`);
       }
     }
 
@@ -115,7 +124,11 @@ export async function getSystemHealth(): Promise<string> {
       return output;
     }
 
-    return "Unexpected result format from OmniFocus";
+    log.error('Unexpected result format from OmniFocus', {
+      resultType: typeof result,
+      resultValue: result === null ? 'null' : result === undefined ? 'undefined' : JSON.stringify(result).substring(0, 200)
+    });
+    throw new Error(`Unexpected result format from OmniFocus (got ${typeof result}). Please check OmniFocus is running and accessible.`);
 
   } catch (error) {
     log.error('Error in getSystemHealth', { error: error instanceof Error ? error.message : String(error) });

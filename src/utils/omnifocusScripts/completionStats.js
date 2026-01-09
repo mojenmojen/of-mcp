@@ -147,7 +147,9 @@
   } catch (error) {
     return JSON.stringify({
       success: false,
-      error: `Error getting completion stats: ${error}`
+      error: `Error getting completion stats: ${error.name || 'Error'}: ${error.message || String(error)}`,
+      errorType: error.name || 'Error',
+      errorMessage: error.message || String(error)
     });
   }
 })();

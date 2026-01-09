@@ -138,7 +138,9 @@
   } catch (error) {
     return JSON.stringify({
       success: false,
-      error: `Error getting system health: ${error}`
+      error: `Error getting system health: ${error.name || 'Error'}: ${error.message || String(error)}`,
+      errorType: error.name || 'Error',
+      errorMessage: error.message || String(error)
     });
   }
 })();
