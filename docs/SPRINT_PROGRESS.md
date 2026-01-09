@@ -1,8 +1,8 @@
 # Sprint Progress - Codebase Robustness Initiative
 
-> **Last Updated**: January 8, 2026
+> **Last Updated**: January 9, 2026
 > **Branch**: `main`
-> **Current Version**: 1.23.1
+> **Current Version**: 1.26.0
 
 ## Completed Sprints
 
@@ -65,6 +65,7 @@ With the robustness foundation in place, development continues with the **Featur
 | **Sprint 6** | Developer Experience | 004, 008 | ✅ Done |
 | **Sprint 7** | Performance | 009 | ✅ Done |
 | **Sprint 8** | New Tools | 007, 010, 011 | ✅ Done |
+| **Sprint 9** | Tag Operations & Query Improvements | #44-#49 | ✅ Done |
 
 ### Sprint 4: Foundation Prep ✅
 | # | Feature | Effort |
@@ -140,69 +141,44 @@ All feature request issues have been created:
 
 ---
 
-## Next: Bug Fixes & Enhancements
+### Sprint 9: Tag Operations & Query Improvements ✅
+**PRs**: #50, #51, #52
 
-### Sprint 9: Tag Operations & Query Improvements
+Based on open issues in `docs/issues/`, Sprint 9 addressed critical tag bugs and query enhancements.
 
-Based on open issues in `docs/issues/`, Sprint 9 addresses critical tag bugs and query enhancements.
+#### Issue Summary
 
-#### Issue Analysis
+| Issue | Title | Resolution |
+|-------|-------|------------|
+| #44 | Tag operations silent failure on projects | ✅ Fixed in 9A (PR #50) |
+| #45 | get_tasks_by_tag ignores dropped tags | ✅ Fixed in 9B (PR #51) |
+| #46 | Task IDs missing from perspective output | ✅ Already implemented |
+| #47 | No way to filter untagged tasks | ✅ Fixed in 9C (PR #52) |
+| #48 | `inInbox` filter returns wrong results | ✅ Code was correct |
+| #49 | False "moved to folder" success message | ✅ Already fixed |
 
-| ID | Issue | Type | Severity | Root Cause |
-|----|-------|------|----------|------------|
-| A | Tag operations silent failure | BUG | HIGH | Under investigation |
-| B | Project tag edit requires `itemType: "task"` | BUG | HIGH | `if (itemType === 'task')` guards skip projects |
-| C | get_tasks_by_tag ignores dropped tags | BUG | MEDIUM | `flattenedTags.filter(tag => tag.active)` |
-| D | Task IDs missing from perspective output | FEAT | MEDIUM | Not included in formatters |
-| E | No way to filter untagged tasks | FEAT | LOW | Missing parameter |
-| F | `inInbox` filter returns wrong results | BUG | MEDIUM | Logic issue |
-| G | False "moved to folder" success message | BUG | LOW | Missing "already in folder" check |
+#### Sprint 9A: Tag Operations on Projects ✅
+**PR**: #50 | **Version**: 1.24.0
 
-#### Sprint 9A: Tag Operations (Critical)
+- Fixed tag operations (`addTags`, `removeTags`, `replaceTags`) to work on both tasks AND projects
+- Root cause: `if (itemType === 'task')` guards incorrectly skipped tag operations for projects
+- Files changed: `editItem.js`, `batchEditItems.js`, `editItem.ts`, `batchEditItems.ts`
+- Renamed `editTask.js` → `editItem.js` for clarity
 
-| Item | Issue | File | Effort |
-|------|-------|------|--------|
-| B | Fix project tag editing | `batchEditItems.js`, `editItem.js` | Low |
-| A | Verify tag operations work after B | Testing | Low |
+#### Sprint 9B: Query Improvements ✅
+**PR**: #51 | **Version**: 1.25.0
 
-**Root cause for B**: Lines 251, 263, 271 in `batchEditItems.js` have `if (itemType === 'task')` guards that skip tag operations for projects.
+- Added `includeDropped` parameter to `get_tasks_by_tag`
+- Allows searching tasks by dropped/inactive tags
+- Closed #46: All perspective tools already include task IDs in output
 
-#### Sprint 9B: Query Improvements
+#### Sprint 9C: Filter Enhancements ✅
+**PR**: #52 | **Version**: 1.26.0
 
-| Item | Issue | File | Effort |
-|------|-------|------|--------|
-| C | Add `includeDropped` param to get_tasks_by_tag | `tasksByTag.js` | Low |
-| D | Add task IDs to perspective tool output | Multiple formatters | Medium |
+- Added `untagged` parameter to `filter_tasks`
+- Use case: Find unorganized tasks after bulk tag removal
+- Closed #48: `inInbox` filter logic was already correct
 
-**Root cause for C**: Line 42 in `tasksByTag.js` filters `flattenedTags.filter(tag => tag.active)`.
-
-#### Sprint 9C: Filter Enhancements
-
-| Item | Issue | File | Effort |
-|------|-------|------|--------|
-| E | Add `untagged: true` param to filter_tasks | `filterTasks.js` | Low |
-| F | Fix inInbox filter logic | `filterTasks.js` | Medium |
-
-#### Sprint 9D: Polish
-
-| Item | Issue | File | Effort |
-|------|-------|------|--------|
-| G | Add "already in folder" check | `editItem.js` | Low |
-
-#### Dependencies
-
-```
-A ←── B (same code area, fix B first to see if A resolves)
-D includes fix for get_inbox_tasks missing IDs
-C, E, F, G are independent
-```
-
-#### Source Issues
-
-- `docs/issues/bugs/2026-01-06-batch-edit-tags-silent-failure.md` (A)
-- `docs/issues/bugs/2026-01-08-project-tag-edit-requires-task-itemtype.md` (B)
-- `docs/issues/bugs/bug-get-tasks-by-tag-dropped-tags.md` (C)
-- `docs/issues/features/feature-request-perspective-task-ids.md` (D)
-- `docs/issues/features/2026-01-08-untagged-tasks-filter.md` (E)
-- `docs/issues/bugs/mcp-omnifocus-bug-report.md` (F, plus overlap with D)
-- `docs/issues/bugs/mcp-omnifocus-bug-false-move-success.md` (G)
+#### Sprint 9D: Polish ✅
+- Closed #49: Fix was already in codebase (commit `ef731f5`)
+- `editItem.js` already checks if project is in target folder before reporting move
