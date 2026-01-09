@@ -225,8 +225,8 @@
       }
     }
 
-    // Task-specific: Replace all tags (direct iteration to keep OmniJS proxy alive)
-    if (itemType === 'task' && args.replaceTags && args.replaceTags.length > 0) {
+    // Replace all tags (tasks and projects both support tags)
+    if (args.replaceTags && args.replaceTags.length > 0) {
       // First, remove all existing tags
       const existingTags = foundItem.tags.slice(); // Make a copy
       for (const existingTag of existingTags) {
@@ -239,8 +239,8 @@
       }
       changedProperties.push("tags (replaced)");
     } else {
-      // Task-specific: Add tags (direct iteration, creates if missing)
-      if (itemType === 'task' && args.addTags && args.addTags.length > 0) {
+      // Add tags (tasks and projects both support tags)
+      if (args.addTags && args.addTags.length > 0) {
         for (const tagName of args.addTags) {
           const tag = findOrCreateTag(tagName);
           foundItem.addTag(tag);
@@ -248,8 +248,8 @@
         changedProperties.push("tags (added)");
       }
 
-      // Task-specific: Remove tags (direct iteration)
-      if (itemType === 'task' && args.removeTags && args.removeTags.length > 0) {
+      // Remove tags (tasks and projects both support tags)
+      if (args.removeTags && args.removeTags.length > 0) {
         for (const tagName of args.removeTags) {
           const tag = findTag(tagName);
           if (tag) {

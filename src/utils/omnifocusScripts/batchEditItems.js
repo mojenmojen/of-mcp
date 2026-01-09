@@ -247,8 +247,8 @@
           }
         }
 
-        // Task-specific: Replace all tags (direct iteration to keep OmniJS proxy alive)
-        if (itemType === 'task' && edit.replaceTags && edit.replaceTags.length > 0) {
+        // Replace all tags (tasks and projects both support tags)
+        if (edit.replaceTags && edit.replaceTags.length > 0) {
           const existingTags = foundItem.tags.slice();
           for (const existingTag of existingTags) {
             foundItem.removeTag(existingTag);
@@ -259,16 +259,16 @@
           }
           changedProperties.push("tags (replaced)");
         } else {
-          // Add tags (direct iteration, creates if missing)
-          if (itemType === 'task' && edit.addTags && edit.addTags.length > 0) {
+          // Add tags (tasks and projects both support tags)
+          if (edit.addTags && edit.addTags.length > 0) {
             for (const tagName of edit.addTags) {
               const tag = findOrCreateTag(tagName);
               foundItem.addTag(tag);
             }
             changedProperties.push("tags (added)");
           }
-          // Remove tags (direct iteration)
-          if (itemType === 'task' && edit.removeTags && edit.removeTags.length > 0) {
+          // Remove tags (tasks and projects both support tags)
+          if (edit.removeTags && edit.removeTags.length > 0) {
             for (const tagName of edit.removeTags) {
               const tag = findTag(tagName);
               if (tag) foundItem.removeTag(tag);
