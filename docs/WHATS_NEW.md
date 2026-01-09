@@ -1,6 +1,6 @@
-# OmniFocus MCP Server - What's New (v1.26.0)
+# OmniFocus MCP Server - What's New (v1.27.0)
 
-> Summary of changes from Sprints 1-9 for AI assistants using this MCP server.
+> Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
 
 ## Efficiency Guidelines (IMPORTANT)
 
@@ -18,6 +18,17 @@
 ---
 
 ## New Tools
+
+### Sprint 10: AI Assistant Optimizations
+| Tool | Description |
+|------|-------------|
+| `get_system_health` | Get all OmniFocus health metrics in ONE call. Returns inbox, projects, tasks, tags, flagged, and untagged counts with health indicators (🟢/🟡/🔴). Replaces 6+ separate API calls. |
+| `get_completion_stats` | Get task completion counts grouped by project, tag, or folder for a date range. Returns sorted list with percentages. Replaces N filter_tasks calls. |
+
+### Sprint 10: filter_tasks Enhancement
+| Parameter | Description |
+|-----------|-------------|
+| `countOnly: true` | Return only the count of matching tasks, not task data. Much faster for health checks and dashboards. |
 
 ### Sprint 8: New Tools
 | Tool | Description |
@@ -89,7 +100,7 @@
 
 ## Tool Count
 
-**Total: 29 tools**
+**Total: 31 tools**
 
 | Category | Tools |
 |----------|-------|
@@ -98,6 +109,7 @@
 | Queries | filter_tasks, batch_filter_tasks, search_tasks, get_task_by_id |
 | Perspectives | get_inbox_tasks, get_flagged_tasks, get_forecast_tasks, get_tasks_by_tag, get_custom_perspective_tasks, list_custom_perspectives |
 | Projects/Folders | add_project, add_folder, list_projects, get_project_by_id, get_folder_by_id, duplicate_project |
+| Analytics | get_system_health, get_completion_stats |
 | Tags | list_tags, edit_tag |
 | Review | get_projects_for_review, batch_mark_reviewed |
 | Utility | get_server_version, diagnose_connection, get_today_completed_tasks |

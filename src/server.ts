@@ -45,6 +45,9 @@ import * as diagnoseConnectionTool from './tools/definitions/diagnoseConnection.
 import * as searchTasksTool from './tools/definitions/searchTasks.js';
 import * as duplicateProjectTool from './tools/definitions/duplicateProject.js';
 import * as editTagTool from './tools/definitions/editTag.js';
+// Import Sprint 10 tools
+import * as systemHealthTool from './tools/definitions/systemHealth.js';
+import * as completionStatsTool from './tools/definitions/completionStats.js';
 import { logger } from './utils/logger.js';
 
 // Create an MCP server
@@ -263,6 +266,21 @@ server.tool(
   "Edit a tag's properties: rename, change status (active/onHold/dropped), move to different parent, or set allowsNextAction. Use to reactivate dropped tags or reorganize tag hierarchy.",
   editTagTool.schema.shape,
   editTagTool.handler
+);
+
+// Sprint 10: AI Assistant Optimization tools
+server.tool(
+  "get_system_health",
+  "Get all OmniFocus health metrics in a single call. Returns counts for inbox, projects (by status), tasks (by status), tags, flagged tasks, and untagged tasks. Includes health indicators (🟢/🟡/🔴) and percentages. Much faster than multiple filter_tasks calls for dashboards.",
+  systemHealthTool.schema.shape,
+  systemHealthTool.handler
+);
+
+server.tool(
+  "get_completion_stats",
+  "Get task completion counts grouped by project, tag, or folder for a date range. Returns sorted list with counts and percentages. Much faster than multiple filter_tasks calls for analytics.",
+  completionStatsTool.schema.shape,
+  completionStatsTool.handler
 );
 
 // Start the MCP server

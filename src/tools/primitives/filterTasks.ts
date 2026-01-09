@@ -65,6 +65,7 @@ export interface FilterTasksOptions {
   limit?: number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+  countOnly?: boolean;
 }
 
 export async function filterTasks(options: FilterTasksOptions = {}): Promise<string> {
@@ -111,6 +112,17 @@ export async function filterTasks(options: FilterTasksOptions = {}): Promise<str
 
       if (data.error) {
         throw new Error(data.error);
+      }
+
+      // Handle countOnly mode - return simplified output
+      if (data.countOnly) {
+        const filterSummary = buildFilterSummary(options);
+        let output = `# 📊 TASK COUNT\n\n`;
+        output += `**Count**: ${data.count} task${data.count === 1 ? '' : 's'}\n`;
+        if (filterSummary) {
+          output += `**Filter**: ${filterSummary}\n`;
+        }
+        return output;
       }
 
       // Format filter results
