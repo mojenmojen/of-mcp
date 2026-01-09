@@ -211,6 +211,12 @@ filter_tasks {
   "taskStatus": ["Overdue", "DueSoon"]
 }
 
+# Find untagged tasks (useful after bulk tag cleanup)
+filter_tasks {
+  "untagged": true,
+  "taskStatus": ["Available", "Next"]
+}
+
 # Filter by project ID and tag ID (for programmatic use)
 filter_tasks {
   "projectId": "projectId123",

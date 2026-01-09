@@ -21,6 +21,7 @@ export interface FilterTasksOptions {
   tagFilter?: string | string[];
   tagId?: string | string[];
   exactTagMatch?: boolean;
+  untagged?: boolean;
 
   // Due date filter
   dueBefore?: string;
@@ -198,7 +199,11 @@ function buildFilterSummary(options: FilterTasksOptions): string {
     const tags = Array.isArray(options.tagFilter) ? options.tagFilter.join(', ') : options.tagFilter;
     conditions.push(`Tags: ${tags}`);
   }
-  
+
+  if (options.untagged) {
+    conditions.push('Untagged: Yes');
+  }
+
   if (options.flagged !== undefined) {
     conditions.push(`Flagged: ${options.flagged ? 'Yes' : 'No'}`);
   }
