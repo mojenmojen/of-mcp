@@ -182,3 +182,118 @@ Based on open issues in `docs/issues/`, Sprint 9 addressed critical tag bugs and
 #### Sprint 9D: Polish ✅
 - Closed #49: Fix was already in codebase (commit `ef731f5`)
 - `editItem.js` already checks if project is in target folder before reporting move
+
+---
+
+## Next: Sprint 10 - AI Assistant Optimizations
+
+Based on analysis of real-world AI assistant usage patterns, Sprint 10 focuses on reducing API calls for common health check and analytics workflows.
+
+### Sprint 10 Overview
+
+| Issue | Feature | Effort | Impact |
+|-------|---------|--------|--------|
+| #54 | `get_system_health` tool | Medium | High |
+| #55 | `get_completion_stats` tool | Medium | High |
+| #56 | `countOnly` mode for filter_tasks | Low | Medium |
+
+### Issue Details
+
+#### #54: get_system_health Tool
+
+**Problem:** Health checks require 4-6 separate API calls:
+- `get_inbox_tasks` → inbox count
+- `list_projects` → project counts
+- `filter_tasks` (taskStatus: Next) → next action count
+- `filter_tasks` (overdue: true) → overdue count
+- `filter_tasks` (untagged: true) → untagged count
+- `get_flagged_tasks` → flagged count
+
+**Solution:** Single tool returning all metrics:
+```javascript
+get_system_health()
+// Returns:
+{
+  inbox: 12,
+  projects: {active: 45, onHold: 8, dropped: 23, completed: 156},
+  tasks: {available: 234, next: 38, blocked: 12, overdue: 5, dueSoon: 8},
+  untagged: 3,
+  flagged: 7,
+  tags: {active: 45, onHold: 3, dropped: 12}
+}
+```
+
+**Use cases:**
+- Weekly review health checks
+- Monthly review dashboards
+- Daily standup metrics
+- of-stats recording
+
+#### #55: get_completion_stats Tool
+
+**Problem:** Completion analytics require N API calls (one per project/tag):
+```
+filter_tasks({projectFilter: "proj1", completedAfter: date})
+filter_tasks({projectFilter: "proj2", completedAfter: date})
+...
+```
+
+**Solution:** Single tool with grouping:
+```javascript
+get_completion_stats({
+  completedAfter: "2026-01-01",
+  completedBefore: "2026-01-31",
+  groupBy: "project"  // or "tag" or "folder"
+})
+// Returns:
+{
+  period: {start: "2026-01-01", end: "2026-01-31"},
+  totalCompleted: 87,
+  byGroup: [
+    {name: "Project A", count: 23, percentage: 26.4},
+    {name: "Project B", count: 18, percentage: 20.7},
+    ...
+  ]
+}
+```
+
+**Use cases:**
+- Weekly review completion summaries
+- Monthly review priority distribution
+- Omnifocus audit tag analysis
+
+#### #56: countOnly Mode for filter_tasks
+
+**Problem:** Health checks only need counts, but `filter_tasks` returns full task data.
+
+**Solution:** Add `countOnly: true` parameter:
+```javascript
+filter_tasks({
+  taskStatus: ["Available", "Next"],
+  countOnly: true  // Returns count only, not task data
+})
+// Returns:
+{
+  count: 156,
+  filters: {...}
+}
+```
+
+**Benefits:**
+- Faster response (no serialization of task data)
+- Lower memory usage
+- Ideal for dashboards and health checks
+
+### Sprint 10 Dependencies
+
+```
+#56 (countOnly) - Independent, can ship first
+#54 (health) - May use countOnly internally
+#55 (stats) - Independent
+```
+
+### Implementation Notes
+
+- All new tools should leverage existing OmniJS scripts where possible
+- Health metrics should use the same thresholds as documented in seshat skills
+- Consider caching for get_system_health (changes infrequently during a session)
