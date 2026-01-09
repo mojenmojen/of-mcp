@@ -30,6 +30,7 @@
       tagFilter: args.tagFilter || null,
       tagId: args.tagId || null,
       exactTagMatch: args.exactTagMatch || false,
+      untagged: args.untagged === true,
       searchText: args.searchText || null,
       limit: args.limit || 100,
       sortBy: args.sortBy || "name",
@@ -202,6 +203,11 @@
           if (!hasMatchingTag) {
             return false;
           }
+        }
+
+        // Untagged filter - returns only tasks with no tags
+        if (filters.untagged && task.tags.length > 0) {
+          return false;
         }
 
         // Search text filter

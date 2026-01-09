@@ -30,6 +30,7 @@ export const schema = z.object({
   tagFilter: z.union([z.string(), z.array(z.string())]).optional().describe("Filter by tag name(s). Can be single tag or array of tags"),
   tagId: z.union([z.string(), z.array(z.string())]).optional().describe("Filter by tag ID(s) (alternative to tagFilter). Can be single ID or array of IDs"),
   exactTagMatch: z.boolean().optional().describe("Set to true for exact tag name match, false for partial (default: false)"),
+  untagged: z.boolean().optional().describe("Filter for tasks with NO tags assigned. Useful after bulk tag removal to find unorganized tasks."),
 
   // Due date filtering
   dueBefore: z.string().optional().describe("Show tasks due before this date (ISO format: YYYY-MM-DD)"),

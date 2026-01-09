@@ -1,4 +1,4 @@
-# OmniFocus MCP Server - What's New (v1.25.0)
+# OmniFocus MCP Server - What's New (v1.26.0)
 
 > Summary of changes from Sprints 1-9 for AI assistants using this MCP server.
 
@@ -70,6 +70,11 @@
 - **New parameter**: `includeDropped: true` to search tasks by dropped/inactive tags
 - Default behavior unchanged (only searches active tags)
 - Use case: Find tasks blocked by tags that were later dropped
+
+### Sprint 9C: filter_tasks Enhancement
+- **New parameter**: `untagged: true` to filter for tasks with NO tags assigned
+- Use case: Find unorganized tasks after bulk tag removal
+- Example: `filter_tasks {"untagged": true, "taskStatus": ["Available"]}`
 
 ---
 
