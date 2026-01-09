@@ -19,12 +19,14 @@ const editItemSchema = z.object({
   newFlagged: z.boolean().optional().describe("Set flagged status"),
   newEstimatedMinutes: z.number().optional().describe("New estimated minutes"),
 
+  // Tag operations (work on both tasks and projects)
+  addTags: z.array(z.string()).optional().describe("Tags to add (works on both tasks and projects)"),
+  removeTags: z.array(z.string()).optional().describe("Tags to remove (works on both tasks and projects)"),
+  replaceTags: z.array(z.string()).optional().describe("Replace all existing tags (works on both tasks and projects)"),
+
   // Task-specific fields
   newStatus: z.enum(['incomplete', 'completed', 'dropped']).optional().describe("New status for tasks"),
   dropCompletely: z.boolean().optional().describe("When dropping a repeating task, set to true to drop completely"),
-  addTags: z.array(z.string()).optional().describe("Tags to add to the task"),
-  removeTags: z.array(z.string()).optional().describe("Tags to remove from the task"),
-  replaceTags: z.array(z.string()).optional().describe("Tags to replace all existing tags with"),
   newRepetitionRule: repetitionRuleSchema.nullable().optional().describe("New repetition rule (null to remove)"),
 
   // Task movement fields
