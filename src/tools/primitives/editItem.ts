@@ -24,12 +24,14 @@ export interface EditItemParams {
   newFlagged?: boolean;         // New flagged status (false to remove flag, true to add flag)
   newEstimatedMinutes?: number; // New estimated minutes
 
+  // Tag operations (work on both tasks and projects)
+  addTags?: string[];           // Tags to add (works on both tasks and projects)
+  removeTags?: string[];        // Tags to remove (works on both tasks and projects)
+  replaceTags?: string[];       // Replace all existing tags (works on both tasks and projects)
+
   // Task-specific fields
   newStatus?: TaskStatus;       // New status for tasks (incomplete, completed, dropped)
   dropCompletely?: boolean;     // When dropping repeating task, true = drop completely (no future occurrences)
-  addTags?: string[];           // Tags to add to the task
-  removeTags?: string[];        // Tags to remove from the task
-  replaceTags?: string[];       // Tags to replace all existing tags with
   newRepetitionRule?: RepetitionRule | null; // New repetition rule (null to remove, object to set)
 
   // Task movement fields
