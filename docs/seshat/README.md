@@ -6,8 +6,8 @@ Documentation for integrating of-mcp with seshat AI assistant skills.
 
 | File | Description | Status |
 |------|-------------|--------|
-| [skill-optimizations.md](skill-optimizations.md) | Batch operation optimizations for reset-habits, project-review, omnifocus-audit | Ready to implement |
-| [sprint9-integration.md](sprint9-integration.md) | How to use Sprint 9 features (untagged filter, includeDropped, project tags) | Ready to implement |
+| [skill-optimizations.md](skill-optimizations.md) | Batch operation optimizations for reset-habits, project-review, omnifocus-audit | ✅ Implemented |
+| [sprint9-integration.md](sprint9-integration.md) | How to use Sprint 9 features (untagged filter, includeDropped, project tags) | ✅ Implemented |
 | [sprint10-integration.md](sprint10-integration.md) | Future integration after Sprint 10 ships | Pending Sprint 10 |
 
 ## Quick Links

@@ -1,6 +1,8 @@
 # Seshat Integration: Sprint 9 Features
 
-> How seshat skills can leverage new of-mcp v1.26.0 features from Sprint 9.
+> **Status: ✅ Implemented** (January 2026)
+
+How seshat skills can leverage new of-mcp v1.26.0 features from Sprint 9.
 
 ---
 
