@@ -9,6 +9,7 @@ export const schema = z.object({
   tagMatchMode: z.enum(["any", "all"]).optional().describe("How to match multiple tags: 'any' returns tasks with at least one tag (default), 'all' returns tasks with every specified tag"),
   hideCompleted: z.boolean().optional().describe("Set to false to show completed tasks with this tag (default: true)"),
   exactMatch: z.boolean().optional().describe("Set to true for exact tag name match, false for partial (default: false)"),
+  includeDropped: z.boolean().optional().describe("Set to true to include dropped/inactive tags in search (default: false). Useful for finding tasks with tags that were later dropped."),
   limit: z.number().optional().describe("Maximum number of tasks to return (default: 500). Use to prevent timeout with many tags")
 });
 
@@ -31,6 +32,7 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
       tagMatchMode: args.tagMatchMode || 'any',
       hideCompleted: args.hideCompleted !== false, // Default to true
       exactMatch: args.exactMatch || false,
+      includeDropped: args.includeDropped || false,
       limit: args.limit
     });
     

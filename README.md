@@ -173,6 +173,9 @@ get_tasks_by_tag {"tagId": ["tagId1", "tagId2"]}
 # Tasks by multiple tags (AND - all of these tags)
 get_tasks_by_tag {"tagName": ["home", "errands"], "tagMatchMode": "all"}
 
+# Include dropped/inactive tags in search
+get_tasks_by_tag {"tagId": "droppedTagId", "includeDropped": true}
+
 # List all tags (fast - ~400ms)
 list_tags {}
 
