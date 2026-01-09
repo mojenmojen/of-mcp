@@ -459,7 +459,7 @@ batch_edit_items {
   ]
 }
 
-# Batch update tags (auto-creates missing tags)
+# Batch update tags (works on both tasks AND projects, auto-creates missing tags)
 batch_edit_items {
   "edits": [
     {
@@ -467,6 +467,11 @@ batch_edit_items {
       "itemType": "task",
       "addTags": ["urgent", "review"],
       "removeTags": ["someday"]
+    },
+    {
+      "id": "projectId1",
+      "itemType": "project",
+      "addTags": ["Q1", "active"]
     },
     {
       "id": "taskId2",
