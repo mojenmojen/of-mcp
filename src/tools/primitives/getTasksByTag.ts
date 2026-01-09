@@ -6,11 +6,12 @@ export interface GetTasksByTagOptions {
   tagMatchMode?: 'any' | 'all';
   hideCompleted?: boolean;
   exactMatch?: boolean;
+  includeDropped?: boolean;
   limit?: number;
 }
 
 export async function getTasksByTag(options: GetTasksByTagOptions): Promise<string> {
-  const { tagName, tagId, tagMatchMode = 'any', hideCompleted = true, exactMatch = false, limit } = options;
+  const { tagName, tagId, tagMatchMode = 'any', hideCompleted = true, exactMatch = false, includeDropped = false, limit } = options;
 
   // Normalize to arrays
   const tagNames = tagName ? (Array.isArray(tagName) ? tagName : [tagName]).map(t => t.trim()).filter(t => t !== '') : [];
@@ -28,6 +29,7 @@ export async function getTasksByTag(options: GetTasksByTagOptions): Promise<stri
       tagMatchMode: tagMatchMode,
       hideCompleted: hideCompleted,
       exactMatch: exactMatch,
+      includeDropped: includeDropped,
       limit: limit ?? 500 // Default limit to prevent timeout with many tags
     });
     

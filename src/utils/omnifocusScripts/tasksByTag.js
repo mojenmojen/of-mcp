@@ -12,6 +12,7 @@
     const hideCompleted = args.hideCompleted !== false; // Default to true
     const exactMatch = args.exactMatch || false;
     const matchMode = args.tagMatchMode || 'any'; // 'any' (OR) or 'all' (AND)
+    const includeDropped = args.includeDropped === true; // Default to false
     const limit = (args.limit !== undefined && args.limit !== null) ? args.limit : 500; // Limit results to prevent timeout
 
     if (tagNames.length === 0 && tagIds.length === 0) {
@@ -38,8 +39,10 @@
       availableTags: []
     };
 
-    // Get all active tags for reference
-    const allTags = flattenedTags.filter(tag => tag.active);
+    // Get tags for reference (include dropped if requested)
+    const allTags = includeDropped
+      ? Array.from(flattenedTags)
+      : flattenedTags.filter(tag => tag.active);
     exportData.availableTags = allTags.map(tag => tag.name).sort();
 
     // Build tag ID map for ID lookups

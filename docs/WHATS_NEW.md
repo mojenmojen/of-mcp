@@ -1,4 +1,4 @@
-# OmniFocus MCP Server - What's New (v1.24.0)
+# OmniFocus MCP Server - What's New (v1.25.0)
 
 > Summary of changes from Sprints 1-9 for AI assistants using this MCP server.
 
@@ -65,6 +65,11 @@
 ### list_tags Enhancement
 - Now shows tag status: active, (on hold), (dropped)
 - Use `edit_tag` to reactivate dropped tags
+
+### Sprint 9B: get_tasks_by_tag Enhancement
+- **New parameter**: `includeDropped: true` to search tasks by dropped/inactive tags
+- Default behavior unchanged (only searches active tags)
+- Use case: Find tasks blocked by tags that were later dropped
 
 ---
 
