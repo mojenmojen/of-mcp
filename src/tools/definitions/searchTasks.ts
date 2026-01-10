@@ -27,15 +27,6 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
   try {
     const result = await searchTasks(args);
 
-    // Check if this is a large database rejection (returned as formatted error text)
-    if (result.includes('Database contains') && result.includes('Please specify a projectName')) {
-      log.warn('Large database search rejected', {
-        query: args.query,
-        matchMode: args.matchMode,
-        hasProjectFilter: !!(args.projectName || args.projectId)
-      });
-    }
-
     return {
       content: [{
         type: "text" as const,

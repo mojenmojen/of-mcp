@@ -17,18 +17,7 @@
       });
     }
 
-    // Performance safeguard: warn if searching large database without project filter
     const hasProjectFilter = projectName || projectId;
-    const totalTaskCount = flattenedTasks.length;
-    const LARGE_DATABASE_THRESHOLD = 5000;
-
-    if (!hasProjectFilter && totalTaskCount > LARGE_DATABASE_THRESHOLD) {
-      return JSON.stringify({
-        success: false,
-        error: `Database contains ${totalTaskCount} tasks. Please specify a projectName or projectId filter for better performance. Unfiltered searches on large databases may be slow or timeout.`
-      });
-    }
-
     const queryLower = query.toLowerCase();
     const queryWords = queryLower.split(/\s+/).filter(w => w.length > 0);
 
@@ -85,6 +74,20 @@
       const noteMatch = searchIn !== 'name' && matches(task.note);
       return nameMatch || noteMatch;
     });
+
+    // Result count safeguard: too many matches without project filter
+    const MAX_MATCHES_WITHOUT_FILTER = 500;
+    if (!hasProjectFilter && matchedTasks.length > MAX_MATCHES_WITHOUT_FILTER) {
+      return JSON.stringify({
+        success: true,
+        tooManyMatches: true,
+        query: query,
+        matchMode: matchMode,
+        totalMatches: matchedTasks.length,
+        returned: 0,
+        tasks: []
+      });
+    }
 
     // Map to output format with match highlights
     let result = matchedTasks.slice(0, limit).map(task => {

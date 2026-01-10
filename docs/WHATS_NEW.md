@@ -11,9 +11,10 @@
 
 This allows AI assistants to immediately reference created items without additional lookups.
 
-**search_tasks performance safeguard:**
-- Searches without `projectName` or `projectId` on databases with >5000 tasks now return an error with guidance to add a project filter
-- This prevents timeouts on large OmniFocus databases
+**search_tasks result count safeguard:**
+- Searches without `projectName` or `projectId` that match >500 tasks now return guidance to narrow the search
+- Specific searches on large databases work fine - only broad queries with many matches are affected
+- Provides actionable suggestions (add project filter, use specific terms, try different match modes)
 
 ---
 

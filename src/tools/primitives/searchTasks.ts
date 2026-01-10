@@ -71,6 +71,7 @@ export async function searchTasks(options: SearchTasksOptions): Promise<string> 
 interface SearchResult {
   success: boolean;
   error?: string;
+  tooManyMatches?: boolean;
   query: string;
   matchMode: string;
   totalMatches: number;
@@ -98,6 +99,18 @@ function formatSearchResults(data: SearchResult, query: string, matchMode: strin
 
   let output = `# 🔍 SEARCH RESULTS\n\n`;
   output += `**Query**: "${query}" (${matchMode})\n\n`;
+
+  // Handle too many matches - return guidance instead of results
+  if (data.tooManyMatches) {
+    output += `⚠️ **Search returned too many results** (${data.totalMatches} matches found)\n\n`;
+    output += `To get results, please narrow your search:\n`;
+    output += `- Add \`projectName\` or \`projectId\` to limit to a specific project\n`;
+    output += `- Use more specific search terms\n`;
+    output += `- Try \`matchMode: "exact"\` for precise matching\n`;
+    output += `- Try \`matchMode: "allWords"\` if searching multiple words\n\n`;
+    output += `💡 Example: \`search_tasks({query: "${query}", projectName: "YourProject"})\`\n`;
+    return output;
+  }
 
   if (data.tasks.length === 0) {
     output += "No tasks match your search.\n";

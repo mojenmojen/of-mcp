@@ -49,10 +49,19 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
 
       // Include details about added items (use result.name since items may be reordered)
       // IMPORTANT: Include IDs so callers can reference the created items
-      const details = result.results.map((item) => {
+      const details = result.results.map((item, index) => {
         if (item.success) {
-          // Defensive check: ID should always exist on success, but handle edge cases
-          const idText = item.id ? ` (id: ${item.id})` : '';
+          // ID should always exist on success - log if missing for investigation
+          let idText = '';
+          if (item.id) {
+            idText = ` (id: ${item.id})`;
+          } else {
+            log.warn('Batch item created successfully but no ID returned', {
+              itemName: item.name,
+              itemType: item.type,
+              itemIndex: index
+            });
+          }
           return `- ✅ ${item.type}: "${item.name}"${idText}`;
         } else {
           return `- ❌ ${item.type || 'item'}: "${item.name || 'unknown'}" - Error: ${item.error}`;
