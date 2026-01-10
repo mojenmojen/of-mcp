@@ -48,9 +48,22 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
       }
 
       // Include details about added items (use result.name since items may be reordered)
-      const details = result.results.map((item) => {
+      // IMPORTANT: Include IDs so callers can reference the created items
+      const details = result.results.map((item, index) => {
         if (item.success) {
-          return `- ✅ ${item.type}: "${item.name}"`;
+          // ID should always exist on success - log if missing and inform user
+          let idText = '';
+          if (item.id) {
+            idText = ` (id: ${item.id})`;
+          } else {
+            log.warn('Batch item created successfully but no ID returned', {
+              itemName: item.name,
+              itemType: item.type,
+              itemIndex: index
+            });
+            idText = ' (Note: ID not available)';
+          }
+          return `- ✅ ${item.type}: "${item.name}"${idText}`;
         } else {
           return `- ❌ ${item.type || 'item'}: "${item.name || 'unknown'}" - Error: ${item.error}`;
         }
@@ -74,7 +87,12 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
     }
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    log.error('Tool execution error', { error: errorMessage });
+    log.error('Tool execution error', {
+      error: errorMessage,
+      itemCount: args.items.length,
+      itemTypes: args.items.map(i => i.type),
+      itemNames: args.items.slice(0, 5).map(i => i.name)
+    });
     return {
       content: [{
         type: "text" as const,

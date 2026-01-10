@@ -3,6 +3,9 @@ import { addOmniFocusTask, AddOmniFocusTaskParams } from '../primitives/addOmniF
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 import { repetitionRuleSchema } from '../../schemas/repetitionRule.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('addOmniFocusTask:handler');
 
 export const schema = z.object({
   name: z.string().describe("The name of the task"),
@@ -20,7 +23,7 @@ export const schema = z.object({
   repetitionRule: repetitionRuleSchema.optional().describe("Repetition rule for recurring tasks. Examples: {frequency: 'daily'}, {frequency: 'weekly', daysOfWeek: [1,3,5]}, {frequency: 'monthly', dayOfMonth: 15}")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Call the addOmniFocusTask function 
     const result = await addOmniFocusTask(args as AddOmniFocusTaskParams);
@@ -59,10 +62,23 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
         }
       }
 
+      // Include the task ID so callers can reference it
+      let idText = '';
+      if (result.taskId) {
+        idText = ` (id: ${result.taskId})`;
+      } else {
+        // This should not happen - log for investigation and inform user
+        log.warn('Task created successfully but no ID returned', {
+          taskName: args.name,
+          projectName: args.projectName
+        });
+        idText = ' (Note: ID not available - use search to find this task)';
+      }
+
       return {
         content: [{
           type: "text" as const,
-          text: `✅ Task "${args.name}" created successfully ${locationText}${dueDateText}${plannedDateText}${tagText}${repeatText}.`
+          text: `✅ Task "${args.name}"${idText} created successfully ${locationText}${dueDateText}${plannedDateText}${tagText}${repeatText}.`
         }]
       };
     } else {
@@ -77,7 +93,11 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
     }
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    console.error(`Tool execution error: ${errorMessage}`);
+    log.error('Tool execution error', {
+      error: errorMessage,
+      taskName: args.name,
+      projectName: args.projectName
+    });
     return {
       content: [{
         type: "text" as const,

@@ -17,6 +17,7 @@
       });
     }
 
+    const hasProjectFilter = projectName || projectId;
     const queryLower = query.toLowerCase();
     const queryWords = queryLower.split(/\s+/).filter(w => w.length > 0);
 
@@ -73,6 +74,20 @@
       const noteMatch = searchIn !== 'name' && matches(task.note);
       return nameMatch || noteMatch;
     });
+
+    // Result count safeguard: too many matches without project filter
+    const MAX_MATCHES_WITHOUT_FILTER = 500;
+    if (!hasProjectFilter && matchedTasks.length > MAX_MATCHES_WITHOUT_FILTER) {
+      return JSON.stringify({
+        success: true,
+        tooManyMatches: true,
+        query: query,
+        matchMode: matchMode,
+        totalMatches: matchedTasks.length,
+        returned: 0,
+        tasks: []
+      });
+    }
 
     // Map to output format with match highlights
     let result = matchedTasks.slice(0, limit).map(task => {

@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { addProject, AddProjectParams } from '../primitives/addProject.js';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('addProject:handler');
 
 export const schema = z.object({
   name: z.string().describe("The name of the project"),
@@ -16,7 +19,7 @@ export const schema = z.object({
   sequential: z.boolean().optional().describe("Whether tasks in the project should be sequential (default: false)")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Call the addProject function 
     const result = await addProject(args as AddProjectParams);
@@ -39,10 +42,23 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
         ? " (sequential)"
         : " (parallel)";
         
+      // Include the project ID so callers can reference it
+      let idText = '';
+      if (result.projectId) {
+        idText = ` (id: ${result.projectId})`;
+      } else {
+        // This should not happen - log for investigation and inform user
+        log.warn('Project created successfully but no ID returned', {
+          projectName: args.name,
+          folderName: args.folderName
+        });
+        idText = ' (Note: ID not available - use list_projects to find this project)';
+      }
+
       return {
         content: [{
           type: "text" as const,
-          text: `✅ Project "${args.name}" created successfully ${locationText}${dueDateText}${tagText}${sequentialText}.`
+          text: `✅ Project "${args.name}"${idText} created successfully ${locationText}${dueDateText}${tagText}${sequentialText}.`
         }]
       };
     } else {
@@ -57,7 +73,11 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
     }
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    console.error(`Tool execution error: ${errorMessage}`);
+    log.error('Tool execution error', {
+      error: errorMessage,
+      projectName: args.name,
+      folderName: args.folderName
+    });
     return {
       content: [{
         type: "text" as const,
