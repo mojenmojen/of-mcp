@@ -17,6 +17,18 @@
       });
     }
 
+    // Performance safeguard: warn if searching large database without project filter
+    const hasProjectFilter = projectName || projectId;
+    const totalTaskCount = flattenedTasks.length;
+    const LARGE_DATABASE_THRESHOLD = 5000;
+
+    if (!hasProjectFilter && totalTaskCount > LARGE_DATABASE_THRESHOLD) {
+      return JSON.stringify({
+        success: false,
+        error: `Database contains ${totalTaskCount} tasks. Please specify a projectName or projectId filter for better performance. Unfiltered searches on large databases may be slow or timeout.`
+      });
+    }
+
     const queryLower = query.toLowerCase();
     const queryWords = queryLower.split(/\s+/).filter(w => w.length > 0);
 

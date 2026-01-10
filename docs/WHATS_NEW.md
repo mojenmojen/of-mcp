@@ -1,6 +1,21 @@
-# OmniFocus MCP Server - What's New (v1.27.0)
+# OmniFocus MCP Server - What's New (v1.27.1)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.27.1 Bug Fixes
+
+**IDs now included in add/create responses:**
+- `add_omnifocus_task` now returns `(id: xyz123)` in the success message
+- `add_project` now returns `(id: xyz123)` in the success message
+- `batch_add_items` now returns `(id: xyz123)` for each created item
+
+This allows AI assistants to immediately reference created items without additional lookups.
+
+**search_tasks performance safeguard:**
+- Searches without `projectName` or `projectId` on databases with >5000 tasks now return an error with guidance to add a project filter
+- This prevents timeouts on large OmniFocus databases
+
+---
 
 ## Efficiency Guidelines (IMPORTANT)
 

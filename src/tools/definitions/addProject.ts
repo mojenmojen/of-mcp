@@ -39,10 +39,13 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
         ? " (sequential)"
         : " (parallel)";
         
+      // Include the project ID so callers can reference it
+      const idText = result.projectId ? ` (id: ${result.projectId})` : '';
+
       return {
         content: [{
           type: "text" as const,
-          text: `✅ Project "${args.name}" created successfully ${locationText}${dueDateText}${tagText}${sequentialText}.`
+          text: `✅ Project "${args.name}"${idText} created successfully ${locationText}${dueDateText}${tagText}${sequentialText}.`
         }]
       };
     } else {

@@ -48,9 +48,12 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
       }
 
       // Include details about added items (use result.name since items may be reordered)
+      // IMPORTANT: Include IDs so callers can reference the created items
       const details = result.results.map((item) => {
         if (item.success) {
-          return `- ✅ ${item.type}: "${item.name}"`;
+          // Defensive check: ID should always exist on success, but handle edge cases
+          const idText = item.id ? ` (id: ${item.id})` : '';
+          return `- ✅ ${item.type}: "${item.name}"${idText}`;
         } else {
           return `- ❌ ${item.type || 'item'}: "${item.name || 'unknown'}" - Error: ${item.error}`;
         }

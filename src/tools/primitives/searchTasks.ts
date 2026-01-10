@@ -57,7 +57,13 @@ export async function searchTasks(options: SearchTasksOptions): Promise<string> 
     return formatSearchResults(parsed, query, matchMode);
 
   } catch (error) {
-    log.error('Error in searchTasks', { error: error instanceof Error ? error.message : String(error) });
+    log.error('Error in searchTasks', {
+      error: error instanceof Error ? error.message : String(error),
+      query: options.query,
+      projectName: options.projectName,
+      projectId: options.projectId,
+      matchMode: options.matchMode
+    });
     throw new Error(`Failed to search tasks: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

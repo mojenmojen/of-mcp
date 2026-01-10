@@ -59,10 +59,13 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
         }
       }
 
+      // Include the task ID so callers can reference it
+      const idText = result.taskId ? ` (id: ${result.taskId})` : '';
+
       return {
         content: [{
           type: "text" as const,
-          text: `✅ Task "${args.name}" created successfully ${locationText}${dueDateText}${plannedDateText}${tagText}${repeatText}.`
+          text: `✅ Task "${args.name}"${idText} created successfully ${locationText}${dueDateText}${plannedDateText}${tagText}${repeatText}.`
         }]
       };
     } else {
