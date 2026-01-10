@@ -51,7 +51,7 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
       // IMPORTANT: Include IDs so callers can reference the created items
       const details = result.results.map((item, index) => {
         if (item.success) {
-          // ID should always exist on success - log if missing for investigation
+          // ID should always exist on success - log if missing and inform user
           let idText = '';
           if (item.id) {
             idText = ` (id: ${item.id})`;
@@ -61,6 +61,7 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
               itemType: item.type,
               itemIndex: index
             });
+            idText = ' (Note: ID not available)';
           }
           return `- ✅ ${item.type}: "${item.name}"${idText}`;
         } else {
@@ -86,7 +87,12 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
     }
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    log.error('Tool execution error', { error: errorMessage });
+    log.error('Tool execution error', {
+      error: errorMessage,
+      itemCount: args.items.length,
+      itemTypes: args.items.map(i => i.type),
+      itemNames: args.items.slice(0, 5).map(i => i.name)
+    });
     return {
       content: [{
         type: "text" as const,

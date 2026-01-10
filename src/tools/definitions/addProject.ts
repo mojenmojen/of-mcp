@@ -47,11 +47,12 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
       if (result.projectId) {
         idText = ` (id: ${result.projectId})`;
       } else {
-        // This should not happen - log for investigation
+        // This should not happen - log for investigation and inform user
         log.warn('Project created successfully but no ID returned', {
           projectName: args.name,
           folderName: args.folderName
         });
+        idText = ' (Note: ID not available - use list_projects to find this project)';
       }
 
       return {

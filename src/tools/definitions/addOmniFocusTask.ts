@@ -67,11 +67,12 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
       if (result.taskId) {
         idText = ` (id: ${result.taskId})`;
       } else {
-        // This should not happen - log for investigation
+        // This should not happen - log for investigation and inform user
         log.warn('Task created successfully but no ID returned', {
           taskName: args.name,
           projectName: args.projectName
         });
+        idText = ' (Note: ID not available - use search to find this task)';
       }
 
       return {
