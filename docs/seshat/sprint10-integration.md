@@ -1,8 +1,8 @@
 # Seshat Integration: Sprint 10 Features
 
-> **Status: ✅ Ready** (of-mcp v1.27.0)
+> **Status: ✅ Implemented** (of-mcp v1.27.0, seshat updated)
 
-How seshat skills can leverage of-mcp Sprint 10 features.
+How seshat skills leverage of-mcp Sprint 10 features.
 
 ---
 
@@ -60,7 +60,7 @@ filter_tasks({
 
 ---
 
-## Skill Integration Plans
+## Skill Integrations (Completed)
 
 ### weekly-review
 
@@ -254,47 +254,18 @@ Then fetch full task list only when user selects a project for detailed review.
 
 ---
 
-## Implementation Priority
+## Implementation Summary
 
-| Skill | Sprint 10 Feature | Effort | Impact |
-|-------|-------------------|--------|--------|
-| weekly-review | get_system_health | Low | High |
-| weekly-review | get_completion_stats | Low | Medium |
-| monthly-review | get_system_health | Low | High |
-| monthly-review | get_completion_stats (x2) | Low | High |
-| omnifocus-audit | get_completion_stats | Low | Very High |
-| of-stats | get_system_health | Medium | High (UX) |
-| project-review | countOnly | Low | Low |
-
-**Recommended implementation order:**
-1. weekly-review (highest usage)
-2. monthly-review (similar changes)
-3. omnifocus-audit (biggest performance win)
-4. of-stats (nice UX improvement)
-5. project-review (minor optimization)
+| Skill | Sprint 10 Feature | Status |
+|-------|-------------------|--------|
+| weekly-review | get_system_health | ✅ Implemented |
+| weekly-review | get_completion_stats | ✅ Implemented |
+| monthly-review | get_system_health | ✅ Implemented |
+| monthly-review | get_completion_stats (x2) | ✅ Implemented |
+| omnifocus-audit | get_completion_stats | ✅ Implemented |
+| of-stats | get_system_health | ✅ Implemented |
+| project-review | countOnly | ✅ Implemented |
 
 ---
 
-## Migration Notes
-
-### Backward Compatibility
-
-All existing API calls will continue to work. These are additive optimizations.
-
-### Gradual Migration
-
-Skills can migrate incrementally:
-1. Add Sprint 10 calls alongside existing calls
-2. Verify results match
-3. Remove old calls
-
-### Feature Detection
-
-Check of-mcp version before using new features:
-```
-get_server_version() → if >= 1.27.0, use Sprint 10 features
-```
-
----
-
-*Planned for of-mcp v1.27.0+ (Sprint 10)*
+*Implemented in of-mcp v1.27.0 (Sprint 10) - January 2026*
