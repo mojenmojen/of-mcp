@@ -7,9 +7,17 @@
       return taskStatusMap[status] || "Unknown";
     }
 
-    // Count inbox tasks using the reliable inInbox property
-    // Note: inbox.tasks doesn't work reliably via evaluateJavascript()
-    const inboxCount = flattenedTasks.filter(task => task.inInbox).length;
+    // Count inbox tasks - only active statuses (matching OF Statistics behavior)
+    // Excludes Completed, Dropped, and Blocked tasks from inbox count
+    const activeStatuses = [
+      Task.Status.Available,
+      Task.Status.DueSoon,
+      Task.Status.Next,
+      Task.Status.Overdue
+    ];
+    const inboxCount = flattenedTasks.filter(task =>
+      task.inInbox && activeStatuses.includes(task.taskStatus)
+    ).length;
 
     // Count projects by status
     const projects = {

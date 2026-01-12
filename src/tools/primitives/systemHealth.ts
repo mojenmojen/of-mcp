@@ -98,7 +98,8 @@ export async function getSystemHealth(): Promise<string> {
                         (tasksNext >= 30 && tasksNext <= 45) ? '🟡' : '🔴';
       output += `${nextStatus} **${tasksNext}** next actions`;
       output += ` | ${data.tasks?.available || 0} available`;
-      output += ` | ${data.tasks?.blocked || 0} blocked\n`;
+      output += ` | ${data.tasks?.blocked || 0} blocked`;
+      output += ` | ${data.tasks?.completed || 0} completed\n`;
 
       // Overdue
       const overduePercent = data.calculated?.overduePercent || 0;

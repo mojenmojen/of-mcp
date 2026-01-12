@@ -1,6 +1,19 @@
-# OmniFocus MCP Server - What's New (v1.27.2)
+# OmniFocus MCP Server - What's New (v1.27.3)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.27.3 Bug Fixes
+
+**Fixed `get_system_health` inbox count to match OmniFocus UI:**
+- Previously counted all inbox tasks including completed/dropped/blocked (143 vs actual 18)
+- Now counts only active inbox tasks (Available, DueSoon, Next, Overdue) to match OF Statistics behavior
+- Inbox count now matches `get_inbox_tasks()` and the OmniFocus UI
+
+**Added completed tasks count to `get_system_health` output:**
+- The Tasks section now includes total completed tasks count
+- This matches the historical metric tracked by OF Statistics plug-in
+
+---
 
 ## v1.27.2 Bug Fixes
 
