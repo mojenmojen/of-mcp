@@ -7,8 +7,9 @@
       return taskStatusMap[status] || "Unknown";
     }
 
-    // Count inbox tasks
-    const inboxCount = inbox.tasks.length;
+    // Count inbox tasks using the reliable inInbox property
+    // Note: inbox.tasks doesn't work reliably via evaluateJavascript()
+    const inboxCount = flattenedTasks.filter(task => task.inInbox).length;
 
     // Count projects by status
     const projects = {

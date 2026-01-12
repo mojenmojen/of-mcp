@@ -1,6 +1,15 @@
-# OmniFocus MCP Server - What's New (v1.27.1)
+# OmniFocus MCP Server - What's New (v1.27.2)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.27.2 Bug Fixes
+
+**Fixed `get_system_health` crashing with "inbox.tasks.length" error:**
+- The `inbox.tasks` property is not reliably available when running OmniJS via `evaluateJavascript()`
+- Changed to use `flattenedTasks.filter(task => task.inInbox)` which is the pattern used by all other scripts
+- This fixes the weekly review skill and any workflow using `get_system_health`
+
+---
 
 ## v1.27.1 Bug Fixes
 
