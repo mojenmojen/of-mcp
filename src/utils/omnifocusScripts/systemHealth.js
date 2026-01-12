@@ -94,13 +94,17 @@
           break;
       }
 
-      // Count flagged (only among active tasks)
-      if (task.flagged && status !== "Completed" && status !== "Dropped") {
+      // Count flagged (only among active tasks, exclude project root tasks)
+      if (task.flagged &&
+          !task.project &&
+          activeStatuses.includes(task.taskStatus)) {
         flaggedCount++;
       }
 
-      // Count untagged (only among active tasks)
-      if (task.tags.length === 0 && status !== "Completed" && status !== "Dropped") {
+      // Count untagged (only among active tasks, exclude project root tasks)
+      if (task.tags.length === 0 &&
+          !task.project &&
+          activeStatuses.includes(task.taskStatus)) {
         untaggedCount++;
       }
     });

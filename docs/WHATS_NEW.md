@@ -1,6 +1,15 @@
-# OmniFocus MCP Server - What's New (v1.27.3)
+# OmniFocus MCP Server - What's New (v1.27.4)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.27.4 Bug Fixes
+
+**Fixed `get_system_health` untagged and flagged counts:**
+- Untagged/flagged counts now exclude project root tasks (project titles)
+- Now uses same active status filter as inbox count (Available, DueSoon, Next, Overdue)
+- Consistent with OF Statistics plug-in behavior
+
+---
 
 ## v1.27.3 Bug Fixes
 
