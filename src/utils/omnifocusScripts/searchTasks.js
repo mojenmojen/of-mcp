@@ -101,6 +101,7 @@
         project: task.containingProject ? task.containingProject.name : null,
         projectId: task.containingProject ? task.containingProject.id.primaryKey : null,
         dueDate: task.dueDate ? task.dueDate.toISOString() : null,
+        createdDate: task.added ? task.added.toISOString() : null,
         completed: task.taskStatus === Task.Status.Completed,
         flagged: task.flagged,
         tags: task.tags.map(t => t.name),

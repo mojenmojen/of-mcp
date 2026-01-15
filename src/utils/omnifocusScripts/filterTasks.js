@@ -344,6 +344,7 @@
           deferDate: formatDate(task.deferDate),
           plannedDate: formatDate(task.plannedDate),
           completedDate: formatDate(task.completionDate),
+          createdDate: formatDate(task.added),
           estimatedMinutes: task.estimatedMinutes,
           projectId: task.containingProject ? task.containingProject.id.primaryKey : null,
           projectName: task.containingProject ? task.containingProject.name : null,

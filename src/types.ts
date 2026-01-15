@@ -16,6 +16,7 @@ export interface OmnifocusTask {
     deferDate: string | null;
     plannedDate: string | null;
     effectivePlannedDate: string | null;
+    createdDate: string | null;
     estimatedMinutes: number | null;
     
     // Organization

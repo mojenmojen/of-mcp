@@ -101,6 +101,7 @@
             dueDate: formatDate(task.dueDate),
             deferDate: formatDate(task.deferDate),
             estimatedMinutes: task.estimatedMinutes,
+            createdDate: formatDate(task.added),
             projectId: task.containingProject ? task.containingProject.id.primaryKey : null,
             projectName: task.containingProject ? task.containingProject.name : null,
             inInbox: task.inInbox,

@@ -56,6 +56,7 @@
       deferDate: foundTask.deferDate ? foundTask.deferDate.toISOString() : null,
       plannedDate: foundTask.plannedDate ? foundTask.plannedDate.toISOString() : null,
       estimatedMinutes: foundTask.estimatedMinutes || null,
+      createdDate: foundTask.added ? foundTask.added.toISOString() : null,
       hasChildren: foundTask.hasChildren,
       childrenCount: foundTask.children ? foundTask.children.length : 0,
       parentId: null,

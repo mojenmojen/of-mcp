@@ -1,6 +1,21 @@
-# OmniFocus MCP Server - What's New (v1.27.4)
+# OmniFocus MCP Server - What's New (v1.28.0)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.28.0 New Feature
+
+**Added `createdDate` field to task data:**
+- All task-returning tools now include `createdDate` (ISO string or null)
+- Exposes when tasks were originally created in OmniFocus via `task.added` property
+- Use cases: sorting/filtering by task age, backlog analysis, task creation analytics
+
+**Affected tools:**
+- `filter_tasks`, `search_tasks`, `get_task_by_id`
+- `get_inbox_tasks`, `get_flagged_tasks`, `get_forecast_tasks`
+- `get_tasks_by_tag`, `get_today_completed_tasks`
+- `batch_filter_tasks`, `get_custom_perspective_tasks` (already had this)
+
+---
 
 ## v1.27.4 Bug Fixes
 

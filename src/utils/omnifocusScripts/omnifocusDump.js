@@ -159,6 +159,7 @@
             effectiveDeferDate: formatDate(task.effectiveDeferDate),
             effectivePlannedDate: formatDate(task.effectivePlannedDate),
             estimatedMinutes: task.estimatedMinutes,
+            createdDate: formatDate(task.added),
             completedByChildren: task.completedByChildren,
             sequential: task.sequential || false,
             tags: taskTags,
