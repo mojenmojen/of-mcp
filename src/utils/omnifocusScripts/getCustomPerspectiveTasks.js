@@ -60,7 +60,7 @@
           flagged: t.flagged,
           estimatedMinutes: t.estimatedMinutes || null,
           repetitionRule: t.repetitionRule ? t.repetitionRule.toString() : null,
-          creationDate: t.added ? t.added.toISOString() : null,
+          createdDate: t.added ? t.added.toISOString() : null,
           completionDate: t.completedDate ? t.completedDate.toISOString() : null,
           parent: parentId,     // Parent task ID
           children: [],         // Child task IDs, populated below

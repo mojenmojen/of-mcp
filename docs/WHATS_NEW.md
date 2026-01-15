@@ -13,7 +13,7 @@
 - `filter_tasks`, `search_tasks`, `get_task_by_id`
 - `get_inbox_tasks`, `get_flagged_tasks`, `get_forecast_tasks`
 - `get_tasks_by_tag`, `get_today_completed_tasks`
-- `batch_filter_tasks`, `get_custom_perspective_tasks` (already had this)
+- `batch_filter_tasks`, `get_custom_perspective_tasks`
 
 ---
 

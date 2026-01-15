@@ -46,7 +46,7 @@ Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **project r
 - **📊 Smart Querying** - Find tasks, projects, or folders by ID or name
 - **🔗 Consistent ID Support** - All tools accept both IDs and names (IDs take priority for reliability)
 - **🔄 Full CRUD Operations** - Create, read, update, delete tasks, projects, and folders
-- **📅 Time Management** - Due dates, defer dates, planned dates, estimates, and scheduling
+- **📅 Time Management** - Due dates, defer dates, planned dates, creation dates, estimates, and scheduling
 - **🏷️ Advanced Tagging** - Multi-tag filtering with any/all matching, exact/partial search, and auto-creation of missing tags
 - **🤖 AI Integration** - Seamless Claude AI integration for intelligent workflows
 
