@@ -61,7 +61,7 @@ Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **project r
 
 2. Add to Claude Code:
    ```bash
-   claude mcp add omnifocus -- node /path/to/of-mcp/dist/server.js
+   claude mcp add omnifocus -- node "/path/to/of-mcp/dist/server.js"
    ```
 
 ## 📋 Requirements
