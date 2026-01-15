@@ -52,26 +52,17 @@ Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **project r
 
 ## 📦 Installation
 
-### Quick Install (Recommended)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/mojenmojen/of-mcp.git
+   cd of-mcp
+   npm install && npm run build
+   ```
 
-```bash
-# One-line installation
-claude mcp add omnifocus-enhanced -- npx -y of-mcp
-```
-
-### Alternative Installation Methods
-
-```bash
-# Global installation
-npm install -g of-mcp
-claude mcp add omnifocus-enhanced -- of-mcp
-
-# Local project installation
-git clone https://github.com/mojenmojen/of-mcp.git
-cd of-mcp
-npm install && npm run build
-claude mcp add omnifocus-enhanced -- node "/path/to/of-mcp/dist/server.js"
-```
+2. Add to Claude Code:
+   ```bash
+   claude mcp add omnifocus -- node /path/to/of-mcp/dist/server.js
+   ```
 
 ## 📋 Requirements
 
