@@ -57,7 +57,7 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
       }
 
       if (task.createdDate) {
-        infoText += `• **Created**: ${task.createdDate}\n`;
+        infoText += `• **Created**: ${new Date(task.createdDate).toLocaleDateString()}\n`;
       }
 
       infoText += `• **Has Children**: ${task.hasChildren ? `Yes (${task.childrenCount} subtasks)` : 'No'}\n`;
