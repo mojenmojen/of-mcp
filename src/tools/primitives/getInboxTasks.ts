@@ -38,7 +38,7 @@ export async function getInboxTasks(options: GetInboxTasksOptions = {}): Promise
             const flagSymbol = task.flagged ? '🚩 ' : '';
             const dueDateStr = task.dueDate ? ` [DUE: ${new Date(task.dueDate).toLocaleDateString()}]` : '';
             const statusStr = task.taskStatus !== 'Available' ? ` (${task.taskStatus})` : '';
-            const createdStr = task.createdDate ? ` (created: ${task.createdDate})` : '';
+            const createdStr = task.createdDate ? ` (created: ${new Date(task.createdDate).toLocaleDateString()})` : '';
 
             output += `${index + 1}. ${flagSymbol}${task.name}${dueDateStr}${statusStr} [ID: ${task.id}]${createdStr}\n`;
             

@@ -164,7 +164,7 @@ function formatTaskDetails(task: any): string[] {
   }
 
   if (task.createdDate) {
-    details.push(`Created: ${task.createdDate}`);
+    details.push(`Created: ${new Date(task.createdDate).toLocaleDateString()}`);
   }
 
   if (task.estimatedMinutes) {
@@ -211,7 +211,7 @@ function formatFlatTasks(perspectiveName: string, tasks: any[], limit: number, t
     }
 
     if (task.createdDate) {
-      taskText += `\n   Created: ${task.createdDate}`;
+      taskText += `\n   Created: ${new Date(task.createdDate).toLocaleDateString()}`;
     }
 
     if (task.flagged) {

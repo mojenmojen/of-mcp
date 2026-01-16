@@ -158,7 +158,7 @@ function formatSearchResults(data: SearchResult, query: string, matchMode: strin
       }
 
       if (task.createdDate) {
-        output += ` (created: ${task.createdDate})`;
+        output += ` (created: ${new Date(task.createdDate).toLocaleDateString()})`;
       }
 
       output += '\n';

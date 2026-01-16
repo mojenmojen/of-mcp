@@ -113,7 +113,7 @@ export async function getTasksByTag(options: GetTasksByTagOptions): Promise<stri
               const deferDateStr = task.deferDate ? ` [DEFER: ${new Date(task.deferDate).toLocaleDateString()}]` : '';
               const statusStr = task.taskStatus !== 'Available' ? ` (${task.taskStatus})` : '';
               const estimateStr = task.estimatedMinutes ? ` ⏱${task.estimatedMinutes}m` : '';
-              const createdStr = task.createdDate ? ` (created: ${task.createdDate})` : '';
+              const createdStr = task.createdDate ? ` (created: ${new Date(task.createdDate).toLocaleDateString()})` : '';
 
               output += `• ${flagSymbol}${task.name}${dueDateStr}${deferDateStr}${statusStr}${estimateStr} [ID: ${task.id}]${createdStr}\n`;
               
