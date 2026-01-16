@@ -1,6 +1,20 @@
-# OmniFocus MCP Server - What's New (v1.28.0)
+# OmniFocus MCP Server - What's New (v1.28.3)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.28.3 Enhancement
+
+**`createdDate` now displayed in formatted task output:**
+- All task-returning tools now show creation date in human-readable format (e.g., `1/15/2026`)
+- Uses `toLocaleDateString()` for consistent formatting across all tools
+- The `createdDate` data field was added in v1.28.0; this update makes it visible in output
+
+**Affected tools:**
+- `filter_tasks`, `search_tasks`, `get_task_by_id`
+- `get_inbox_tasks`, `get_flagged_tasks`, `get_forecast_tasks`
+- `get_tasks_by_tag`, `batch_filter_tasks`, `get_custom_perspective_tasks`
+
+---
 
 ## v1.28.0 New Feature
 
