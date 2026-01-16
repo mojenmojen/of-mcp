@@ -1,4 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('getProjectById');
 
 // Interface for project lookup parameters
 export interface GetProjectByIdParams {
@@ -42,8 +45,10 @@ export async function getProjectById(params: GetProjectByIdParams): Promise<{suc
       };
     }
 
-    console.error("Executing OmniJS script for getProjectById...");
-    console.error(`Parameters: projectId=${params.projectId}, projectName=${params.projectName}`);
+    log.debug('Executing OmniJS script for getProjectById', {
+      projectId: params.projectId,
+      projectName: params.projectName
+    });
 
     // Execute the OmniJS script
     const result = await executeOmniFocusScript('@getProjectByName.js', {
@@ -57,7 +62,7 @@ export async function getProjectById(params: GetProjectByIdParams): Promise<{suc
       try {
         parsed = JSON.parse(result);
       } catch (e) {
-        console.error("Failed to parse result as JSON:", e);
+        log.error('Failed to parse result as JSON', { error: (e as Error).message });
         return {
           success: false,
           error: `Failed to parse result: ${result}`
@@ -79,11 +84,12 @@ export async function getProjectById(params: GetProjectByIdParams): Promise<{suc
       };
     }
 
-  } catch (error: any) {
-    console.error("Error in getProjectById:", error);
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.error('Error in getProjectById', { error: errorMsg });
     return {
       success: false,
-      error: error?.message || "Unknown error in getProjectById"
+      error: errorMsg || "Unknown error in getProjectById"
     };
   }
 }

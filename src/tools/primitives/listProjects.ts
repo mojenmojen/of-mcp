@@ -1,4 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('listProjects');
 
 export interface ListProjectsOptions {
   folderName?: string;
@@ -37,8 +40,12 @@ export async function listProjects(options: ListProjectsOptions = {}): Promise<L
   } = options;
 
   try {
-    console.error("Executing OmniJS script for listProjects...");
-    console.error(`Parameters: folderName=${folderName}, folderId=${folderId}, status=${status}, limit=${limit}`);
+    log.debug('Executing OmniJS script for listProjects', {
+      folderName,
+      folderId,
+      status,
+      limit
+    });
 
     const result = await executeOmniFocusScript('@listProjects.js', {
       folderName,
@@ -54,7 +61,7 @@ export async function listProjects(options: ListProjectsOptions = {}): Promise<L
       try {
         parsed = JSON.parse(result);
       } catch (e) {
-        console.error("Failed to parse result as JSON:", e);
+        log.error('Failed to parse result as JSON', { error: (e as Error).message });
         return {
           success: false,
           error: `Failed to parse result: ${result}`,
@@ -70,11 +77,12 @@ export async function listProjects(options: ListProjectsOptions = {}): Promise<L
 
     return parsed;
 
-  } catch (error: any) {
-    console.error("Error in listProjects:", error);
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.error('Error in listProjects', { error: errorMsg });
     return {
       success: false,
-      error: error?.message || "Unknown error in listProjects",
+      error: errorMsg || "Unknown error in listProjects",
       count: 0,
       folderFilter: null,
       statusFilter: status,

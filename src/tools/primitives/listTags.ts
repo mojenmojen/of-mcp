@@ -1,4 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('listTags');
 
 export interface ListTagsOptions {
   includeDropped?: boolean;
@@ -100,7 +103,7 @@ export async function listTags(options: ListTagsOptions = {}): Promise<string> {
     return output;
 
   } catch (error) {
-    console.error("Error in listTags:", error);
+    log.error('Error in listTags', { error: error instanceof Error ? error.message : String(error) });
     throw new Error(`Failed to list tags: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

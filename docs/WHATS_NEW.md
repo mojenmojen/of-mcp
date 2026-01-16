@@ -1,6 +1,45 @@
-# OmniFocus MCP Server - What's New (v1.29.0)
+# OmniFocus MCP Server - What's New (v1.29.2)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.29.2 Logging Standardization
+
+**Structured logging now consistent across all primitive files (Issue #82):**
+- All 10 remaining primitive files migrated from `console.error` to structured `logger` utility
+- Debug output uses `log.debug()`, error handling uses `log.error()`
+- Each primitive has a descriptive logger child name (e.g., `of-mcp:getFolderById`)
+- Logs are written to stderr with timestamps and structured context objects
+
+**Files updated:**
+- `batchFilterTasks.ts`, `getCustomPerspectiveTasks.ts`, `getFolderById.ts`
+- `getPerspectiveTasksV2.ts`, `getProjectById.ts`, `getProjectsForReview.ts`
+- `getTodayCompletedTasks.ts`, `listCustomPerspectives.ts`, `listProjects.ts`, `listTags.ts`
+
+**Benefits:**
+- Consistent log format across all modules for easier debugging
+- Log level filtering via `LOG_LEVEL` environment variable (debug, info, warn, error, silent)
+- Structured context objects instead of string concatenation
+
+---
+
+## v1.29.1 Safe Date Formatting Extended
+
+**`formatDateSafe()` now applied across all task-returning primitives (Issue #81):**
+- Extended safe date handling from 4 definition files to all 8 primitive files
+- 21 instances of date formatting now use `formatDateSafe()` instead of raw `new Date().toLocaleDateString()`
+- Prevents "Invalid Date" strings from appearing in output when OmniFocus returns malformed dates
+
+**Affected files:**
+- `filterTasks.ts` (5 instances: createdDate, dueDate, deferDate, plannedDate, completedDate)
+- `getCustomPerspectiveTasks.ts` (4 instances: dueDate x2, createdDate x2)
+- `batchFilterTasks.ts` (3 instances: createdDate, dueDate, deferDate)
+- `getFlaggedTasks.ts` (3 instances: dueDate, deferDate, createdDate)
+- `getTasksByTag.ts` (3 instances: dueDate, deferDate, createdDate)
+- `searchTasks.ts` (2 instances: dueDate, createdDate)
+- `getInboxTasks.ts` (2 instances: dueDate, createdDate)
+- `getForecastTasks.ts` (1 instance: createdDate)
+
+---
 
 ## v1.29.0 Error Handling Improvements
 

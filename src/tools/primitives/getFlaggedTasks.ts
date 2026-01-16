@@ -1,5 +1,6 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 import { logger } from '../../utils/logger.js';
+import { formatDateSafe } from '../../utils/dateUtils.js';
 
 const log = logger.child('getFlaggedTasks');
 
@@ -66,11 +67,11 @@ export async function getFlaggedTasks(options: GetFlaggedTasksOptions = {}): Pro
             }
             
             tasks.forEach((task: any, index: number) => {
-              const dueDateStr = task.dueDate ? ` [DUE: ${new Date(task.dueDate).toLocaleDateString()}]` : '';
-              const deferDateStr = task.deferDate ? ` [DEFER: ${new Date(task.deferDate).toLocaleDateString()}]` : '';
+              const dueDateStr = task.dueDate ? ` [DUE: ${formatDateSafe(task.dueDate)}]` : '';
+              const deferDateStr = task.deferDate ? ` [DEFER: ${formatDateSafe(task.deferDate)}]` : '';
               const statusStr = task.taskStatus !== 'Available' ? ` (${task.taskStatus})` : '';
               const estimateStr = task.estimatedMinutes ? ` ⏱${task.estimatedMinutes}m` : '';
-              const createdStr = task.createdDate ? ` (created: ${new Date(task.createdDate).toLocaleDateString()})` : '';
+              const createdStr = task.createdDate ? ` (created: ${formatDateSafe(task.createdDate)})` : '';
 
               output += `• 🚩 ${task.name}${dueDateStr}${deferDateStr}${statusStr}${estimateStr} [ID: ${task.id}]${createdStr}\n`;
               

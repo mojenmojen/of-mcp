@@ -1,4 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('getTodayCompletedTasks');
 
 export interface GetTodayCompletedTasksOptions {
   limit?: number;
@@ -71,7 +74,7 @@ export async function getTodayCompletedTasks(options: GetTodayCompletedTasksOpti
     return "Unable to parse OmniFocus result";
     
   } catch (error) {
-    console.error("Error in getTodayCompletedTasks:", error);
+    log.error('Error in getTodayCompletedTasks', { error: error instanceof Error ? error.message : String(error) });
     throw new Error(`Failed to get today's completed tasks: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

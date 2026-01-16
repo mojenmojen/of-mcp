@@ -1,6 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 import { queryCache } from '../../utils/cache.js';
 import { logger } from '../../utils/logger.js';
+import { formatDateSafe } from '../../utils/dateUtils.js';
 
 const log = logger.child('filterTasks');
 
@@ -289,30 +290,31 @@ function formatTask(task: any): string {
   }
 
   // Created date
-  if (task.createdDate) {
-    output += ` (created: ${new Date(task.createdDate).toLocaleDateString()})`;
+  const createdDateStr = formatDateSafe(task.createdDate);
+  if (createdDateStr) {
+    output += ` (created: ${createdDateStr})`;
   }
 
   // Date info
   const dateInfo: string[] = [];
-  if (task.dueDate) {
-    const dueDateStr = new Date(task.dueDate).toLocaleDateString();
+  const dueDateStr = formatDateSafe(task.dueDate);
+  if (dueDateStr) {
     const isOverdue = new Date(task.dueDate) < new Date();
     dateInfo.push(isOverdue ? `⚠️ DUE: ${dueDateStr}` : `📅 DUE: ${dueDateStr}`);
   }
 
-  if (task.deferDate) {
-    const deferDateStr = new Date(task.deferDate).toLocaleDateString();
+  const deferDateStr = formatDateSafe(task.deferDate);
+  if (deferDateStr) {
     dateInfo.push(`🚀 DEFER: ${deferDateStr}`);
   }
 
-  if (task.plannedDate) {
-    const plannedDateStr = new Date(task.plannedDate).toLocaleDateString();
+  const plannedDateStr = formatDateSafe(task.plannedDate);
+  if (plannedDateStr) {
     dateInfo.push(`📋 PLANNED: ${plannedDateStr}`);
   }
 
-  if (task.completedDate) {
-    const completedDateStr = new Date(task.completedDate).toLocaleDateString();
+  const completedDateStr = formatDateSafe(task.completedDate);
+  if (completedDateStr) {
     dateInfo.push(`✅ DONE: ${completedDateStr}`);
   }
 

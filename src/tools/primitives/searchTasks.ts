@@ -1,6 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 import { queryCache } from '../../utils/cache.js';
 import { logger } from '../../utils/logger.js';
+import { formatDateSafe } from '../../utils/dateUtils.js';
 
 const log = logger.child('searchTasks');
 
@@ -153,13 +154,14 @@ function formatSearchResults(data: SearchResult, query: string, matchMode: strin
       output += `- ${flagSymbol}${task.name} ${matchIndicator}`;
       output += ` [ID: ${task.id}]`;
 
-      if (task.dueDate) {
-        const dueDateStr = new Date(task.dueDate).toLocaleDateString();
+      const dueDateStr = formatDateSafe(task.dueDate);
+      if (dueDateStr) {
         output += ` [📅 ${dueDateStr}]`;
       }
 
-      if (task.createdDate) {
-        output += ` (created: ${new Date(task.createdDate).toLocaleDateString()})`;
+      const createdDateStr = formatDateSafe(task.createdDate);
+      if (createdDateStr) {
+        output += ` (created: ${createdDateStr})`;
       }
 
       output += '\n';

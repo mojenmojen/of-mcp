@@ -1,5 +1,6 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 import { logger } from '../../utils/logger.js';
+import { formatDateSafe } from '../../utils/dateUtils.js';
 
 const log = logger.child('batchFilterTasks');
 
@@ -33,9 +34,10 @@ export async function batchFilterTasks(options: BatchFilterTasksOptions = {}): P
       sortOrder = "asc"
     } = options;
 
-    console.error("Executing batch filter for projects...");
-    console.error(`Project IDs: ${options.projectIds?.join(', ') || 'none'}`);
-    console.error(`Project Names: ${options.projectNames?.join(', ') || 'none'}`);
+    log.debug('Executing batch filter for projects', {
+      projectIds: options.projectIds || [],
+      projectNames: options.projectNames || []
+    });
 
     const result = await executeOmniFocusScript('@batchFilterTasks.js', {
       ...options,
@@ -144,21 +146,23 @@ function formatTask(task: any): string {
   }
 
   // Created date
-  if (task.createdDate) {
-    output += ` (created: ${new Date(task.createdDate).toLocaleDateString()})`;
+  const createdDateStr = formatDateSafe(task.createdDate);
+  if (createdDateStr) {
+    output += ` (created: ${createdDateStr})`;
   }
 
   output += '\n';
 
   // Date info
-  if (task.dueDate) {
-    const dueDateStr = new Date(task.dueDate).toLocaleDateString();
+  const dueDateStr = formatDateSafe(task.dueDate);
+  if (dueDateStr) {
     const isOverdue = new Date(task.dueDate) < new Date();
     output += `  ${isOverdue ? '⚠️' : '📅'} Due: ${dueDateStr}\n`;
   }
 
-  if (task.deferDate) {
-    output += `  🚀 Defer: ${new Date(task.deferDate).toLocaleDateString()}\n`;
+  const deferDateStr = formatDateSafe(task.deferDate);
+  if (deferDateStr) {
+    output += `  🚀 Defer: ${deferDateStr}\n`;
   }
 
   // Tags

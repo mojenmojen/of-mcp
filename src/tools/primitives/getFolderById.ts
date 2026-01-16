@@ -1,4 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('getFolderById');
 
 // Interface for folder lookup parameters
 export interface GetFolderByIdParams {
@@ -31,8 +34,10 @@ export async function getFolderById(params: GetFolderByIdParams): Promise<{succe
       };
     }
 
-    console.error("Executing OmniJS script for getFolderById...");
-    console.error(`Parameters: folderId=${params.folderId}, folderName=${params.folderName}`);
+    log.debug('Executing OmniJS script for getFolderById', {
+      folderId: params.folderId,
+      folderName: params.folderName
+    });
 
     // Execute the OmniJS script
     const result = await executeOmniFocusScript('@getFolderByName.js', {
@@ -46,7 +51,7 @@ export async function getFolderById(params: GetFolderByIdParams): Promise<{succe
       try {
         parsed = JSON.parse(result);
       } catch (e) {
-        console.error("Failed to parse result as JSON:", e);
+        log.error('Failed to parse result as JSON', { error: (e as Error).message });
         return {
           success: false,
           error: `Failed to parse result: ${result}`
@@ -68,11 +73,12 @@ export async function getFolderById(params: GetFolderByIdParams): Promise<{succe
       };
     }
 
-  } catch (error: any) {
-    console.error("Error in getFolderById:", error);
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.error('Error in getFolderById', { error: errorMsg });
     return {
       success: false,
-      error: error?.message || "Unknown error in getFolderById"
+      error: errorMsg || "Unknown error in getFolderById"
     };
   }
 }

@@ -1,5 +1,6 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 import { logger } from '../../utils/logger.js';
+import { formatDateSafe } from '../../utils/dateUtils.js';
 
 const log = logger.child('getForecastTasks');
 
@@ -73,7 +74,7 @@ export async function getForecastTasks(options: GetForecastTasksOptions = {}): P
               const statusStr = task.taskStatus !== 'Available' ? ` [${task.taskStatus}]` : '';
               const estimateStr = task.estimatedMinutes ? ` ⏱${task.estimatedMinutes}m` : '';
               const typeIndicator = task.isDue ? '📅' : '🚀'; // Due vs Deferred
-              const createdStr = task.createdDate ? ` (created: ${new Date(task.createdDate).toLocaleDateString()})` : '';
+              const createdStr = task.createdDate ? ` (created: ${formatDateSafe(task.createdDate)})` : '';
 
               output += `• ${typeIndicator} ${flagSymbol}${task.name}${projectStr}${statusStr}${estimateStr} [ID: ${task.id}]${createdStr}\n`;
               

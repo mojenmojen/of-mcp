@@ -1,4 +1,7 @@
 import { PerspectiveEngine, TaskItem } from '../../utils/perspectiveEngine.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('getPerspectiveTasksV2');
 
 // Perspective access interface based on OmniFocus 4.2+ new API
 
@@ -32,8 +35,8 @@ export async function getPerspectiveTasksV2(
   params: GetPerspectiveTasksV2Params
 ): Promise<GetPerspectiveTasksV2Result> {
 
-  console.log(`[PerspectiveV2] Starting to get tasks for perspective "${params.perspectiveName}"`);
-  console.log(`[PerspectiveV2] Parameters:`, {
+  log.debug('Starting to get tasks for perspective', {
+    perspectiveName: params.perspectiveName,
     hideCompleted: params.hideCompleted,
     limit: params.limit
   });
@@ -49,26 +52,27 @@ export async function getPerspectiveTasksV2(
     });
 
     if (!result.success) {
-      console.error(`[PerspectiveV2] Execution failed:`, result.error);
+      log.error('Execution failed', { error: result.error });
       return {
         success: false,
         error: result.error
       };
     }
 
-    console.log(`[PerspectiveV2] Execution successful`);
-    console.log(`[PerspectiveV2] Perspective info:`, result.perspectiveInfo);
-    console.log(`[PerspectiveV2] Filtered ${result.tasks?.length || 0} tasks`);
+    log.debug('Execution successful', {
+      perspectiveInfo: result.perspectiveInfo,
+      taskCount: result.tasks?.length || 0
+    });
 
     // Log detailed task info for debugging
     if (result.tasks && result.tasks.length > 0) {
-      console.log(`[PerspectiveV2] Task sample:`, {
+      log.debug('Task sample', {
         first: {
           name: result.tasks[0].name,
           flagged: result.tasks[0].flagged,
           dueDate: result.tasks[0].dueDate,
           projectName: result.tasks[0].projectName,
-          tags: result.tasks[0].tags?.length || 0
+          tagCount: result.tasks[0].tags?.length || 0
         }
       });
     }
@@ -79,12 +83,13 @@ export async function getPerspectiveTasksV2(
       perspectiveInfo: result.perspectiveInfo
     };
 
-  } catch (error: any) {
-    console.error(`[PerspectiveV2] Perspective engine error:`, error);
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.error('Perspective engine error', { error: errorMsg });
 
     return {
       success: false,
-      error: `Perspective engine error: ${error.message || 'Unknown error'}`
+      error: `Perspective engine error: ${errorMsg}`
     };
   }
 }

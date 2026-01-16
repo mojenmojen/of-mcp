@@ -1,4 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('listCustomPerspectives');
 
 export interface ListCustomPerspectivesOptions {
   format?: 'simple' | 'detailed';
@@ -8,31 +11,30 @@ export async function listCustomPerspectives(options: ListCustomPerspectivesOpti
   const { format = 'simple' } = options;
   
   try {
-    console.log('Starting listCustomPerspectives script...');
+    log.debug('Starting listCustomPerspectives script');
 
     // Execute the list custom perspectives script
     const result = await executeOmniFocusScript('@listCustomPerspectives.js', {});
 
-    console.log('Script execution complete, result type:', typeof result);
-    console.log('Script result:', result);
+    log.debug('Script execution complete', { resultType: typeof result });
 
     // Handle various return types
     let data: any;
 
     if (typeof result === 'string') {
-      console.log('Result is string, attempting JSON parse...');
+      log.debug('Result is string, attempting JSON parse');
       try {
         data = JSON.parse(result);
-        console.log('JSON parse successful:', data);
+        log.debug('JSON parse successful');
       } catch (parseError) {
-        console.error('JSON parse failed:', parseError);
+        log.error('JSON parse failed', { error: (parseError as Error).message });
         throw new Error(`Failed to parse string result: ${result}`);
       }
     } else if (typeof result === 'object' && result !== null) {
-      console.log('Result is object, using directly...');
+      log.debug('Result is object, using directly');
       data = result;
     } else {
-      console.error('Invalid result type:', typeof result, result);
+      log.error('Invalid result type', { type: typeof result, value: result });
       throw new Error(`Script returned invalid result type: ${typeof result}, value: ${result}`);
     }
 
@@ -59,7 +61,7 @@ export async function listCustomPerspectives(options: ListCustomPerspectivesOpti
     }
 
   } catch (error) {
-    console.error('Error in listCustomPerspectives:', error);
+    log.error('Error in listCustomPerspectives', { error: error instanceof Error ? error.message : String(error) });
     return `❌ **Error**: ${error instanceof Error ? error.message : String(error)}`;
   }
 }

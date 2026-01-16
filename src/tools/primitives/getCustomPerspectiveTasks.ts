@@ -1,4 +1,8 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { formatDateSafe } from '../../utils/dateUtils.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('getCustomPerspectiveTasks');
 
 export interface GetCustomPerspectiveTasksOptions {
   perspectiveName?: string;
@@ -67,7 +71,7 @@ export async function getCustomPerspectiveTasks(options: GetCustomPerspectiveTas
     }
 
   } catch (error) {
-    console.error('Error in getCustomPerspectiveTasks:', error);
+    log.error('Error in getCustomPerspectiveTasks', { error: error instanceof Error ? error.message : String(error) });
     return `❌ **Error**: ${error instanceof Error ? error.message : String(error)}`;
   }
 }
@@ -158,13 +162,14 @@ function formatTaskDetails(task: any): string[] {
     details.push(`Tags: ${task.tags.join(', ')}`);
   }
 
-  if (task.dueDate) {
-    const dueDate = new Date(task.dueDate).toLocaleDateString();
+  const dueDate = formatDateSafe(task.dueDate);
+  if (dueDate) {
     details.push(`Due: ${dueDate}`);
   }
 
-  if (task.createdDate) {
-    details.push(`Created: ${new Date(task.createdDate).toLocaleDateString()}`);
+  const createdDate = formatDateSafe(task.createdDate);
+  if (createdDate) {
+    details.push(`Created: ${createdDate}`);
   }
 
   if (task.estimatedMinutes) {
@@ -205,13 +210,14 @@ function formatFlatTasks(perspectiveName: string, tasks: any[], limit: number, t
       taskText += `\n   Tags: ${task.tags.join(', ')}`;
     }
 
-    if (task.dueDate) {
-      const dueDate = new Date(task.dueDate).toLocaleDateString();
+    const dueDate = formatDateSafe(task.dueDate);
+    if (dueDate) {
       taskText += `\n   Due: ${dueDate}`;
     }
 
-    if (task.createdDate) {
-      taskText += `\n   Created: ${new Date(task.createdDate).toLocaleDateString()}`;
+    const createdDate = formatDateSafe(task.createdDate);
+    if (createdDate) {
+      taskText += `\n   Created: ${createdDate}`;
     }
 
     if (task.flagged) {

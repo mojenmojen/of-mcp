@@ -1,5 +1,6 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 import { logger } from '../../utils/logger.js';
+import { formatDateSafe } from '../../utils/dateUtils.js';
 
 const log = logger.child('getInboxTasks');
 
@@ -39,9 +40,9 @@ export async function getInboxTasks(options: GetInboxTasksOptions = {}): Promise
           
           data.tasks.forEach((task: any, index: number) => {
             const flagSymbol = task.flagged ? '🚩 ' : '';
-            const dueDateStr = task.dueDate ? ` [DUE: ${new Date(task.dueDate).toLocaleDateString()}]` : '';
+            const dueDateStr = task.dueDate ? ` [DUE: ${formatDateSafe(task.dueDate)}]` : '';
             const statusStr = task.taskStatus !== 'Available' ? ` (${task.taskStatus})` : '';
-            const createdStr = task.createdDate ? ` (created: ${new Date(task.createdDate).toLocaleDateString()})` : '';
+            const createdStr = task.createdDate ? ` (created: ${formatDateSafe(task.createdDate)})` : '';
 
             output += `${index + 1}. ${flagSymbol}${task.name}${dueDateStr}${statusStr} [ID: ${task.id}]${createdStr}\n`;
             

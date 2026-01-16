@@ -1,4 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('getProjectsForReview');
 
 // Interface for get projects for review parameters
 export interface GetProjectsForReviewParams {
@@ -30,8 +33,10 @@ export async function getProjectsForReview(params: GetProjectsForReviewParams): 
   error?: string;
 }> {
   try {
-    console.error("Executing OmniJS script for getProjectsForReview...");
-    console.error(`Parameters: includeOnHold=${params.includeOnHold}, limit=${params.limit}`);
+    log.debug('Executing OmniJS script for getProjectsForReview', {
+      includeOnHold: params.includeOnHold,
+      limit: params.limit
+    });
 
     // Execute the OmniJS script
     const result = await executeOmniFocusScript('@getProjectsForReview.js', {
@@ -45,7 +50,7 @@ export async function getProjectsForReview(params: GetProjectsForReviewParams): 
       try {
         parsed = JSON.parse(result);
       } catch (e) {
-        console.error("Failed to parse result as JSON:", e);
+        log.error('Failed to parse result as JSON', { error: (e as Error).message });
         return {
           success: false,
           error: `Failed to parse result: ${result}`
@@ -69,11 +74,12 @@ export async function getProjectsForReview(params: GetProjectsForReviewParams): 
       };
     }
 
-  } catch (error: any) {
-    console.error("Error in getProjectsForReview:", error);
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.error('Error in getProjectsForReview', { error: errorMsg });
     return {
       success: false,
-      error: error?.message || "Unknown error in getProjectsForReview"
+      error: errorMsg || "Unknown error in getProjectsForReview"
     };
   }
 }
