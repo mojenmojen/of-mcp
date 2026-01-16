@@ -1,4 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('batchFilterTasks');
 
 export interface BatchFilterTasksOptions {
   // Project filters
@@ -56,10 +59,11 @@ export async function batchFilterTasks(options: BatchFilterTasksOptions = {}): P
       return formatBatchResults(data, options);
     }
 
-    return "Unexpected result format from OmniFocus";
+    log.error('Unexpected result format', { resultType: typeof result, result });
+    throw new Error('Unexpected result format from OmniFocus');
 
   } catch (error) {
-    console.error("Error in batchFilterTasks:", error);
+    log.error('Error in batchFilterTasks', { error: error instanceof Error ? error.message : String(error) });
     throw new Error(`Failed to batch filter tasks: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

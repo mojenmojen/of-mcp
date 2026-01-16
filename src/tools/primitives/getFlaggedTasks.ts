@@ -1,4 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('getFlaggedTasks');
 
 export interface GetFlaggedTasksOptions {
   hideCompleted?: boolean;
@@ -91,10 +94,11 @@ export async function getFlaggedTasks(options: GetFlaggedTasksOptions = {}): Pro
       return output;
     }
     
-    return "Unexpected result format from OmniFocus";
-    
+    log.error('Unexpected result format', { resultType: typeof result, result });
+    throw new Error('Unexpected result format from OmniFocus');
+
   } catch (error) {
-    console.error("Error in getFlaggedTasks:", error);
+    log.error('Error in getFlaggedTasks', { error: error instanceof Error ? error.message : String(error) });
     throw new Error(`Failed to get flagged tasks: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

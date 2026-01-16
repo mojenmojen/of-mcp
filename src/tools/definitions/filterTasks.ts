@@ -76,7 +76,7 @@ export const schema = z.object({
   countOnly: z.boolean().optional().describe("Return only the count of matching tasks, not the task data. Much faster for health checks and dashboards.")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     const result = await filterTasks(args);
     

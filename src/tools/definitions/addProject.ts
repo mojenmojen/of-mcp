@@ -3,6 +3,7 @@ import { addProject, AddProjectParams } from '../primitives/addProject.js';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 import { logger } from '../../utils/logger.js';
+import { formatDateSafe } from '../../utils/dateUtils.js';
 
 const log = logger.child('addProject:handler');
 
@@ -34,8 +35,9 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
         ? ` with tags: ${args.tags.join(', ')}`
         : "";
         
-      let dueDateText = args.dueDate
-        ? ` due on ${new Date(args.dueDate).toLocaleDateString()}`
+      const formattedDue = formatDateSafe(args.dueDate);
+      let dueDateText = formattedDue
+        ? ` due on ${formattedDue}`
         : "";
         
       let sequentialText = args.sequential

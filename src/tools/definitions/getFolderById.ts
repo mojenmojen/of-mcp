@@ -8,7 +8,7 @@ export const schema = z.object({
   folderName: z.string().optional().describe("The name of the folder to retrieve (alternative to folderId)")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Validate that either folderId or folderName is provided
     if (!args.folderId && !args.folderName) {

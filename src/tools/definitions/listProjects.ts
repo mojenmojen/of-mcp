@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { listProjects } from '../primitives/listProjects.js';
+import { formatDateSafe } from '../../utils/dateUtils.js';
 
 export const schema = z.object({
   folderName: z.string().optional().describe("Filter by folder name"),
@@ -54,9 +55,7 @@ export async function handler(
 
       // Table rows
       for (const project of result.projects) {
-        const reviewDate = project.nextReviewDate
-          ? new Date(project.nextReviewDate).toLocaleDateString()
-          : '-';
+        const reviewDate = formatDateSafe(project.nextReviewDate) || '-';
         const folderDisplay = project.folderName || '(root)';
 
         output += `| ${project.name} | ${project.status} | ${project.taskCount} | ${reviewDate} | ${folderDisplay} |\n`;

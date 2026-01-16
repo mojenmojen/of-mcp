@@ -11,7 +11,7 @@ export const schema = z.object({
   })).describe("Array of items (tasks or projects) to remove")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Validate that each item has at least an ID or name
     for (const item of args.items) {

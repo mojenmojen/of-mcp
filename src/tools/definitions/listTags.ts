@@ -8,7 +8,7 @@ export const schema = z.object({
   showTaskCounts: z.boolean().optional().describe("Show task counts per tag - slower but more informative (default: false)")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     const result = await listTags({
       includeDropped: args.includeDropped || false,

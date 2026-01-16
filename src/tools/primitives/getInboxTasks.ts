@@ -1,4 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('getInboxTasks');
 
 export interface GetInboxTasksOptions {
   hideCompleted?: boolean;
@@ -54,10 +57,11 @@ export async function getInboxTasks(options: GetInboxTasksOptions = {}): Promise
       return output;
     }
     
-    return "Unexpected result format from OmniFocus";
-    
+    log.error('Unexpected result format', { resultType: typeof result, result });
+    throw new Error('Unexpected result format from OmniFocus');
+
   } catch (error) {
-    console.error("Error in getInboxTasks:", error);
+    log.error('Error in getInboxTasks', { error: error instanceof Error ? error.message : String(error) });
     throw new Error(`Failed to get inbox tasks: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

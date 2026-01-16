@@ -37,7 +37,7 @@ const validationSchema = schema.refine(
   { message: "Either sourceProjectId or sourceProjectName is required" }
 );
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Validate that either sourceProjectId or sourceProjectName is provided
     const validated = validationSchema.parse(args);

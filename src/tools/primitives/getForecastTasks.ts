@@ -1,4 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('getForecastTasks');
 
 export interface GetForecastTasksOptions {
   days?: number;
@@ -93,10 +96,11 @@ export async function getForecastTasks(options: GetForecastTasksOptions = {}): P
       return output;
     }
     
-    return "Unexpected result format from OmniFocus";
-    
+    log.error('Unexpected result format', { resultType: typeof result, result });
+    throw new Error('Unexpected result format from OmniFocus');
+
   } catch (error) {
-    console.error("Error in getForecastTasks:", error);
+    log.error('Error in getForecastTasks', { error: error instanceof Error ? error.message : String(error) });
     throw new Error(`Failed to get forecast tasks: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

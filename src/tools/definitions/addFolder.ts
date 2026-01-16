@@ -9,7 +9,7 @@ export const schema = z.object({
   parentFolderId: z.string().optional().describe("Parent folder ID (alternative to parentFolderName)")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Call the addFolder function
     const result = await addFolder(args as AddFolderParams);

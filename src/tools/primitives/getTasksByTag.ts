@@ -1,4 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('getTasksByTag');
 
 export interface GetTasksByTagOptions {
   tagName?: string | string[];
@@ -146,10 +149,11 @@ export async function getTasksByTag(options: GetTasksByTagOptions): Promise<stri
       return output;
     }
     
-    return "Unexpected result format from OmniFocus";
-    
+    log.error('Unexpected result format', { resultType: typeof result, result });
+    throw new Error('Unexpected result format from OmniFocus');
+
   } catch (error) {
-    console.error("Error in getTasksByTag:", error);
+    log.error('Error in getTasksByTag', { error: error instanceof Error ? error.message : String(error) });
     throw new Error(`Failed to get tasks by tag: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

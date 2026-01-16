@@ -8,7 +8,7 @@ export const schema = z.object({
   projectNames: z.array(z.string()).optional().describe("Array of project names to mark as reviewed (alternative to projectIds)")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Validate at least one identifier array is provided
     const hasIds = args.projectIds && args.projectIds.length > 0;

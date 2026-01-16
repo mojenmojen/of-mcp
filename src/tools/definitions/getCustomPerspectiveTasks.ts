@@ -11,7 +11,7 @@ export const schema = z.object({
   showHierarchy: z.boolean().optional().describe("Display tasks in hierarchical tree structure showing parent-child relationships (default: false)")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Validate that at least one identifier is provided
     if (!args.perspectiveName && !args.perspectiveId) {

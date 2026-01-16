@@ -35,7 +35,7 @@ export const schema = z.object({
   })).describe("Array of items (tasks or projects) to add")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Call the batchAddItems function (now uses true batching - single OmniJS script)
     const result = await batchAddItems(args.items as BatchAddItemsParams[]);

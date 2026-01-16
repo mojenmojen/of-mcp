@@ -183,7 +183,8 @@ export async function filterTasks(options: FilterTasksOptions = {}): Promise<str
       return output;
     }
 
-    return "Unexpected result format from OmniFocus";
+    log.error('Unexpected result format', { resultType: typeof result, result });
+    throw new Error('Unexpected result format from OmniFocus');
 
   } catch (error) {
     log.error('Error in filterTasks', { error: error instanceof Error ? error.message : String(error) });

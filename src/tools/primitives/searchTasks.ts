@@ -48,7 +48,8 @@ export async function searchTasks(options: SearchTasksOptions): Promise<string> 
     } else if (result && typeof result === 'object') {
       parsed = result as SearchResult;
     } else {
-      return "Unexpected result format from OmniFocus";
+      log.error('Unexpected result format', { resultType: typeof result, result });
+      throw new Error('Unexpected result format from OmniFocus');
     }
 
     // Cache the result

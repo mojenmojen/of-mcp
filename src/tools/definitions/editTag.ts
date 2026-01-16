@@ -32,7 +32,7 @@ const validationSchema = schema.refine(
   { message: "At least one change parameter is required (newName, newStatus, newParentTagId, newParentTagName, or allowsNextAction)" }
 );
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Validate input requirements
     const validated = validationSchema.parse(args);

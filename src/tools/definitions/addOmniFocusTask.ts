@@ -4,6 +4,7 @@ import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.j
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 import { repetitionRuleSchema } from '../../schemas/repetitionRule.js';
 import { logger } from '../../utils/logger.js';
+import { formatDateSafe } from '../../utils/dateUtils.js';
 
 const log = logger.child('addOmniFocusTask:handler');
 
@@ -44,12 +45,14 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
         ? ` with tags: ${args.tags.join(', ')}`
         : "";
         
-      let dueDateText = args.dueDate
-        ? ` due on ${new Date(args.dueDate).toLocaleDateString()}`
+      const formattedDue = formatDateSafe(args.dueDate);
+      let dueDateText = formattedDue
+        ? ` due on ${formattedDue}`
         : "";
 
-      let plannedDateText = args.plannedDate
-        ? ` planned for ${new Date(args.plannedDate).toLocaleDateString()}`
+      const formattedPlanned = formatDateSafe(args.plannedDate);
+      let plannedDateText = formattedPlanned
+        ? ` planned for ${formattedPlanned}`
         : "";
 
       let repeatText = "";

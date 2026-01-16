@@ -8,7 +8,7 @@ export const schema = z.object({
   projectName: z.string().optional().describe("The name of the project to retrieve (alternative to projectId)")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Validate that either projectId or projectName is provided
     if (!args.projectId && !args.projectName) {

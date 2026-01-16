@@ -13,7 +13,7 @@ export const schema = z.object({
   limit: z.number().optional().describe("Maximum number of tasks to return (default: 500). Use to prevent timeout with many tags")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Validate that at least one of tagName or tagId is provided
     if (!args.tagName && !args.tagId) {

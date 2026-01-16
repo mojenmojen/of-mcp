@@ -5,7 +5,7 @@ import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/typ
 
 export const schema = z.object({});
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     const result = await getSystemHealth();
 

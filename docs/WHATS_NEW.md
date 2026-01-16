@@ -1,6 +1,24 @@
-# OmniFocus MCP Server - What's New (v1.28.3)
+# OmniFocus MCP Server - What's New (v1.29.0)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.29.0 Error Handling Improvements
+
+**Improved error visibility and debugging:**
+- Unexpected OmniFocus result formats now log diagnostic details before throwing (Issue #64)
+- 7 primitive functions updated to log `resultType` and `result` for debugging
+- Silent returns replaced with explicit errors for fail-fast behavior
+
+**Safe date formatting utility:**
+- New `formatDateSafe()` utility handles invalid dates gracefully
+- Returns `null` instead of "Invalid Date" for malformed date strings
+- Applied to `get_task_by_id`, `add_omnifocus_task`, `add_project`, `list_projects`
+
+**Code consistency:**
+- Standardized unused parameter naming (`_extra`) across 23 handler functions
+- Follows TypeScript convention for intentionally unused parameters
+
+---
 
 ## v1.28.3 Enhancement
 

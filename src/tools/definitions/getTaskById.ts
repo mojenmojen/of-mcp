@@ -2,13 +2,14 @@ import { z } from 'zod';
 import { getTaskById, GetTaskByIdParams } from '../primitives/getTaskById.js';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
+import { formatDateSafe } from '../../utils/dateUtils.js';
 
 export const schema = z.object({
   taskId: z.string().optional().describe("The ID of the task to retrieve"),
   taskName: z.string().optional().describe("The name of the task to retrieve (alternative to taskId)")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Validate that either taskId or taskName is provided
     if (!args.taskId && !args.taskName) {
@@ -44,20 +45,24 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
         infoText += `• **Project**: ${task.projectName} (${task.projectId})\n`;
       }
 
-      if (task.dueDate) {
-        infoText += `• **Due Date**: ${new Date(task.dueDate).toLocaleDateString()}\n`;
+      const dueDate = formatDateSafe(task.dueDate);
+      if (dueDate) {
+        infoText += `• **Due Date**: ${dueDate}\n`;
       }
 
-      if (task.deferDate) {
-        infoText += `• **Defer Date**: ${new Date(task.deferDate).toLocaleDateString()}\n`;
+      const deferDate = formatDateSafe(task.deferDate);
+      if (deferDate) {
+        infoText += `• **Defer Date**: ${deferDate}\n`;
       }
 
-      if (task.plannedDate) {
-        infoText += `• **Planned Date**: ${new Date(task.plannedDate).toLocaleDateString()}\n`;
+      const plannedDate = formatDateSafe(task.plannedDate);
+      if (plannedDate) {
+        infoText += `• **Planned Date**: ${plannedDate}\n`;
       }
 
-      if (task.createdDate) {
-        infoText += `• **Created**: ${new Date(task.createdDate).toLocaleDateString()}\n`;
+      const createdDate = formatDateSafe(task.createdDate);
+      if (createdDate) {
+        infoText += `• **Created**: ${createdDate}\n`;
       }
 
       infoText += `• **Has Children**: ${task.hasChildren ? `Yes (${task.childrenCount} subtasks)` : 'No'}\n`;

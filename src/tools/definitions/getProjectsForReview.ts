@@ -8,7 +8,7 @@ export const schema = z.object({
   limit: z.number().optional().describe("Maximum number of projects to return (default: 50)")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     // Call the getProjectsForReview function
     const result = await getProjectsForReview(args as GetProjectsForReviewParams);

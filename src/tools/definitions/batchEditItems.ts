@@ -48,7 +48,7 @@ export const schema = z.object({
   edits: z.array(editItemSchema).describe("Array of edit operations to perform")
 });
 
-export async function handler(args: z.infer<typeof schema>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
   try {
     if (!args.edits || args.edits.length === 0) {
       return {
