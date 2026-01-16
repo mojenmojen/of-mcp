@@ -287,6 +287,11 @@ function formatTask(task: any): string {
     output += ` [ID: ${task.id}]`;
   }
 
+  // Created date
+  if (task.createdDate) {
+    output += ` (created: ${task.createdDate})`;
+  }
+
   // Date info
   const dateInfo: string[] = [];
   if (task.dueDate) {

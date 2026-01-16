@@ -86,6 +86,7 @@ interface SearchTaskResult {
   project: string | null;
   projectId: string | null;
   dueDate: string | null;
+  createdDate: string | null;
   completed: boolean;
   flagged: boolean;
   tags: string[];
@@ -154,6 +155,10 @@ function formatSearchResults(data: SearchResult, query: string, matchMode: strin
       if (task.dueDate) {
         const dueDateStr = new Date(task.dueDate).toLocaleDateString();
         output += ` [📅 ${dueDateStr}]`;
+      }
+
+      if (task.createdDate) {
+        output += ` (created: ${task.createdDate})`;
       }
 
       output += '\n';

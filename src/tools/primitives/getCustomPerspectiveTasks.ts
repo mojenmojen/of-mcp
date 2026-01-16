@@ -163,6 +163,10 @@ function formatTaskDetails(task: any): string[] {
     details.push(`Due: ${dueDate}`);
   }
 
+  if (task.createdDate) {
+    details.push(`Created: ${task.createdDate}`);
+  }
+
   if (task.estimatedMinutes) {
     const hours = Math.floor(task.estimatedMinutes / 60);
     const minutes = task.estimatedMinutes % 60;
@@ -204,6 +208,10 @@ function formatFlatTasks(perspectiveName: string, tasks: any[], limit: number, t
     if (task.dueDate) {
       const dueDate = new Date(task.dueDate).toLocaleDateString();
       taskText += `\n   Due: ${dueDate}`;
+    }
+
+    if (task.createdDate) {
+      taskText += `\n   Created: ${task.createdDate}`;
     }
 
     if (task.flagged) {

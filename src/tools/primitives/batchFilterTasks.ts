@@ -139,6 +139,11 @@ function formatTask(task: any): string {
     output += ` (${task.taskStatus})`;
   }
 
+  // Created date
+  if (task.createdDate) {
+    output += ` (created: ${task.createdDate})`;
+  }
+
   output += '\n';
 
   // Date info

@@ -56,6 +56,10 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
         infoText += `• **Planned Date**: ${new Date(task.plannedDate).toLocaleDateString()}\n`;
       }
 
+      if (task.createdDate) {
+        infoText += `• **Created**: ${task.createdDate}\n`;
+      }
+
       infoText += `• **Has Children**: ${task.hasChildren ? `Yes (${task.childrenCount} subtasks)` : 'No'}\n`;
 
       if (task.isRepeating && task.repetitionRule) {

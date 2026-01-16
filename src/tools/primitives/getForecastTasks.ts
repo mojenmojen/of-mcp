@@ -70,8 +70,9 @@ export async function getForecastTasks(options: GetForecastTasksOptions = {}): P
               const statusStr = task.taskStatus !== 'Available' ? ` [${task.taskStatus}]` : '';
               const estimateStr = task.estimatedMinutes ? ` ⏱${task.estimatedMinutes}m` : '';
               const typeIndicator = task.isDue ? '📅' : '🚀'; // Due vs Deferred
-              
-              output += `• ${typeIndicator} ${flagSymbol}${task.name}${projectStr}${statusStr}${estimateStr} [ID: ${task.id}]\n`;
+              const createdStr = task.createdDate ? ` (created: ${task.createdDate})` : '';
+
+              output += `• ${typeIndicator} ${flagSymbol}${task.name}${projectStr}${statusStr}${estimateStr} [ID: ${task.id}]${createdStr}\n`;
               
               if (task.note && task.note.trim()) {
                 output += `  📝 ${task.note.trim()}\n`;
