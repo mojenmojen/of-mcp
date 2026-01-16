@@ -82,11 +82,12 @@ export async function batchMarkReviewed(params: BatchMarkReviewedParams): Promis
       error: parsed.error
     };
 
-  } catch (error: any) {
-    log.error('Error in batchMarkReviewed', { error: error?.message });
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.error('Error in batchMarkReviewed', { error: errorMsg });
     return {
       success: false,
-      error: error?.message || "Unknown error in batchMarkReviewed"
+      error: errorMsg || "Unknown error in batchMarkReviewed"
     };
   }
 }

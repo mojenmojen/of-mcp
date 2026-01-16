@@ -86,11 +86,12 @@ export async function getTaskById(params: GetTaskByIdParams): Promise<{success: 
 
     return response;
 
-  } catch (error: any) {
-    log.error('Error in getTaskById', { error: error?.message });
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.error('Error in getTaskById', { error: errorMsg });
     return {
       success: false,
-      error: error?.message || "Unknown error in getTaskById"
+      error: errorMsg || "Unknown error in getTaskById"
     };
   }
 }

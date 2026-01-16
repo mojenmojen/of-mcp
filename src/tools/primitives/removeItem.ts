@@ -65,11 +65,12 @@ export async function removeItem(params: RemoveItemParams): Promise<{success: bo
       };
     }
 
-  } catch (error: any) {
-    log.error('Error in removeItem', { error: error?.message });
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.error('Error in removeItem', { error: errorMsg });
     return {
       success: false,
-      error: error?.message || "Unknown error in removeItem"
+      error: errorMsg || "Unknown error in removeItem"
     };
   }
 }

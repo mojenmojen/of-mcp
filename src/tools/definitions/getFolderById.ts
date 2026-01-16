@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { getFolderById, GetFolderByIdParams } from '../primitives/getFolderById.js';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('def:getFolderById');
 
 export const schema = z.object({
   folderId: z.string().optional().describe("The ID of the folder to retrieve"),
@@ -58,7 +61,7 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
     }
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    console.error(`Tool execution error: ${errorMessage}`);
+    log.error('Tool execution error', { error: errorMessage });
     return {
       content: [{
         type: "text" as const,

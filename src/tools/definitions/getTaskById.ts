@@ -3,6 +3,9 @@ import { getTaskById, GetTaskByIdParams } from '../primitives/getTaskById.js';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 import { formatDateSafe } from '../../utils/dateUtils.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('def:getTaskById');
 
 export const schema = z.object({
   taskId: z.string().optional().describe("The ID of the task to retrieve"),
@@ -89,7 +92,7 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
     }
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    console.error(`Tool execution error: ${errorMessage}`);
+    log.error('Tool execution error', { error: errorMessage });
     return {
       content: [{
         type: "text" as const,

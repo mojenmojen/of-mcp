@@ -139,11 +139,12 @@ export async function editItem(params: EditItemParams): Promise<{
       };
     }
 
-  } catch (error: any) {
-    log.error('Error in editItem', { error: error?.message });
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.error('Error in editItem', { error: errorMsg });
     return {
       success: false,
-      error: error?.message || "Unknown error in editItem"
+      error: errorMsg || "Unknown error in editItem"
     };
   }
 }

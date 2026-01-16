@@ -81,14 +81,15 @@ export async function batchRemoveItems(items: BatchRemoveItemsParams[]): Promise
       error: parsed.error
     };
 
-  } catch (error: any) {
-    log.error('Error in batchRemoveItems', { error: error?.message });
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.error('Error in batchRemoveItems', { error: errorMsg });
     return {
       success: false,
       successCount: 0,
       failureCount: items.length,
       results: [],
-      error: error?.message || "Unknown error in batchRemoveItems"
+      error: errorMsg || "Unknown error in batchRemoveItems"
     };
   }
 }

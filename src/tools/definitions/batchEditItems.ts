@@ -3,6 +3,9 @@ import { batchEditItems, BatchEditItemParams } from '../primitives/batchEditItem
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 import { repetitionRuleSchema } from '../../schemas/repetitionRule.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('def:batchEditItems');
 
 // Schema for a single edit operation
 const editItemSchema = z.object({
@@ -98,7 +101,7 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
     }
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    console.error(`Tool execution error: ${errorMessage}`);
+    log.error('Tool execution error', { error: errorMessage });
     return {
       content: [{
         type: "text" as const,

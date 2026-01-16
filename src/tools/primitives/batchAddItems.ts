@@ -178,18 +178,18 @@ export async function batchAddItems(items: BatchAddItemsParams[]): Promise<Batch
       error: parsed.error
     };
 
-  } catch (error: any) {
+  } catch (error) {
     // Handle both StructuredError and regular Error
     const errorMessage = isStructuredError(error)
       ? error.error.message
-      : (error?.message || "Unknown error in batchAddItems");
+      : (error instanceof Error ? error.message : String(error));
     log.error('Error in batchAddItems', { error: errorMessage });
     return {
       success: false,
       successCount: 0,
       failureCount: items.length,
       results: [],
-      error: errorMessage
+      error: errorMessage || "Unknown error in batchAddItems"
     };
   }
 }

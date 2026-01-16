@@ -1,4 +1,7 @@
 import { executeJXA } from './scriptExecution.js';
+import { logger } from './logger.js';
+
+const log = logger.child('perspectiveEngine');
 
 // OmniFocus Perspective Engine - Based on 4.2+ new API
 // Supports true perspective filtering, not full data return like AppleScript
@@ -92,7 +95,7 @@ export class PerspectiveEngine {
   }> {
     try {
       // Get filtered tasks directly from OmniFocus perspective
-      console.log(`[DEBUG] Getting tasks from OmniFocus perspective "${perspectiveName}"...`);
+      log.debug('Getting tasks from OmniFocus perspective', { perspectiveName });
       const filteredTasks = await this.getTasksFromPerspective(perspectiveName);
 
       // Apply additional option filters
@@ -115,11 +118,12 @@ export class PerspectiveEngine {
         }
       };
 
-    } catch (error: any) {
-      console.error('Perspective engine execution error:', error);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      log.error('Perspective engine execution error', { error: errorMsg });
       return {
         success: false,
-        error: error.message || 'Perspective engine execution failed'
+        error: errorMsg || 'Perspective engine execution failed'
       };
     }
   }
@@ -173,7 +177,8 @@ export class PerspectiveEngine {
       }
       return { supportsNewAPI: false };
     } catch (error) {
-      console.error('Version check failed:', error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      log.error('Version check failed', { error: errorMsg });
       return { supportsNewAPI: false };
     }
   }
@@ -248,13 +253,14 @@ export class PerspectiveEngine {
       }
 
       if (parsed.error) {
-        console.error('Failed to get perspective config:', parsed.error);
+        log.error('Failed to get perspective config', { error: parsed.error });
         return null;
       }
 
       return parsed;
     } catch (error) {
-      console.error('Perspective config execution failed:', error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      log.error('Perspective config execution failed', { error: errorMsg });
       return null;
     }
   }
@@ -338,27 +344,26 @@ export class PerspectiveEngine {
     `;
 
     try {
-      console.log(`[DEBUG] Getting tasks from perspective "${perspectiveName}"...`);
+      log.debug('Getting tasks from perspective', { perspectiveName });
       const result = await executeJXA(script);
-      console.log('[DEBUG] Perspective query result type:', typeof result);
-      console.log('[DEBUG] Perspective query result:', JSON.stringify(result).substring(0, 200));
+      log.debug('Perspective query result', { resultType: typeof result, preview: JSON.stringify(result).substring(0, 200) });
 
       // Simplified handling: executeJXA should return task array directly
       let tasks = result;
 
       // Check for errors
       if (tasks && typeof tasks === 'object' && !Array.isArray(tasks) && (tasks as any).error) {
-        console.error('Perspective query error:', (tasks as any).error);
+        log.error('Perspective query error', { error: (tasks as any).error });
         return [];
       }
 
       // Ensure it's an array
       if (!Array.isArray(tasks)) {
-        console.log('[DEBUG] Perspective query result is not array, type:', typeof tasks);
+        log.debug('Perspective query result is not array', { resultType: typeof tasks });
         return [];
       }
 
-      console.log(`[DEBUG] Successfully got ${tasks.length} tasks from perspective`);
+      log.debug('Successfully got tasks from perspective', { taskCount: tasks.length });
 
       // Build tag cache
       this.buildTagCache(tasks);
@@ -366,7 +371,8 @@ export class PerspectiveEngine {
       // Convert to standard format
       return tasks.map((task: any) => this.normalizeTask(task));
     } catch (error) {
-      console.error('Failed to get tasks from perspective:', error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      log.error('Failed to get tasks from perspective', { error: errorMsg });
       return [];
     }
   }
@@ -421,27 +427,26 @@ export class PerspectiveEngine {
     `;
 
     try {
-      console.log('[DEBUG] Executing JXA script...');
+      log.debug('Executing JXA script for getAllTasks');
       const result = await executeJXA(script);
-      console.log('[DEBUG] JXA script result type:', typeof result);
-      console.log('[DEBUG] JXA script result:', JSON.stringify(result).substring(0, 200));
+      log.debug('JXA script result', { resultType: typeof result, preview: JSON.stringify(result).substring(0, 200) });
 
       // Simplified handling: executeJXA should return task array directly
       let tasks = result;
 
       // Check for errors
       if (tasks && typeof tasks === 'object' && !Array.isArray(tasks) && (tasks as any).error) {
-        console.error('Script execution error:', (tasks as any).error);
+        log.error('Script execution error', { error: (tasks as any).error });
         return [];
       }
 
       // Ensure it's an array
       if (!Array.isArray(tasks)) {
-        console.log('[DEBUG] Result is not array, type:', typeof tasks);
+        log.debug('Result is not array', { resultType: typeof tasks });
         return [];
       }
 
-      console.log(`[DEBUG] Successfully parsed ${tasks.length} tasks`);
+      log.debug('Successfully parsed tasks', { taskCount: tasks.length });
 
       // Build tag cache
       this.buildTagCache(tasks);
@@ -449,7 +454,8 @@ export class PerspectiveEngine {
       // Convert to standard format
       return tasks.map((task: any) => this.normalizeTask(task));
     } catch (error) {
-      console.error('Failed to get all tasks:', error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      log.error('Failed to get all tasks', { error: errorMsg });
       return [];
     }
   }

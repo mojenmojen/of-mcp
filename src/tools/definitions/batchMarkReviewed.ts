@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { batchMarkReviewed, BatchMarkReviewedParams } from '../primitives/batchMarkReviewed.js';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('def:batchMarkReviewed');
 
 export const schema = z.object({
   projectIds: z.array(z.string()).optional().describe("Array of project IDs to mark as reviewed"),
@@ -92,7 +95,7 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
     }
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    console.error(`Tool execution error: ${errorMessage}`);
+    log.error('Tool execution error', { error: errorMessage });
     return {
       content: [{
         type: "text" as const,

@@ -1,5 +1,8 @@
 import { z } from 'zod';
 import { getPerspectiveTasksV2 } from '../primitives/getPerspectiveTasksV2.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('def:getPerspectiveTasksV2');
 
 // Native perspective access tool based on OmniFocus 4.2+ API
 // Differences from the original get_custom_perspective tool:
@@ -71,14 +74,15 @@ export async function handler(params: GetPerspectiveTasksV2Params) {
       }]
     };
 
-  } catch (error: any) {
-    console.error('getPerspectiveTasksV2 handler error:', error);
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.error('getPerspectiveTasksV2 handler error', { error: errorMsg });
     return {
       content: [{
         type: "text" as const,
         text: JSON.stringify({
           success: false,
-          error: error.message || 'Unknown error in getPerspectiveTasksV2',
+          error: errorMsg || 'Unknown error in getPerspectiveTasksV2',
           metadata: {
             timestamp: new Date().toISOString(),
             apiVersion: "v2",

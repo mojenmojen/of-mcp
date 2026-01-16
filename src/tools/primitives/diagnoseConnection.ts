@@ -64,8 +64,9 @@ export async function diagnoseConnection(): Promise<DiagnosticResult> {
       errors.push(`Script error: ${parsed.error}`);
     }
 
-  } catch (error: any) {
-    const message = error.message?.toLowerCase() || '';
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    const message = errorMsg.toLowerCase();
 
     if (message.includes('timed out')) {
       errors.push('Script execution timed out');
@@ -86,7 +87,7 @@ export async function diagnoseConnection(): Promise<DiagnosticResult> {
       errors.push('OmniFocus is not running');
       instructions.push('Start OmniFocus and try again');
     } else {
-      errors.push(`Unknown error: ${error.message}`);
+      errors.push(`Unknown error: ${errorMsg}`);
       instructions.push(
         'Check that OmniFocus is installed and running.',
         'Ensure automation permissions are granted.',

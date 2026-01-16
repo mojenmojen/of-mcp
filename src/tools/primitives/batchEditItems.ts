@@ -118,14 +118,15 @@ export async function batchEditItems(edits: BatchEditItemParams[]): Promise<Batc
       error: parsed.error
     };
 
-  } catch (error: any) {
-    log.error('Error in batchEditItems', { error: error?.message });
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.error('Error in batchEditItems', { error: errorMsg });
     return {
       success: false,
       successCount: 0,
       failureCount: edits.length,
       results: [],
-      error: error?.message || "Unknown error in batchEditItems"
+      error: errorMsg || "Unknown error in batchEditItems"
     };
   }
 }

@@ -64,11 +64,12 @@ export async function addFolder(params: AddFolderParams): Promise<{success: bool
       };
     }
 
-  } catch (error: any) {
-    log.error('Error in addFolder', { error: error?.message });
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.error('Error in addFolder', { error: errorMsg });
     return {
       success: false,
-      error: error?.message || "Unknown error in addFolder"
+      error: errorMsg || "Unknown error in addFolder"
     };
   }
 }

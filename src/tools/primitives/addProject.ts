@@ -79,11 +79,12 @@ export async function addProject(params: AddProjectParams): Promise<{success: bo
       };
     }
 
-  } catch (error: any) {
-    log.error('Error in addProject', { error: error?.message });
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.error('Error in addProject', { error: errorMsg });
     return {
       success: false,
-      error: error?.message || "Unknown error in addProject"
+      error: errorMsg || "Unknown error in addProject"
     };
   }
 }

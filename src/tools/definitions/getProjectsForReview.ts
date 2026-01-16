@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { getProjectsForReview, GetProjectsForReviewParams } from '../primitives/getProjectsForReview.js';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
+import { logger } from '../../utils/logger.js';
+
+const log = logger.child('def:getProjectsForReview');
 
 export const schema = z.object({
   includeOnHold: z.boolean().optional().describe("Include on-hold projects in results (default: false)"),
@@ -69,7 +72,7 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
     }
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    console.error(`Tool execution error: ${errorMessage}`);
+    log.error('Tool execution error', { error: errorMessage });
     return {
       content: [{
         type: "text" as const,

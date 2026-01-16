@@ -1,6 +1,27 @@
-# OmniFocus MCP Server - What's New (v1.29.2)
+# OmniFocus MCP Server - What's New (v1.29.3)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.29.3 Complete Logging Standardization (Issue #84)
+
+**Extended structured logging to ALL remaining files:**
+
+### Primitive files (11 files)
+- Standardized `catch (error: any)` to `catch (error)` with `instanceof Error` pattern
+- Files: `addOmniFocusTask.ts`, `addProject.ts`, `addFolder.ts`, `getTaskById.ts`, `removeItem.ts`, `editItem.ts`, `batchAddItems.ts`, `batchEditItems.ts`, `batchRemoveItems.ts`, `batchMarkReviewed.ts`, `diagnoseConnection.ts`
+
+### perspectiveEngine.ts
+- Migrated all TypeScript-level console statements to structured logger
+- JXA script console statements (which run inside OmniFocus) left unchanged
+- Added `logger.child('perspectiveEngine')` with consistent debug/error patterns
+
+### Definition files (11 files)
+- Added logger imports and replaced `console.error` with `log.error`
+- Files: `getFolderById.ts`, `addFolder.ts`, `getProjectsForReview.ts`, `batchMarkReviewed.ts`, `batchRemoveItems.ts`, `removeItem.ts`, `getTaskById.ts`, `getProjectById.ts`, `editItem.ts`, `batchEditItems.ts`, `getPerspectiveTasksV2.ts`
+
+**Result:** No more `console.log` or `console.error` in TypeScript code (except JXA scripts). All logging goes through structured logger to stderr.
+
+---
 
 ## v1.29.2 Logging Standardization
 
