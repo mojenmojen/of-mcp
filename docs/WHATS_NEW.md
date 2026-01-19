@@ -1,6 +1,29 @@
-# OmniFocus MCP Server - What's New (v1.29.5)
+# OmniFocus MCP Server - What's New (v1.29.6)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.29.6 Fix batch_edit_items newProjectId Support (Issue #88)
+
+**Fixed `batch_edit_items` silently ignoring `newProjectId` parameter:**
+- Previously, using `newProjectId` to move tasks reported "success" with "no changes"
+- Now correctly moves tasks to the specified project by ID
+- ID lookup takes priority over name lookup (matches `edit_item` behavior)
+
+**Impact:**
+- Inbox tasks can now be batch-moved to projects using project ID
+- Common workflow: triage inbox by moving old tasks to an archive project
+
+**Example:**
+```json
+{
+  "edits": [
+    {"itemType": "task", "id": "abc123", "newProjectId": "xyz789"},
+    {"itemType": "task", "id": "def456", "newProjectId": "xyz789"}
+  ]
+}
+```
+
+---
 
 ## v1.29.5 Error Handling and Logging Improvements
 

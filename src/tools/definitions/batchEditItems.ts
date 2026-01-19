@@ -33,7 +33,8 @@ const editItemSchema = z.object({
   newRepetitionRule: repetitionRuleSchema.nullable().optional().describe("New repetition rule (null to remove)"),
 
   // Task movement fields
-  newProjectName: z.string().optional().describe("Move task to a different project"),
+  newProjectName: z.string().optional().describe("Move task to a different project (by name)"),
+  newProjectId: z.string().optional().describe("Move task to a different project (by ID)"),
   newParentTaskId: z.string().optional().describe("Move task to be a subtask of another task (by ID)"),
   newParentTaskName: z.string().optional().describe("Move task to be a subtask of another task (by name)"),
   moveToInbox: z.boolean().optional().describe("Set to true to move task to inbox"),

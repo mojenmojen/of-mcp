@@ -34,6 +34,7 @@ export interface BatchEditItemParams {
 
   // Task movement fields
   newProjectName?: string;
+  newProjectId?: string;
   newParentTaskId?: string;
   newParentTaskName?: string;
   moveToInbox?: boolean;

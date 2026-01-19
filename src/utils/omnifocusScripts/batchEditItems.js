@@ -207,18 +207,30 @@
           changedProperties.push("moved to inbox");
         }
 
-        // Task-specific: Move to different project
-        if (itemType === 'task' && edit.newProjectName) {
-          const targetProject = getProjectsByName().get(edit.newProjectName.toLowerCase());
+        // Task-specific: Move to different project (ID takes priority over name)
+        if (itemType === 'task' && (edit.newProjectId || edit.newProjectName)) {
+          let targetProject = null;
+
+          // Try ID first
+          if (edit.newProjectId) {
+            targetProject = getProjectsById().get(edit.newProjectId);
+          }
+
+          // Fall back to name if ID not found or not provided
+          if (!targetProject && edit.newProjectName) {
+            targetProject = getProjectsByName().get(edit.newProjectName.toLowerCase());
+          }
+
           if (targetProject) {
             moveTasks([foundItem], targetProject);
             changedProperties.push("moved to project");
           } else {
+            const searchRef = edit.newProjectId ? `ID "${edit.newProjectId}"` : `name "${edit.newProjectName}"`;
             results.push({
               success: false,
               id: originalId,
               name: originalName,
-              error: `Project not found: ${edit.newProjectName}`
+              error: `Project not found with ${searchRef}`
             });
             continue;
           }
