@@ -1,6 +1,23 @@
-# OmniFocus MCP Server - What's New (v1.29.4)
+# OmniFocus MCP Server - What's New (v1.29.5)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.29.5 Error Handling and Logging Improvements
+
+**Fixed silent failure in script path resolution:**
+- Previously, if no script path was found, the code silently fell back to an unchecked path
+- Now throws an informative error listing all attempted paths with troubleshooting guidance
+- Error message includes actionable steps: run build commands, check script files exist
+
+**Added debug logging for script path resolution:**
+- Each path resolution now logs the selected path and build type (esbuild, tsc, dev, absolute)
+- Makes debugging build/path issues much easier
+
+**Restored `dev` script to watch mode:**
+- `npm run dev` now runs `tsc -w` again (continuous compilation)
+- Previous change to `ts-node` was a behavioral regression
+
+---
 
 ## v1.29.4 Build System Improvements
 

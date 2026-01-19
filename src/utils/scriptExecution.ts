@@ -98,15 +98,31 @@ export async function executeOmniFocusScript(
 
       if (existsSync(bundledPath)) {
         actualPath = bundledPath;
+        log.debug('Script path resolved', { scriptName, actualPath, buildType: 'esbuild' });
       } else if (existsSync(distPath)) {
         actualPath = distPath;
+        log.debug('Script path resolved', { scriptName, actualPath, buildType: 'tsc' });
       } else if (existsSync(srcPath)) {
         actualPath = srcPath;
+        log.debug('Script path resolved', { scriptName, actualPath, buildType: 'dev' });
       } else {
-        actualPath = join(__dirname, '..', 'omnifocusScripts', scriptName);
+        const attemptedPaths = [bundledPath, distPath, srcPath];
+        log.error('Script file not found in any expected location', {
+          scriptName,
+          attemptedPaths,
+          __dirname
+        });
+        throw new Error(
+          `Script '${scriptName}' not found. Attempted paths:\n` +
+          attemptedPaths.map(p => `  - ${p}`).join('\n') +
+          `\n\nThis usually means:\n` +
+          `  - The build did not complete successfully (run 'npm run build' or 'npm run build:fast')\n` +
+          `  - The script file is missing from src/utils/omnifocusScripts/`
+        );
       }
     } else {
       actualPath = scriptPath;
+      log.debug('Script path resolved', { scriptName: scriptPath, actualPath, buildType: 'absolute' });
     }
     
     // Read the script file

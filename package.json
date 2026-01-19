@@ -1,7 +1,7 @@
 {
   "name": "of-mcp",
   "type": "module",
-  "version": "1.29.4",
+  "version": "1.29.5",
   "description": "MCP server for OmniFocus with batch operations, custom perspectives, hierarchical tasks, and comprehensive task management",
   "main": "dist/server.js",
   "bin": {
@@ -12,7 +12,7 @@
     "build:fast": "esbuild src/server.ts --bundle --platform=node --outfile=dist/server.js --format=esm --external:@modelcontextprotocol/sdk --external:zod && npm run copy-files && chmod 755 dist/server.js",
     "copy-files": "mkdir -p dist/utils/omnifocusScripts/lib && cp src/utils/omnifocusScripts/*.js dist/utils/omnifocusScripts/ && cp src/utils/omnifocusScripts/lib/*.js dist/utils/omnifocusScripts/lib/",
     "start": "node dist/server.js",
-    "dev": "ts-node src/server.ts",
+    "dev": "tsc -w",
     "prepublishOnly": "npm run build",
     "test": "echo \"Test passed - manual testing required with OmniFocus\""
   },
