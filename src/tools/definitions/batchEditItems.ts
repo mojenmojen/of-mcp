@@ -41,7 +41,8 @@ const editItemSchema = z.object({
 
   // Project-specific fields
   newSequential: z.boolean().optional().describe("Whether the project should be sequential"),
-  newFolderName: z.string().optional().describe("New folder to move the project to"),
+  newFolderName: z.string().optional().describe("Move project to a different folder (by name)"),
+  newFolderId: z.string().optional().describe("Move project to a different folder (by ID)"),
   newProjectStatus: z.enum(['active', 'completed', 'dropped', 'onHold']).optional().describe("New status for projects"),
 
   // Project review fields

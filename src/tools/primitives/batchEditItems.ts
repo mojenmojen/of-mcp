@@ -42,6 +42,7 @@ export interface BatchEditItemParams {
   // Project-specific fields
   newSequential?: boolean;
   newFolderName?: string;
+  newFolderId?: string;
   newProjectStatus?: ProjectStatus;
 
   // Project review fields

@@ -1,6 +1,28 @@
-# OmniFocus MCP Server - What's New (v1.29.6)
+# OmniFocus MCP Server - What's New (v1.29.7)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.29.7 Fix batch_edit_items newFolderId Support (Issue #90)
+
+**Fixed `batch_edit_items` silently ignoring `newFolderId` parameter:**
+- Previously, using `newFolderId` to move projects was silently ignored
+- Now correctly moves projects to the specified folder by ID
+- ID lookup takes priority over name lookup (matches `edit_item` behavior)
+
+**Behavior note:**
+- `newFolderId` not found → Error (folders aren't auto-created by ID)
+- `newFolderName` not found → Creates new folder (existing behavior preserved)
+
+**Example:**
+```json
+{
+  "edits": [
+    {"itemType": "project", "id": "proj123", "newFolderId": "folder456"}
+  ]
+}
+```
+
+---
 
 ## v1.29.6 Fix batch_edit_items newProjectId Support (Issue #88)
 

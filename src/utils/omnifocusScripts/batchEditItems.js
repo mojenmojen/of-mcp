@@ -42,6 +42,7 @@
     let tasksById = null;
     let tagsByName = null;
     let foldersByName = null;
+    let foldersById = null;
 
     function getProjectsByName() {
       if (!projectsByName) {
@@ -93,6 +94,14 @@
         flattenedFolders.forEach(f => foldersByName.set(f.name.toLowerCase(), f));
       }
       return foldersByName;
+    }
+
+    function getFoldersById() {
+      if (!foldersById) {
+        foldersById = new Map();
+        flattenedFolders.forEach(f => foldersById.set(f.id.primaryKey, f));
+      }
+      return foldersById;
     }
 
     const results = [];
@@ -336,9 +345,20 @@
           changedProperties.push("status");
         }
 
-        // Project-specific: Move to folder
-        if (itemType === 'project' && edit.newFolderName) {
-          const targetFolder = getFoldersByName().get(edit.newFolderName.toLowerCase());
+        // Project-specific: Move to folder (ID takes priority over name)
+        if (itemType === 'project' && (edit.newFolderId || edit.newFolderName)) {
+          let targetFolder = null;
+
+          // Try ID first
+          if (edit.newFolderId) {
+            targetFolder = getFoldersById().get(edit.newFolderId);
+          }
+
+          // Fall back to name if ID not found or not provided
+          if (!targetFolder && edit.newFolderName) {
+            targetFolder = getFoldersByName().get(edit.newFolderName.toLowerCase());
+          }
+
           if (targetFolder) {
             const currentFolder = foundItem.parentFolder;
             if (currentFolder && currentFolder.id.primaryKey === targetFolder.id.primaryKey) {
@@ -347,7 +367,17 @@
               moveSections([foundItem], targetFolder);
               changedProperties.push("moved to folder");
             }
+          } else if (edit.newFolderId) {
+            // ID was provided but not found - error
+            results.push({
+              success: false,
+              id: originalId,
+              name: originalName,
+              error: `Folder not found with ID "${edit.newFolderId}"`
+            });
+            continue;
           } else {
+            // Name was provided but not found - create new folder
             const newFolder = new Folder(edit.newFolderName);
             moveSections([foundItem], newFolder);
             changedProperties.push("moved to new folder");
