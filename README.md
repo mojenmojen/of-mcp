@@ -460,7 +460,7 @@ batch_edit_items {
       "id": "projectId1",
       "itemType": "project",
       "newNote": "Updated via batch edit",
-      "newFolderId": "folderId456"  # Move project to another folder by ID
+      "newFolderName": "Work Projects"  # Move project to another folder by name
     }
   ]
 }
