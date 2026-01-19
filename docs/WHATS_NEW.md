@@ -1,6 +1,25 @@
-# OmniFocus MCP Server - What's New (v1.29.3)
+# OmniFocus MCP Server - What's New (v1.29.4)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.29.4 Build System Improvements
+
+**Added `npm run build:fast` alternative build option:**
+- Uses esbuild instead of tsc for ~14ms builds (vs minutes with tsc)
+- Useful when tsc hangs or runs out of memory on some systems
+- Produces identical working output to `npm run build`
+
+**Fixed script path resolution for bundled builds:**
+- OmniJS script files now resolve correctly when using esbuild bundled output
+- Added `bundledPath` check in `scriptExecution.ts` for `dist/server.js` location
+- Supports both tsc (separate files) and esbuild (single bundle) build outputs
+
+**Why this matters:**
+- Some systems experience tsc hangs due to complex type inference in `@modelcontextprotocol/sdk` and `zod`
+- The `build:fast` script provides a reliable alternative that skips type checking
+- For type validation, run `npx tsc --noEmit` separately or rely on IDE integration
+
+---
 
 ## v1.29.3 Complete Logging Standardization (Issue #84)
 

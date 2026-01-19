@@ -89,10 +89,16 @@ export async function executeOmniFocusScript(
       const __filename = fileURLToPath(import.meta.url);
       const __dirname = dirname(__filename);
       
+      // Path for esbuild bundle (everything in dist/server.js)
+      const bundledPath = join(__dirname, 'utils', 'omnifocusScripts', scriptName);
+      // Path for tsc build (files in dist/utils/)
       const distPath = join(__dirname, '..', 'utils', 'omnifocusScripts', scriptName);
+      // Path for dev mode (running from src)
       const srcPath = join(__dirname, '..', '..', 'src', 'utils', 'omnifocusScripts', scriptName);
-      
-      if (existsSync(distPath)) {
+
+      if (existsSync(bundledPath)) {
+        actualPath = bundledPath;
+      } else if (existsSync(distPath)) {
         actualPath = distPath;
       } else if (existsSync(srcPath)) {
         actualPath = srcPath;

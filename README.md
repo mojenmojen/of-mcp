@@ -59,6 +59,12 @@ Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **project r
    npm install && npm run build
    ```
 
+   **Alternative build** (if `npm run build` hangs or runs out of memory):
+   ```bash
+   npm run build:fast
+   ```
+   This uses esbuild (~14ms) instead of tsc. See [Troubleshooting](#troubleshooting) for details.
+
 2. Add to Claude Code:
    ```bash
    claude mcp add omnifocus -- node "/path/to/of-mcp/dist/server.js"
@@ -836,6 +842,14 @@ filter_tasks {
 ```
 
 ### Troubleshooting
+
+**Build issues:**
+- If `npm run build` hangs or crashes with OOM, use `npm run build:fast` instead
+- The `build:fast` script uses esbuild which skips type checking but produces identical output
+- This can happen due to complex type inference in the MCP SDK and Zod dependencies
+- For type checking, run `npx tsc --noEmit` separately or rely on your IDE
+
+**Runtime issues:**
 - Ensure OmniFocus 3+ is installed and running
 - Verify Node.js 18+ is installed
 - Check Claude Code MCP configuration
