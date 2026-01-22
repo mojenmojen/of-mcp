@@ -1,6 +1,15 @@
-# OmniFocus MCP Server - What's New (v1.30.1)
+# OmniFocus MCP Server - What's New (v1.30.2)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.30.2 Fix get_custom_perspective_tasks SyntaxError (Issue #95)
+
+**Fixed `get_custom_perspective_tasks` failing with duplicate variable declaration error:**
+- The script declared `perspectiveName` and `perspectiveId` variables that conflicted with runtime injection
+- Removed duplicate declarations - these variables are now correctly provided by `scriptExecution.ts`
+- Added documentation comment explaining the runtime injection pattern
+
+---
 
 ## v1.30.1 Type-Safe Error Handling (Issue #86)
 

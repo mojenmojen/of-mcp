@@ -2,9 +2,9 @@
 // Based on improved user-provided code
 
 (() => {
-  // Declare variables needed for cleanup outside try block
-  let perspectiveName = null;
-  let perspectiveId = null;
+  // Runtime injection: injectedArgs, perspectiveName, perspectiveId, and other
+  // parameters are injected by executeOmniFocusScript() before this code runs.
+  // See scriptExecution.ts for the full list of injected variables.
   let originalFocus = null;
   let focusWasActive = false;
   let focusCleared = false;
@@ -12,10 +12,6 @@
   let focusTarget = null;
 
   try {
-    // Get injected parameters
-    perspectiveName = injectedArgs && injectedArgs.perspectiveName ? injectedArgs.perspectiveName : null;
-    perspectiveId = injectedArgs && injectedArgs.perspectiveId ? injectedArgs.perspectiveId : null;
-
     // Get Focus state BEFORE any operations
     originalFocus = document.focus;
     focusWasActive = originalFocus !== null;
