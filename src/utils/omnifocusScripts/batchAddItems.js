@@ -21,6 +21,7 @@
     let tagsByName = null;
     let cachedFolders = null;
     let foldersById = null;
+    let foldersByName = null;
 
     function getProjectsByName() {
       if (!projectsByName) {
@@ -79,6 +80,22 @@
         flattenedFolders.forEach(f => foldersById.set(f.id.primaryKey, f));
       }
       return foldersById;
+    }
+
+    // Lowercased-name -> Folder index for O(1) plain-name resolution.
+    // First-wins (mirrors resolveFolderByName's linear scan), built over the
+    // same folder set as getAllFolders() so lookups are identical to the scan.
+    function getFoldersByName() {
+      if (!foldersByName) {
+        foldersByName = new Map();
+        getAllFolders().forEach(f => {
+          const key = f.name.toLowerCase();
+          if (!foldersByName.has(key)) {
+            foldersByName.set(key, f);
+          }
+        });
+      }
+      return foldersByName;
     }
 
     const results = [];
@@ -274,7 +291,7 @@
               container = getFoldersById().get(folderId);
             }
             if (!container && folderName) {
-              container = resolveFolderByName(folderName, getAllFolders());
+              container = resolveFolderByName(folderName, getAllFolders(), getFoldersByName());
             }
             if (!container) {
               const searchRef = folderId ? `ID "${folderId}"` : `name "${folderName}"`;

@@ -43,6 +43,7 @@
     let tagsByName = null;
     let cachedFolders = null;
     let foldersById = null;
+    let foldersByName = null;
 
     function getProjectsByName() {
       if (!projectsByName) {
@@ -101,6 +102,24 @@
         flattenedFolders.forEach(f => foldersById.set(f.id.primaryKey, f));
       }
       return foldersById;
+    }
+
+    // Lowercased-name -> Folder index for O(1) plain-name resolution.
+    // First-wins (mirrors resolveFolderByName's linear scan), built over the
+    // same folder set as getAllFolders() so lookups are identical to the scan.
+    // Kept in sync when a new folder is created mid-batch (see below) so a later
+    // edit referencing the same new name reuses it instead of duplicating it.
+    function getFoldersByName() {
+      if (!foldersByName) {
+        foldersByName = new Map();
+        getAllFolders().forEach(f => {
+          const key = f.name.toLowerCase();
+          if (!foldersByName.has(key)) {
+            foldersByName.set(key, f);
+          }
+        });
+      }
+      return foldersByName;
     }
 
     const results = [];
@@ -355,7 +374,7 @@
 
           // Fall back to name (supports "Parent > Child" paths)
           if (!targetFolder && edit.newFolderName) {
-            targetFolder = resolveFolderByName(edit.newFolderName, getAllFolders());
+            targetFolder = resolveFolderByName(edit.newFolderName, getAllFolders(), getFoldersByName());
           }
 
           if (targetFolder) {
@@ -379,6 +398,14 @@
             // Name was provided but not found - create new folder
             const newFolder = new Folder(edit.newFolderName);
             moveSections([foundItem], newFolder);
+            // Index the new folder (first-wins) so a later edit in this same
+            // batch referencing the same plain name reuses it rather than
+            // creating a duplicate. (Path-style names go through the ancestor
+            // walk, not this map, so this entry is harmless for those.)
+            const newFolderKey = newFolder.name.toLowerCase();
+            if (!getFoldersByName().has(newFolderKey)) {
+              getFoldersByName().set(newFolderKey, newFolder);
+            }
             changedProperties.push("moved to new folder");
           }
         }

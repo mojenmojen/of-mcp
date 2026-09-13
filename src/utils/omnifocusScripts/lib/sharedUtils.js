@@ -119,9 +119,14 @@ function getFolderPath(folder) {
  * Case-insensitive comparison.
  * @param {string} folderName - Folder name or " > "-separated path
  * @param {Array} allFolders - flattenedFolders array
+ * @param {Map} [foldersByName] - Optional lowercased-name -> Folder index (first-wins)
+ *   for O(1) plain-name resolution. When supplied it is consulted for the plain-name
+ *   branch instead of scanning allFolders; the path-style branch always uses allFolders.
+ *   The map must be built first-wins over the same folder set as allFolders so results
+ *   are identical to the linear scan (see batch scripts' getFoldersByName()).
  * @returns {Folder|null} - Matched folder or null
  */
-function resolveFolderByName(folderName, allFolders) {
+function resolveFolderByName(folderName, allFolders, foldersByName) {
   const nameLower = folderName.toLowerCase();
   const isPath = nameLower.indexOf(' > ') !== -1;
 
@@ -142,7 +147,12 @@ function resolveFolderByName(folderName, allFolders) {
     return null;
   }
 
-  // Plain name: first case-insensitive match (existing behavior)
+  // Plain name: first case-insensitive match (existing behavior).
+  // When a name index is supplied, use its O(1) lookup; the index is built
+  // first-wins so it returns the same folder the linear scan would.
+  if (foldersByName) {
+    return foldersByName.get(nameLower) || null;
+  }
   for (const folder of allFolders) {
     if (folder.name.toLowerCase() === nameLower) {
       return folder;

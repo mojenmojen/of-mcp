@@ -1,6 +1,14 @@
-# OmniFocus MCP Server - What's New (v1.33.0)
+# OmniFocus MCP Server - What's New (v1.33.1)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.33.1 Batch folder-name resolution is O(1) per item again (#130)
+
+`batch_add_items` and `batch_edit_items` resolved a project's destination folder by *name* with a linear scan over every folder, once per item — `O(N×F)` for `N` items over `F` folders, a regression introduced in #117. Both scripts now build a lowercased-name → folder index once (first-wins, matching the previous "first match" semantics) and consult it for plain-name lookups, restoring `O(N)`. Resolution by `folderId` was already `O(1)` and is unchanged, as is `"Parent > Child"` path-style resolution (which still walks the ancestor chain). The effect is negligible at realistic folder counts; this is a tidy-up, not a fix for an observed slowdown.
+
+**One behaviour improvement:** in `batch_edit_items`, if two edits in the same batch move projects to the *same new* folder name (one that doesn't already exist), they now land in a single shared folder instead of potentially creating duplicates.
+
+---
 
 ## v1.33.0 Build-staleness gate: `get_server_version` reports build provenance (#126)
 
