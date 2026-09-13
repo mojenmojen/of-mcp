@@ -113,20 +113,22 @@ function getFolderPath(folder) {
 }
 
 /**
- * Resolve a folder by name, supporting path-style disambiguation.
- * Accepts plain names ("Projects") or paths ("Work > Projects").
- * Plain names match any folder (first match). Paths match the full ancestor chain.
- * Case-insensitive comparison.
+ * Resolve a folder by plain name or " > "-separated path.
+ * Case-insensitive. Collects every match so callers can fail closed on
+ * ambiguity rather than silently taking the first (issue #132; root-cause
+ * class behind #112).
  * @param {string} folderName - Folder name or " > "-separated path
  * @param {Array} allFolders - flattenedFolders array
- * @returns {Folder|null} - Matched folder or null
+ * @returns {{folder: Folder|null, matches: Array, ambiguous: boolean}}
+ *   folder is non-null only when exactly one folder matches.
  */
-function resolveFolderByName(folderName, allFolders) {
+function resolveFolderRef(folderName, allFolders) {
   const nameLower = folderName.toLowerCase();
   const isPath = nameLower.indexOf(' > ') !== -1;
+  const matches = [];
 
   if (isPath) {
-    const pathLower = nameLower.split(' > ').map(function(s) { return s.trim(); });
+    const pathLower = nameLower.split(' > ').map(function (s) { return s.trim(); });
     const leafName = pathLower[pathLower.length - 1];
     for (const folder of allFolders) {
       if (folder.name.toLowerCase() !== leafName) continue;
@@ -137,18 +139,49 @@ function resolveFolderByName(folderName, allFolders) {
       for (let i = 0; i < pathLower.length; i++) {
         if (actualPath[i] !== pathLower[i]) { match = false; break; }
       }
-      if (match) return folder;
+      if (match) matches.push(folder);
     }
-    return null;
+  } else {
+    for (const folder of allFolders) {
+      if (folder.name.toLowerCase() === nameLower) {
+        matches.push(folder);
+      }
+    }
   }
 
-  // Plain name: first case-insensitive match (existing behavior)
-  for (const folder of allFolders) {
-    if (folder.name.toLowerCase() === nameLower) {
-      return folder;
-    }
+  if (matches.length === 1) {
+    return { folder: matches[0], matches: matches, ambiguous: false };
   }
-  return null;
+  if (matches.length === 0) {
+    return { folder: null, matches: [], ambiguous: false };
+  }
+  return { folder: null, matches: matches, ambiguous: true };
+}
+
+/**
+ * Build the user-facing error for an ambiguous folder name.
+ * Kept here so every call site reports ambiguity identically.
+ * @param {string} folderName - The name the caller passed
+ * @param {Array} matches - Folders that matched (length >= 2)
+ * @returns {string}
+ */
+function formatAmbiguousFolderError(folderName, matches) {
+  const paths = matches.map(function (f) {
+    return '"' + getFolderPath(f) + '"';
+  }).join(', ');
+  return 'Folder name "' + folderName + '" is ambiguous - ' + matches.length +
+    ' folders match: ' + paths +
+    '. Use the full "Parent > Child" path, or pass folderId.';
+}
+
+/**
+ * DEPRECATED: superseded by resolveFolderRef. Retained only so call sites can
+ * migrate one commit at a time; preserves the historical first-match behaviour.
+ * Removed in Task 5 of the #132 plan.
+ */
+function resolveFolderByName(folderName, allFolders) {
+  const ref = resolveFolderRef(folderName, allFolders);
+  return ref.folder || ref.matches[0] || null;
 }
 
 /**
