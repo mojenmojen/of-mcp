@@ -274,7 +274,16 @@
               container = getFoldersById().get(folderId);
             }
             if (!container && folderName) {
-              container = resolveFolderByName(folderName, getAllFolders());
+              const ref = resolveFolderRef(folderName, getAllFolders());
+              if (ref.ambiguous) {
+                results.push({
+                  success: false,
+                  name: itemName,
+                  error: formatAmbiguousFolderError(folderName, ref.matches)
+                });
+                continue;
+              }
+              container = ref.folder;
             }
             if (!container) {
               const searchRef = folderId ? `ID "${folderId}"` : `name "${folderName}"`;
