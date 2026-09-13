@@ -355,7 +355,19 @@
 
           // Fall back to name (supports "Parent > Child" paths)
           if (!targetFolder && edit.newFolderName) {
-            targetFolder = resolveFolderByName(edit.newFolderName, getAllFolders());
+            const ref = resolveFolderRef(edit.newFolderName, getAllFolders());
+            if (ref.ambiguous) {
+              // Must not fall through to the create-folder branch below: that
+              // would add a third folder sharing the name (issue #132).
+              results.push({
+                success: false,
+                id: originalId,
+                name: originalName,
+                error: formatAmbiguousFolderError(edit.newFolderName, ref.matches)
+              });
+              continue;
+            }
+            targetFolder = ref.folder;
           }
 
           if (targetFolder) {

@@ -323,7 +323,16 @@
 
       // Fall back to name (supports "Parent > Child" paths)
       if (!targetFolder && args.newFolderName) {
-        targetFolder = resolveFolderByName(args.newFolderName, allFolders);
+        const ref = resolveFolderRef(args.newFolderName, allFolders);
+        if (ref.ambiguous) {
+          // Must not fall through to the create-folder branch below: that would
+          // add a third folder sharing the duplicated name (issue #132).
+          return JSON.stringify({
+            success: false,
+            error: formatAmbiguousFolderError(args.newFolderName, ref.matches)
+          });
+        }
+        targetFolder = ref.folder;
       }
 
       if (targetFolder) {
