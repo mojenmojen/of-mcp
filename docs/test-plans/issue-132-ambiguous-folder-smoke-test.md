@@ -57,7 +57,7 @@ empty (repo precedent: `removeTask.js:61`).
 
 ## Results
 
-Executed 2026-09-13 against the worktree build, via the disposable
+Executed 2026-09-12 against the worktree build, via the disposable
 `smoke-142.mjs` stdio harness (never committed), against the user's live
 OmniFocus database, using only disposable `SMOKE-*` fixtures.
 
@@ -175,6 +175,33 @@ The call succeeded even though `folderName` was the ambiguous plain name, becaus
 ### Summary
 
 11 of 12 cases PASS. TC6 FAILs on message delivery only (candidate-path text lost when a `batch_edit_items` call's every edit fails); the underlying fail-closed behaviour it exists to verify held in every case, including TC6. No case required a change to reviewed source, and no source was changed to force a pass.
+
+### Unexpected findings
+
+1. **TC3 message-text anomaly.** The `add_project` success message reported
+   "created successfully at the root level" even though the project was
+   correctly filed in the nested folder — confirmed independently via
+   `list_projects` and `get_project_by_id`. This is a pre-existing cosmetic
+   bug in the confirmation-message text when a project is created directly
+   by `folderId`, unrelated to the #132 ambiguity fix.
+2. **TC6 message-delivery gap.** When every item in a `batch_edit_items`
+   call fails, the tool prints `Failed to process batch edit: undefined`
+   and drops the per-item ambiguity message naming the candidates. The
+   fail-closed behaviour still held — no folder was created and no move
+   occurred. This is pre-existing, not introduced by the #132 fix. The
+   controller has verified that it is systemic across all three batch
+   tools: the OmniJS scripts return `success: successCount > 0` with no
+   top-level `error` when every item fails (`batchAddItems.js:360`,
+   `batchEditItems.js:425`, `batchRemoveItems.js:172`), and the TypeScript
+   handlers render per-item details only when `success` is `true`
+   (`src/tools/definitions/batchAddItems.ts:43/83`, `batchEditItems.ts:71/99`,
+   `batchRemoveItems.ts:35/65`). So a `batch_add_items` or
+   `batch_edit_items` call whose only item names an ambiguous folder fails
+   closed but hides the candidate list, while mixed batches show it
+   correctly. This is tracked for a maintainer decision, not fixed in this
+   change.
+3. **TC10 timing.** The call took about 50 seconds end to end. It was
+   slow, not a hang, so a future re-runner shouldn't abort it early.
 
 ### Cleanup
 
