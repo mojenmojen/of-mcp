@@ -33,7 +33,14 @@
 
     // If not found by ID, search by name (supports "Parent > Child" paths)
     if (!foundFolder && folderName) {
-      foundFolder = resolveFolderByName(folderName, allFolders);
+      const ref = resolveFolderRef(folderName, allFolders);
+      if (ref.ambiguous) {
+        return JSON.stringify({
+          success: false,
+          error: formatAmbiguousFolderError(folderName, ref.matches)
+        });
+      }
+      foundFolder = ref.folder;
     }
 
     if (!foundFolder) {

@@ -43,7 +43,14 @@
       }
     }
     if (!targetFolder && folderName) {
-      targetFolder = resolveFolderByName(folderName, flattenedFolders);
+      const ref = resolveFolderRef(folderName, flattenedFolders);
+      if (ref.ambiguous) {
+        return JSON.stringify({
+          success: false,
+          error: formatAmbiguousFolderError(folderName, ref.matches)
+        });
+      }
+      targetFolder = ref.folder;
       if (!targetFolder) {
         return JSON.stringify({
           success: false,
