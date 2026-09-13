@@ -1,6 +1,20 @@
-# OmniFocus MCP Server - What's New (v1.33.0)
+# OmniFocus MCP Server - What's New (v1.34.0)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v1.34.0 Ambiguous folder names now fail closed (#142)
+
+Passing a plain `folderName` that matches more than one folder previously resolved to whichever folder came first in outline order, silently. Tools now return an explicit error naming every candidate by its full path, for example:
+
+> Folder name "Archive" is ambiguous - 2 folders match: "Clients > Archive", "Archive". Use the full "Parent > Child" path, or pass folderId.
+
+**This is a breaking change** for callers that relied on first-match with duplicate folder names. Unique folder names are unaffected. Disambiguate with the `"Parent > Child"` path syntax or with `folderId`.
+
+Affected tools: `add_project`, `add_folder` (`parentFolderName`), `batch_add_items`, `edit_item`, `batch_edit_items`, `duplicate_project`, `list_projects`, `get_folder_by_id`.
+
+Closes #132. This removes the root-cause class behind #112, where a duplicate folder name (one copy dropped) caused projects to be created in the dropped folder, making them and their tasks invisible to active queries.
+
+---
 
 ## v1.33.0 Build-staleness gate: `get_server_version` reports build provenance (#126)
 

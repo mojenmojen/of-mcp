@@ -156,11 +156,14 @@ get_folder_by_id { "folderName": "Personal > Areas" }
 # Filter projects by disambiguated folder
 list_projects { "folderName": "Work > Areas" }
 
-# Plain names still work (first match, backwards compatible)
+# A plain name shared by more than one folder is ambiguous and returns an error
+# listing each candidate's full path (v1.34.0+)
 get_folder_by_id { "folderName": "Areas" }
 ```
 
 Path syntax is supported everywhere a `folderName` parameter is accepted: `add_project`, `add_folder`, `edit_item`, `duplicate_project`, `batch_add_items`, `batch_edit_items`, `list_projects`, and `get_folder_by_id`.
+
+**Duplicate folder names:** if a plain `folderName` matches more than one folder, the call fails with an error listing each candidate's full path. Disambiguate with `"Parent > Child"` path syntax, or pass `folderId`.
 
 ### 3. 🔍 Perspective Views
 

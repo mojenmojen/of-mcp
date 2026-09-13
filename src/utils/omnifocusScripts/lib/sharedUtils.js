@@ -175,16 +175,6 @@ function formatAmbiguousFolderError(folderName, matches) {
 }
 
 /**
- * DEPRECATED: superseded by resolveFolderRef. Retained only so call sites can
- * migrate one commit at a time; preserves the historical first-match behaviour.
- * Removed in Task 5 of the #132 plan.
- */
-function resolveFolderByName(folderName, allFolders) {
-  const ref = resolveFolderRef(folderName, allFolders);
-  return ref.folder || ref.matches[0] || null;
-}
-
-/**
  * Map of OmniFocus Task.Status enum values to human-readable strings.
  * Used for serializing task status in JSON responses.
  */
