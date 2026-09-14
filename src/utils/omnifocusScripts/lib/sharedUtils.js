@@ -113,20 +113,25 @@ function getFolderPath(folder) {
 }
 
 /**
- * Resolve a folder by name, supporting path-style disambiguation.
- * Accepts plain names ("Projects") or paths ("Work > Projects").
- * Plain names match any folder (first match). Paths match the full ancestor chain.
- * Case-insensitive comparison.
+ * Resolve a folder by plain name or " > "-separated path.
+ * Case-insensitive. A path must match the folder's whole chain from the top
+ * level: "Clients > Archive" does not match a folder whose full path is
+ * "Work > Clients > Archive".
+ * Collects every match so callers can fail closed on ambiguity rather than
+ * silently taking the first (issue #132; the folder side of #112).
  * @param {string} folderName - Folder name or " > "-separated path
  * @param {Array} allFolders - flattenedFolders array
- * @returns {Folder|null} - Matched folder or null
+ * @returns {{folder: Folder|null, matches: Array, ambiguous: boolean}}
+ *   matches holds every matching folder (empty when none match); folder is
+ *   set only when exactly one matches; ambiguous is true when two or more do.
  */
-function resolveFolderByName(folderName, allFolders) {
+function resolveFolderRef(folderName, allFolders) {
   const nameLower = folderName.toLowerCase();
   const isPath = nameLower.indexOf(' > ') !== -1;
+  const matches = [];
 
   if (isPath) {
-    const pathLower = nameLower.split(' > ').map(function(s) { return s.trim(); });
+    const pathLower = nameLower.split(' > ').map(function (s) { return s.trim(); });
     const leafName = pathLower[pathLower.length - 1];
     for (const folder of allFolders) {
       if (folder.name.toLowerCase() !== leafName) continue;
@@ -137,18 +142,45 @@ function resolveFolderByName(folderName, allFolders) {
       for (let i = 0; i < pathLower.length; i++) {
         if (actualPath[i] !== pathLower[i]) { match = false; break; }
       }
-      if (match) return folder;
+      if (match) matches.push(folder);
     }
-    return null;
+  } else {
+    for (const folder of allFolders) {
+      if (folder.name.toLowerCase() === nameLower) {
+        matches.push(folder);
+      }
+    }
   }
 
-  // Plain name: first case-insensitive match (existing behavior)
-  for (const folder of allFolders) {
-    if (folder.name.toLowerCase() === nameLower) {
-      return folder;
-    }
+  if (matches.length === 1) {
+    return { folder: matches[0], matches: matches, ambiguous: false };
   }
-  return null;
+  if (matches.length === 0) {
+    return { folder: null, matches: [], ambiguous: false };
+  }
+  return { folder: null, matches: matches, ambiguous: true };
+}
+
+/**
+ * Build the user-facing error for an ambiguous folder name.
+ * Kept here so every call site builds the one message. Lists each
+ * candidate's full path and folderId, so a top-level folder that shares its
+ * name with a nested one (unreachable by path syntax alone) can still be
+ * selected by ID.
+ * @param {string} folderName - The name the caller passed
+ * @param {Array} matches - Folders that matched (length >= 2)
+ * @param {string} idParam - The calling tool's folder-ID parameter, named in
+ *   the advice: 'folderId', 'newFolderId' or 'parentFolderId'. Required: the
+ *   MCP SDK drops unknown arguments, so naming the wrong one would be ignored.
+ * @returns {string}
+ */
+function formatAmbiguousFolderError(folderName, matches, idParam) {
+  const candidates = matches.map(function (f) {
+    return '"' + getFolderPath(f) + '" (id: ' + f.id.primaryKey + ')';
+  }).join(', ');
+  return 'Folder name "' + folderName + '" is ambiguous - ' + matches.length +
+    ' folders match: ' + candidates +
+    '. Use the full "Parent > Child" path, or pass ' + idParam + '.';
 }
 
 /**

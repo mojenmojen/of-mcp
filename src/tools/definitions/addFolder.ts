@@ -8,7 +8,7 @@ const log = logger.child('def:addFolder');
 
 export const schema = z.object({
   name: z.string().describe("The name of the folder to create"),
-  parentFolderName: z.string().optional().describe("Parent folder name (creates nested folder). If omitted, creates at root level."),
+  parentFolderName: z.string().optional().describe("Parent folder name or \"Parent > Child\" path (creates nested folder). If omitted, creates at root level. If it matches more than one folder, the call fails and lists each candidate's path and ID; pass parentFolderId to choose one."),
   parentFolderId: z.string().optional().describe("Parent folder ID (alternative to parentFolderName)")
 });
 

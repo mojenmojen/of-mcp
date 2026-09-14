@@ -35,7 +35,14 @@
           });
         }
       } else if (parentFolderName) {
-        parentFolder = resolveFolderByName(parentFolderName, allFolders);
+        const ref = resolveFolderRef(parentFolderName, allFolders);
+        if (ref.ambiguous) {
+          return JSON.stringify({
+            success: false,
+            error: formatAmbiguousFolderError(parentFolderName, ref.matches, 'parentFolderId')
+          });
+        }
+        parentFolder = ref.folder;
         if (!parentFolder) {
           return JSON.stringify({
             success: false,

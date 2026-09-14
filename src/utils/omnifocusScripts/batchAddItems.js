@@ -1,6 +1,6 @@
 // OmniJS script to add multiple items in a single execution
 // This provides true batching - all adds happen in one OmniFocus session
-// Note: parseLocalDate and buildRRule are provided by sharedUtils.js
+// Note: parseLocalDate, buildRRule, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
 (() => {
   try {
     const args = typeof injectedArgs !== 'undefined' ? injectedArgs : {};
@@ -274,7 +274,16 @@
               container = getFoldersById().get(folderId);
             }
             if (!container && folderName) {
-              container = resolveFolderByName(folderName, getAllFolders());
+              const ref = resolveFolderRef(folderName, getAllFolders());
+              if (ref.ambiguous) {
+                results.push({
+                  success: false,
+                  name: itemName,
+                  error: formatAmbiguousFolderError(folderName, ref.matches, 'folderId')
+                });
+                continue;
+              }
+              container = ref.folder;
             }
             if (!container) {
               const searchRef = folderId ? `ID "${folderId}"` : `name "${folderName}"`;

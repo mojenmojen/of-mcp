@@ -4,7 +4,7 @@ import { formatDateSafe } from '../../utils/dateUtils.js';
 import { formatProcessingWarnings } from '../../utils/formatUtils.js';
 
 export const schema = z.object({
-  folderName: z.string().optional().describe("Filter by folder name"),
+  folderName: z.string().optional().describe("Filter by folder name or \"Parent > Child\" path. If it matches more than one folder, the call fails and lists each candidate's path and ID; pass folderId instead. When folderId is given, folderName is not used for filtering."),
   folderId: z.string().optional().describe("Filter by folder ID"),
   status: z.enum(['active', 'onHold', 'completed', 'dropped', 'all']).optional()
     .describe("Filter by project status (default: active)"),
@@ -31,7 +31,8 @@ export async function handler(
         content: [{
           type: "text" as const,
           text: `Error: ${result.error}`
-        }]
+        }],
+        isError: true
       };
     }
 
@@ -85,7 +86,8 @@ export async function handler(
       content: [{
         type: "text" as const,
         text: `Error listing projects: ${err?.message || 'Unknown error'}`
-      }]
+      }],
+      isError: true
     };
   }
 }

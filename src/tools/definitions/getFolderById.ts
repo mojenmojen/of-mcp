@@ -9,7 +9,7 @@ const log = logger.child('def:getFolderById');
 
 export const schema = z.object({
   folderId: z.string().optional().describe("The ID of the folder to retrieve"),
-  folderName: z.string().optional().describe("The name of the folder to retrieve (alternative to folderId)")
+  folderName: z.string().optional().describe("The name or \"Parent > Child\" path of the folder to retrieve (alternative to folderId). If it matches more than one folder, the call fails and lists each candidate's path and ID.")
 });
 
 export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {
