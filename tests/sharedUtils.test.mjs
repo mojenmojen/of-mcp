@@ -89,15 +89,13 @@ test('two identical full paths are ambiguous', () => {
   const ref = resolveFolderRef('Clients > Archive', [a, b]);
   assert.equal(ref.ambiguous, true);
   assert.equal(ref.folder, null);
+  assert.equal(ref.matches.length, 2);
 });
 
-test('error message lists every candidate by full path', () => {
+test('error message lists every candidate by full path and folderId', () => {
   const clients = folder('Clients');
   const message = formatAmbiguousFolderError(
     'Archive', [folder('Archive', clients), folder('Archive')]
   );
-  assert.match(message, /ambiguous/);
-  assert.match(message, /"Clients > Archive"/);
-  assert.match(message, /"Archive"/);
-  assert.match(message, /folderId/);
+  assert.equal(message, 'Folder name "Archive" is ambiguous - 2 folders match: "Clients > Archive" (id: Archive-Clients), "Archive" (id: Archive-root). Use the full "Parent > Child" path, or pass folderId.');
 });

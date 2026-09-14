@@ -160,17 +160,20 @@ function resolveFolderRef(folderName, allFolders) {
 
 /**
  * Build the user-facing error for an ambiguous folder name.
- * Kept here so every call site reports ambiguity identically.
+ * Kept here so every call site reports ambiguity identically. Lists each
+ * candidate's full path and folderId, so a top-level folder that shares its
+ * name with a nested one (unreachable by path syntax alone) can still be
+ * disambiguated via folderId (#132 follow-up).
  * @param {string} folderName - The name the caller passed
  * @param {Array} matches - Folders that matched (length >= 2)
  * @returns {string}
  */
 function formatAmbiguousFolderError(folderName, matches) {
-  const paths = matches.map(function (f) {
-    return '"' + getFolderPath(f) + '"';
+  const candidates = matches.map(function (f) {
+    return '"' + getFolderPath(f) + '" (id: ' + f.id.primaryKey + ')';
   }).join(', ');
   return 'Folder name "' + folderName + '" is ambiguous - ' + matches.length +
-    ' folders match: ' + paths +
+    ' folders match: ' + candidates +
     '. Use the full "Parent > Child" path, or pass folderId.';
 }
 
