@@ -54,7 +54,7 @@
     if (folderRef && folderRef.ambiguous) {
       return JSON.stringify({
         success: false,
-        error: formatAmbiguousFolderError(folderName, folderRef.matches),
+        error: formatAmbiguousFolderError(folderName, folderRef.matches, 'folderId'),
         count: 0,
         projects: []
       });

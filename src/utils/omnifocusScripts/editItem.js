@@ -329,7 +329,7 @@
           // add a third folder sharing the duplicated name (issue #132).
           return JSON.stringify({
             success: false,
-            error: formatAmbiguousFolderError(args.newFolderName, ref.matches)
+            error: formatAmbiguousFolderError(args.newFolderName, ref.matches, 'newFolderId')
           });
         }
         targetFolder = ref.folder;

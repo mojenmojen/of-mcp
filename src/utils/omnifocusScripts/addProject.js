@@ -1,6 +1,6 @@
 // OmniJS script to add a project
 // This avoids AppleScript issues with ISO date parsing and special characters
-// Note: parseLocalDate, resolveFolderRef, formatAmbiguousFolderError, and getFolderPath are provided by sharedUtils.js
+// Note: parseLocalDate, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
 (() => {
   try {
     const args = typeof injectedArgs !== 'undefined' ? injectedArgs : {};
@@ -45,7 +45,7 @@
         if (ref.ambiguous) {
           return JSON.stringify({
             success: false,
-            error: formatAmbiguousFolderError(folderName, ref.matches)
+            error: formatAmbiguousFolderError(folderName, ref.matches, 'folderId')
           });
         }
         container = ref.folder;

@@ -363,7 +363,7 @@
                 success: false,
                 id: originalId,
                 name: originalName,
-                error: formatAmbiguousFolderError(edit.newFolderName, ref.matches)
+                error: formatAmbiguousFolderError(edit.newFolderName, ref.matches, 'newFolderId')
               });
               continue;
             }

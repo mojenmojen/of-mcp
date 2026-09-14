@@ -37,7 +37,7 @@
       if (ref.ambiguous) {
         return JSON.stringify({
           success: false,
-          error: formatAmbiguousFolderError(folderName, ref.matches)
+          error: formatAmbiguousFolderError(folderName, ref.matches, 'folderId')
         });
       }
       foundFolder = ref.folder;

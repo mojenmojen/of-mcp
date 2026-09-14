@@ -39,7 +39,7 @@
         if (ref.ambiguous) {
           return JSON.stringify({
             success: false,
-            error: formatAmbiguousFolderError(parentFolderName, ref.matches)
+            error: formatAmbiguousFolderError(parentFolderName, ref.matches, 'parentFolderId')
           });
         }
         parentFolder = ref.folder;

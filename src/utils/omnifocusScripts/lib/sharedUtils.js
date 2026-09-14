@@ -114,13 +114,16 @@ function getFolderPath(folder) {
 
 /**
  * Resolve a folder by plain name or " > "-separated path.
- * Case-insensitive. Collects every match so callers can fail closed on
- * ambiguity rather than silently taking the first (issue #132; root-cause
- * class behind #112).
+ * Case-insensitive. A path must match the folder's whole chain from the top
+ * level: "Clients > Archive" does not match a folder whose full path is
+ * "Work > Clients > Archive".
+ * Collects every match so callers can fail closed on ambiguity rather than
+ * silently taking the first (issue #132; the folder side of #112).
  * @param {string} folderName - Folder name or " > "-separated path
  * @param {Array} allFolders - flattenedFolders array
  * @returns {{folder: Folder|null, matches: Array, ambiguous: boolean}}
- *   folder is non-null only when exactly one folder matches.
+ *   matches holds every matching folder (empty when none match); folder is
+ *   set only when exactly one matches; ambiguous is true when two or more do.
  */
 function resolveFolderRef(folderName, allFolders) {
   const nameLower = folderName.toLowerCase();
@@ -160,21 +163,24 @@ function resolveFolderRef(folderName, allFolders) {
 
 /**
  * Build the user-facing error for an ambiguous folder name.
- * Kept here so every call site reports ambiguity identically. Lists each
+ * Kept here so every call site builds the one message. Lists each
  * candidate's full path and folderId, so a top-level folder that shares its
  * name with a nested one (unreachable by path syntax alone) can still be
- * disambiguated via folderId (#132 follow-up).
+ * selected by ID.
  * @param {string} folderName - The name the caller passed
  * @param {Array} matches - Folders that matched (length >= 2)
+ * @param {string} idParam - The calling tool's folder-ID parameter, named in
+ *   the advice: 'folderId', 'newFolderId' or 'parentFolderId'. Required: the
+ *   MCP SDK drops unknown arguments, so naming the wrong one would be ignored.
  * @returns {string}
  */
-function formatAmbiguousFolderError(folderName, matches) {
+function formatAmbiguousFolderError(folderName, matches, idParam) {
   const candidates = matches.map(function (f) {
     return '"' + getFolderPath(f) + '" (id: ' + f.id.primaryKey + ')';
   }).join(', ');
   return 'Folder name "' + folderName + '" is ambiguous - ' + matches.length +
     ' folders match: ' + candidates +
-    '. Use the full "Parent > Child" path, or pass folderId.';
+    '. Use the full "Parent > Child" path, or pass ' + idParam + '.';
 }
 
 /**
