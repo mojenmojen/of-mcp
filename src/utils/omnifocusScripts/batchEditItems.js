@@ -1,6 +1,6 @@
 // OmniJS script to edit multiple items in a single execution
 // This provides true batching - all edits happen in one OmniFocus session
-// Note: parseLocalDate and buildRRule are provided by sharedUtils.js
+// Note: parseLocalDate, buildRRule, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
 (() => {
   // Build tag lookup Map once for O(1) lookups (instead of O(n) per lookup)
   const tagLookupMap = new Map();
@@ -144,6 +144,45 @@
         const changedProperties = [];
         const originalName = foundItem.name;
         const originalId = foundItem.id.primaryKey;
+
+        // Resolve the target folder BEFORE any write, so a folder error can't
+        // leave this item's earlier edits half-applied. The move itself (and
+        // create-on-miss) still happens after the other edits, below.
+        let targetFolder = null;
+        if (itemType === 'project' && (edit.newFolderId || edit.newFolderName)) {
+          // Try ID first
+          if (edit.newFolderId) {
+            targetFolder = getFoldersById().get(edit.newFolderId);
+          }
+
+          // Fall back to name (supports "Parent > Child" paths)
+          if (!targetFolder && edit.newFolderName) {
+            const ref = resolveFolderRef(edit.newFolderName, getAllFolders());
+            if (ref.ambiguous) {
+              // Must not fall through to the create-folder branch below: that
+              // would add another folder sharing the name (issue #132).
+              results.push({
+                success: false,
+                id: originalId,
+                name: originalName,
+                error: formatAmbiguousFolderError(edit.newFolderName, ref.matches, 'newFolderId')
+              });
+              continue;
+            }
+            targetFolder = ref.folder;
+          }
+
+          // An ID that matches no folder is an error, unless the name resolved
+          if (!targetFolder && edit.newFolderId) {
+            results.push({
+              success: false,
+              id: originalId,
+              name: originalName,
+              error: `Folder not found with ID "${edit.newFolderId}"`
+            });
+            continue;
+          }
+        }
 
         // Apply changes (same logic as editItem.js)
 
@@ -344,32 +383,8 @@
           changedProperties.push("status");
         }
 
-        // Project-specific: Move to folder (ID takes priority over name)
+        // Project-specific: Move to folder (target resolved before any write, above)
         if (itemType === 'project' && (edit.newFolderId || edit.newFolderName)) {
-          let targetFolder = null;
-
-          // Try ID first
-          if (edit.newFolderId) {
-            targetFolder = getFoldersById().get(edit.newFolderId);
-          }
-
-          // Fall back to name (supports "Parent > Child" paths)
-          if (!targetFolder && edit.newFolderName) {
-            const ref = resolveFolderRef(edit.newFolderName, getAllFolders());
-            if (ref.ambiguous) {
-              // Must not fall through to the create-folder branch below: that
-              // would add a third folder sharing the name (issue #132).
-              results.push({
-                success: false,
-                id: originalId,
-                name: originalName,
-                error: formatAmbiguousFolderError(edit.newFolderName, ref.matches, 'newFolderId')
-              });
-              continue;
-            }
-            targetFolder = ref.folder;
-          }
-
           if (targetFolder) {
             const currentFolder = foundItem.parentFolder;
             if (currentFolder && currentFolder.id.primaryKey === targetFolder.id.primaryKey) {
@@ -378,17 +393,8 @@
               moveSections([foundItem], targetFolder);
               changedProperties.push("moved to folder");
             }
-          } else if (edit.newFolderId) {
-            // ID was provided but not found - error
-            results.push({
-              success: false,
-              id: originalId,
-              name: originalName,
-              error: `Folder not found with ID "${edit.newFolderId}"`
-            });
-            continue;
           } else {
-            // Name was provided but not found - create new folder
+            // Only a name (plain or path) that matched nothing reaches here: create a top-level folder with that literal name (#147)
             const newFolder = new Folder(edit.newFolderName);
             moveSections([foundItem], newFolder);
             changedProperties.push("moved to new folder");
