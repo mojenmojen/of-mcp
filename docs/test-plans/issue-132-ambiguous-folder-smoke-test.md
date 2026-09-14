@@ -2,7 +2,7 @@
 
 ## Setup (build-freshness gate, per #126)
 
-Run every case through the throwaway stdio harness (Task 6 Step 2), NOT
+Run every case through the throwaway stdio harness (see Harness below), NOT
 through the MCP server configured in your client. That server runs the main
 checkout's `dist/server.js`, so it would exercise `main` rather than this
 branch — and rebuilding the main checkout with unmerged code would put it
@@ -12,6 +12,31 @@ into daily use.
 2. Through the harness, call `get_server_version` and confirm version
    `1.34.0`, `build.commit` equal to `git rev-parse --short HEAD`, and
    `buildStale: false`.
+
+## Harness
+
+The harness file goes in the worktree root, is never committed, and is deleted after the run.
+
+```javascript
+// Throwaway harness for the #142 smoke test. Do not commit.
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { fileURLToPath } from 'node:url';
+
+const client = new Client({ name: 'smoke-142', version: '0.0.0' });
+await client.connect(new StdioClientTransport({
+  command: 'node',
+  args: [fileURLToPath(new URL('./dist/server.js', import.meta.url))],
+}));
+
+const [tool, json] = process.argv.slice(2);
+const result = await client.callTool({ name: tool, arguments: JSON.parse(json || '{}') });
+console.log(result.content.map(c => c.text).join('\n'));
+if (result.isError) process.exitCode = 1;
+await client.close();
+```
+
+Example: `node smoke-142.mjs add_folder '{"name":"SMOKE-parent"}'`
 
 ## Fixtures
 
@@ -39,10 +64,10 @@ Create two folders that share a name, one nested:
 TC5, TC6 and TC10 are the critical ones: they prove ambiguity is distinguished
 from not-found rather than collapsed into it.
 TC5, TC6 and TC10 operate on the project created in TC2.
-TC12 was added by the controller (not in the original brief) to verify one
-implementation decision: that `list_projects`' `folderId` parameter takes
-priority over `folderName`, so passing both never triggers the ambiguity
-error. It is read-only.
+TC12 was added during the run (it is not in issue #142's original case list)
+to verify one implementation decision: that `list_projects`' `folderId`
+parameter takes priority over `folderName`, so passing both never triggers the
+ambiguity error. It is read-only.
 
 ## Cleanup
 
@@ -56,6 +81,8 @@ empty (repo precedent: `removeTask.js:61`).
 ---
 
 ## Results
+
+**Note:** after this run, the ambiguity message gained each candidate's folder ID, e.g. `"Clients > Archive" (id: <id>)`. The strings below are as recorded before that change.
 
 Executed 2026-09-12 against the worktree build, via the disposable
 `smoke-142.mjs` stdio harness (never committed), against the user's live
@@ -123,7 +150,7 @@ Output: `Failed to process batch edit: undefined`
 Verification: `get_folder_by_id {"folderName":"SMOKE-dup"}` still reported the same 2-way ambiguity (no third folder created); SMOKE-TC2 was still in the nested folder afterwards. The fail-closed behaviour (no silent folder creation, no silent move) held.
 However, the error text delivered to the caller does **not** name the candidates, unlike every other case. Root cause, read in `src/tools/primitives/batchEditItems.ts` and `src/tools/definitions/batchEditItems.ts`: the underlying OmniJS script (`batchEditItems.js`) computes `success: successCount > 0` for the whole batch and only ever sets a top-level `error` string when the whole batch throws or fails to parse — not when every individual edit fails with its own per-item error. The tool definition's handler only prints per-item detail (including the ambiguity message with candidate paths) on the `result.success === true` branch; when a batch has a single edit and that edit fails, `successCount` is `0`, so `result.success` is `false`, and the handler falls into the `else` branch, which prints only `result.error` — which is `undefined` here because the real error lives in the per-item `results` array that this branch never reads.
 This is a pre-existing bug (confirmed via `git show bf18f9e`, the only #132 commit touching these two files, which added the ambiguity check itself but did not touch the success/error branching), not something introduced by this branch's fix. But it means this call site's delivery of the #132 diagnostic is incomplete: **the candidate-path message is lost only when every edit in the batch fails**; it is not lost in a mixed batch. Confirmed with an extra, read-only, fixtures-only probe (`batch_edit_items` with the same ambiguous edit alongside a second edit that succeeds): output was `✅ Batch edit complete: 1 succeeded, 1 failed` with the failed line showing the full ambiguity message naming both candidates.
-**FAIL** (fail-closed behaviour is correct; the caller-facing message is not delivered on this call site when the batch is all-failure). Recommend filing as a follow-up issue against `batchEditItems.ts`'s success/error branching; out of scope for this fix and no source was changed to make this case pass.
+**FAIL** (fail-closed behaviour is correct; the caller-facing message is not delivered on this call site when the batch is all-failure). Recommend filing as a follow-up issue against `batchEditItems.ts`'s success/error branching; out of scope for this fix and no source was changed to make this case pass. Tracked in #146.
 
 **TC7** — `list_projects {"folderName":"SMOKE-dup","status":"all"}`
 Output: `Error: Folder name "SMOKE-dup" is ambiguous - 2 folders match: "SMOKE-dup", "SMOKE-parent > SMOKE-dup". Use the full "Parent > Child" path, or pass folderId.`
@@ -184,22 +211,21 @@ The call succeeded even though `folderName` was the ambiguous plain name, becaus
    `list_projects` and `get_project_by_id`. This is a pre-existing cosmetic
    bug in the confirmation-message text when a project is created directly
    by `folderId`, unrelated to the #132 ambiguity fix.
-2. **TC6 message-delivery gap.** When every item in a `batch_edit_items`
-   call fails, the tool prints `Failed to process batch edit: undefined`
-   and drops the per-item ambiguity message naming the candidates. The
-   fail-closed behaviour still held — no folder was created and no move
-   occurred. This is pre-existing, not introduced by the #132 fix. The
-   controller has verified that it is systemic across all three batch
-   tools: the OmniJS scripts return `success: successCount > 0` with no
-   top-level `error` when every item fails (`batchAddItems.js:360`,
-   `batchEditItems.js:425`, `batchRemoveItems.js:172`), and the TypeScript
-   handlers render per-item details only when `success` is `true`
-   (`src/tools/definitions/batchAddItems.ts:43/83`, `batchEditItems.ts:71/99`,
-   `batchRemoveItems.ts:35/65`). So a `batch_add_items` or
-   `batch_edit_items` call whose only item names an ambiguous folder fails
-   closed but hides the candidate list, while mixed batches show it
-   correctly. This is tracked for a maintainer decision, not fixed in this
-   change.
+2. **TC6 message-delivery gap.** When every item in a `batch_edit_items` call
+   fails, the tool prints `Failed to process batch edit: undefined` and drops the
+   per-item ambiguity message naming the candidates. The fail-closed behaviour
+   still held — no folder was created and no move occurred. This is pre-existing,
+   not introduced by the #132 fix. It was confirmed by reading the source to be
+   systemic across all three batch tools: the OmniJS scripts return `success:
+   successCount > 0` with no top-level `error` when every item fails
+   (`batchAddItems.js:360`, `batchEditItems.js:425`, `batchRemoveItems.js:172`),
+   and the TypeScript handlers render per-item details only when `success` is
+   `true` (`src/tools/definitions/batchAddItems.ts:43/83`,
+   `batchEditItems.ts:71/99`, `batchRemoveItems.ts:35/65`). So a
+   `batch_add_items` or `batch_edit_items` call whose only item names an
+   ambiguous folder fails closed but hides the candidate list, while mixed
+   batches show it correctly. This is tracked for a maintainer decision, not
+   fixed in this change. Tracked in #146.
 3. **TC10 timing.** The call took about 50 seconds end to end. It was
    slow, not a hang, so a future re-runner shouldn't abort it early.
 

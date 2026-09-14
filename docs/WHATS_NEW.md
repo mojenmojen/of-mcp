@@ -4,13 +4,15 @@
 
 ## v1.34.0 Ambiguous folder names now fail closed (#142)
 
-Passing a plain `folderName` that matches more than one folder previously resolved to whichever folder came first in outline order, silently. Tools now return an explicit error naming every candidate by its full path, for example:
+Passing a plain folder name (`folderName`, `newFolderName` or `parentFolderName`) that matches more than one folder previously resolved to whichever folder came first in outline order, silently. Tools now return an explicit error naming every candidate by its full path and folder ID, for example:
 
-> Folder name "Archive" is ambiguous - 2 folders match: "Clients > Archive", "Archive". Use the full "Parent > Child" path, or pass folderId.
+> Folder name "Archive" is ambiguous - 2 folders match: "Clients > Archive" (id: abc123), "Archive" (id: def456). Use the full "Parent > Child" path, or pass folderId.
 
-**This is a breaking change** for callers that relied on first-match with duplicate folder names. Unique folder names are unaffected. Disambiguate with the `"Parent > Child"` path syntax or with `folderId`.
+**This is a breaking change** for callers that relied on first-match with duplicate folder names. Unique folder names are unaffected. Disambiguate with the `"Parent > Child"` path syntax or with `folderId`. When path syntax can't tell the duplicates apart, as with a top-level folder that shares its name with a nested one, pass the candidate's ID from the error instead (`folderId`, `newFolderId` or `parentFolderId`).
 
 Affected tools: `add_project`, `add_folder` (`parentFolderName`), `batch_add_items`, `edit_item`, `batch_edit_items`, `duplicate_project`, `list_projects`, `get_folder_by_id`.
+
+**Known limitation:** when every item in a `batch_add_items` or `batch_edit_items` call fails, the tool currently shows a generic error instead of each item's message, so a batch whose only item names an ambiguous folder fails safely but doesn't show the candidates. Batches where at least one item succeeds show every message. Tracked in #146.
 
 Closes #132. This removes the root-cause class behind #112, where a duplicate folder name (one copy dropped) caused projects to be created in the dropped folder, making them and their tasks invisible to active queries.
 
@@ -49,7 +51,7 @@ The script built the echoed range with `completedAfter.toISOString().split('T')[
 
 **Folder path disambiguation:**
 - All tools accepting `folderName` now support `"Parent > Child"` path syntax to disambiguate folders with the same name at different hierarchy levels (e.g., `"Work > Areas"` vs `"Personal > Areas"`)
-- Plain folder names still work (first match, backwards compatible)
+- Plain folder names still work (first match, backwards compatible) *(Superseded in v1.34.0: a plain name that matches more than one folder now fails with an error listing each candidate.)*
 - Affected tools: `get_folder_by_id`, `add_project`, `add_folder`, `edit_item`, `duplicate_project`, `batch_add_items`, `batch_edit_items`, `list_projects`
 
 **Full folder paths in output:**
@@ -57,7 +59,7 @@ The script built the echoed range with `completedAfter.toISOString().split('T')[
 - `get_folder_by_id` now includes a `path` field in its response
 
 **Stricter folder filtering in `list_projects`:**
-- When a `folderName` filter doesn't resolve (typo, deleted folder, or an ambiguous name), `list_projects` now returns an explicit `Folder not found` error instead of silently returning *every* project. This matches the existing fail-closed behaviour of `add_project`, `duplicate_project`, and `get_folder_by_id`.
+- When a `folderName` filter doesn't resolve (typo, deleted folder, or an ambiguous name), `list_projects` now returns an explicit `Folder not found` error instead of silently returning *every* project. This matches the existing fail-closed behaviour of `add_project`, `duplicate_project`, and `get_folder_by_id`. *(Superseded in v1.34.0 for ambiguous names, which now get their own error listing each candidate.)*
 
 **Server version fix:**
 - `get_server_version` no longer fails with ENOENT when the MCP server runs from a directory without a `package.json`

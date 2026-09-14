@@ -157,13 +157,13 @@ get_folder_by_id { "folderName": "Personal > Areas" }
 list_projects { "folderName": "Work > Areas" }
 
 # A plain name shared by more than one folder is ambiguous and returns an error
-# listing each candidate's full path (v1.34.0+)
+# listing each candidate's full path and ID (v1.34.0+)
 get_folder_by_id { "folderName": "Areas" }
 ```
 
 Path syntax is supported everywhere a `folderName` parameter is accepted: `add_project`, `add_folder`, `edit_item`, `duplicate_project`, `batch_add_items`, `batch_edit_items`, `list_projects`, and `get_folder_by_id`.
 
-**Duplicate folder names:** if a plain `folderName` matches more than one folder, the call fails with an error listing each candidate's full path. Disambiguate with `"Parent > Child"` path syntax, or pass `folderId`.
+**Duplicate folder names:** if a plain folder name (`folderName`, `newFolderName` or `parentFolderName`) matches more than one folder, the call fails with an error listing each candidate's full path and folder ID. Disambiguate with `"Parent > Child"` path syntax, or pass the candidate's ID (`folderId`, `newFolderId` or `parentFolderId`). The ID is the only option when a top-level folder shares its name with a nested one. Known limitation: a `batch_add_items` or `batch_edit_items` call in which every item fails currently shows a generic error instead of the candidate list (#146).
 
 ### 3. 🔍 Perspective Views
 
