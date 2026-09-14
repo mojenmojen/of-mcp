@@ -5,7 +5,7 @@
 Run every case through the throwaway stdio harness (see Harness below), not through an MCP server configured in your client. A configured server usually runs a different checkout's `dist/server.js`, so it would exercise that code rather than this branch.
 
 1. `npm run build:fast` in the worktree.
-2. Through the harness, call `get_server_version` and confirm version
+2. Through the harness, call `get_server_version` and confirm
    the current `package.json` version (`1.34.0` for the run below), `build.commit` equal to `git rev-parse --short HEAD`, and
    `buildStale: false`.
 
@@ -78,7 +78,7 @@ empty (repo precedent: `removeTask.js:61`).
 
 ## Results
 
-**Note:** after this run, the ambiguity message gained each candidate's folder ID, e.g. `"Clients > Archive" (id: <id>)`. The strings below are as recorded before that change. The run used v1.34.0; the change ships as v2.0.0.
+**Note:** after this run, the ambiguity message changed twice. It gained each candidate's folder ID, e.g. `"Clients > Archive" (id: <id>)`, and its advice now names the calling tool's own ID parameter, so TC5 (`edit_item`) would now end `or pass newFolderId.` and TC11 (`add_folder`) `or pass parentFolderId.` The strings below are as recorded before those changes. The run used v1.34.0; the change ships as v2.0.0.
 
 Executed 2026-09-12 against the worktree build, via the disposable
 `smoke-142.mjs` stdio harness (never committed), against a live
