@@ -29,7 +29,7 @@ export const schema = z.object({
     parentTaskName: z.string().optional().describe("For tasks: The name of the parent task to create this task as a subtask"),
 
     // Project-specific properties
-    folderName: z.string().optional().describe("For projects: The name of the folder to add the project to"),
+    folderName: z.string().optional().describe("For projects: The name or \"Parent > Child\" path of the folder to add the project to. If it matches more than one folder, that item fails and the error lists each candidate's path and ID; pass folderId to choose one. When every item in the call fails, per-item messages are currently hidden (#146)."),
     folderId: z.string().optional().describe("For projects: The ID of the folder to add the project to (alternative to folderName)"),
     sequential: z.boolean().optional().describe("For projects: Whether tasks in the project should be sequential")
   })).describe("Array of items (tasks or projects) to add")

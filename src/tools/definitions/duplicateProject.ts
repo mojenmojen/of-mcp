@@ -12,7 +12,7 @@ export const schema = z.object({
   newName: z.string()
     .describe("Name for the duplicated project"),
   folderName: z.string().optional()
-    .describe("Folder to place the new project in"),
+    .describe("Name or \"Parent > Child\" path of the folder to place the new project in. If it matches more than one folder, the call fails and lists each candidate's path and ID; pass folderId to choose one."),
   folderId: z.string().optional()
     .describe("Folder ID to place the new project in"),
   resetDates: z.boolean().optional().default(true)

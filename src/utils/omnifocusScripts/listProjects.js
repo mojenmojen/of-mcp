@@ -49,7 +49,11 @@
       return statusMap[project.status] || "Unknown";
     }
 
-    // Resolve folder filter once (not per-project)
+    // Resolve folder filter once (not per-project). folderId wins when both are
+    // given, so the name is resolved only without one; an ambiguous folderName
+    // sent alongside a folderId must not error.
+    // Note: folderId itself is not validated. An unknown ID matches no project
+    // and returns an empty list rather than an error (#148).
     const folderRef = folderName && !folderId ? resolveFolderRef(folderName, flattenedFolders) : null;
     if (folderRef && folderRef.ambiguous) {
       return JSON.stringify({
@@ -62,9 +66,9 @@
     const resolvedFilterFolder = folderRef ? folderRef.folder : null;
     const filterFolderId = folderId || (resolvedFilterFolder ? resolvedFilterFolder.id.primaryKey : null);
 
-    // Fail closed: a folder filter was requested but didn't resolve (typo, deleted
-    // folder). Return an explicit error rather than silently
-    // matching every project, which would look like a successful unfiltered result
+    // Fail closed: a folder filter was requested but didn't resolve (typo,
+    // deleted folder). Return an explicit error rather than silently matching
+    // every project, which would look like a successful unfiltered result
     // (issue #117 review). Matches add_project / duplicate_project / get_folder_by_id.
     const folderFilterRequested = !!(folderId || folderName);
     if (folderFilterRequested && !filterFolderId) {
