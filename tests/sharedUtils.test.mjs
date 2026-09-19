@@ -5,7 +5,8 @@
 // sharedUtils.js is concatenated into OmniJS scripts and has no exports, so it
 // cannot be imported. Instead it is read and evaluated with `new Function`,
 // which mirrors the runtime's concatenation: a stubbed `Task` satisfies the
-// load-time `Task.Status` dereference (see #133).
+// load-time `Task.Status` dereference (see #133), and a stubbed `Folder`
+// supplies the `Folder.Status` value the dropped-folder note compares against.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -25,23 +26,33 @@ const TASK_STUB = {
   },
 };
 
+const FOLDER_STUB = { Status: { Active: 'Active', Dropped: 'Dropped' } };
+
 function loadSharedUtils() {
   const source = readFileSync(SHARED_UTILS, 'utf8');
   const factory = new Function(
-    'Task',
+    'Task', 'Folder',
     `${source}\nreturn { resolveFolderRef, formatAmbiguousFolderError, getFolderPath };`
   );
-  return factory(TASK_STUB);
+  return factory(TASK_STUB, FOLDER_STUB);
 }
 
-// Minimal stand-in for an OmniJS Folder: getFolderPath walks `.parent`, and
-// formatAmbiguousFolderError reads `.id.primaryKey`. Pass `id` when two
-// fixtures would otherwise get the same derived ID.
-function folder(name, parent = null, id = null) {
-  return { name, parent, id: { primaryKey: id || `${name}-${parent ? parent.name : 'root'}` } };
+// Minimal stand-in for an OmniJS Folder: getFolderPath walks `.parent`,
+// formatAmbiguousFolderError reads `.id.primaryKey`, and the dropped-folder
+// note reads `.status`. Pass `id` when two fixtures would otherwise get the
+// same derived ID.
+function folder(name, parent = null, id = null, status = 'Active') {
+  return { name, parent, id: { primaryKey: id || `${name}-${parent ? parent.name : 'root'}` }, status };
 }
 
-const { resolveFolderRef, formatAmbiguousFolderError } = loadSharedUtils();
+// A folder whose parent chain can't be read, as when an OmniJS proxy fails.
+function unreadableChainFolder(name, id) {
+  const f = folder(name, null, id);
+  Object.defineProperty(f, 'parent', { get() { throw new Error('parent chain unreadable'); } });
+  return f;
+}
+
+const { resolveFolderRef, formatAmbiguousFolderError, getFolderPath } = loadSharedUtils();
 
 test('unique plain name resolves', () => {
   const archive = folder('Archive');
@@ -151,4 +162,53 @@ test('resolution table: several matches, mixed case, deeper chains', () => {
     formatAmbiguousFolderError('Archive', resolveFolderRef('Archive', all).matches, 'folderId'),
     /- 3 folders match: /
   );
+});
+
+test('getFolderPath throws when the parent chain cannot be read', () => {
+  assert.throws(() => getFolderPath(unreadableChainFolder('Archive', 'b1')), /parent chain unreadable/);
+});
+
+test('a path lookup throws rather than skip a candidate whose chain cannot be read', () => {
+  const clients = folder('Clients');
+  const nested = folder('Archive', clients, 'n1');
+  assert.throws(
+    () => resolveFolderRef('Clients > Archive', [clients, nested, unreadableChainFolder('Archive', 'b1')]),
+    /parent chain unreadable/
+  );
+});
+
+test('a plain-name lookup does not read parent chains', () => {
+  const ref = resolveFolderRef('Archive', [unreadableChainFolder('Archive', 'b1'), folder('Archive', null, 'a2')]);
+  assert.equal(ref.ambiguous, true);
+  assert.equal(ref.matches.length, 2);
+});
+
+test('error message shows a candidate with an unreadable chain by name and ID', () => {
+  const message = formatAmbiguousFolderError(
+    'Archive', [unreadableChainFolder('Archive', 'b1'), folder('Archive', null, 'a2')], 'folderId'
+  );
+  assert.equal(message, 'Folder name "Archive" is ambiguous - 2 folders match: "Archive" (id: b1, full path unreadable), "Archive" (id: a2). Use the full "Parent > Child" path, or pass folderId.');
+});
+
+test('error message marks a dropped candidate', () => {
+  const clients = folder('Clients');
+  const message = formatAmbiguousFolderError(
+    'Archive', [folder('Archive', clients, 'a1'), folder('Archive', null, 'a2', 'Dropped')], 'folderId'
+  );
+  assert.equal(message, 'Folder name "Archive" is ambiguous - 2 folders match: "Clients > Archive" (id: a1), "Archive" (id: a2, dropped). Use the full "Parent > Child" path, or pass folderId.');
+});
+
+test('error message marks a candidate inside a dropped folder', () => {
+  const old = folder('Old', null, 'o1', 'Dropped');
+  const message = formatAmbiguousFolderError(
+    'Archive', [folder('Archive', old, 'a3'), folder('Archive', null, 'a4')], 'folderId'
+  );
+  assert.equal(message, 'Folder name "Archive" is ambiguous - 2 folders match: "Old > Archive" (id: a3, inside a dropped folder), "Archive" (id: a4). Use the full "Parent > Child" path, or pass folderId.');
+});
+
+test('error message leaves out the dropped note when a status cannot be read', () => {
+  const unreadableStatus = folder('Archive', null, 'a5');
+  Object.defineProperty(unreadableStatus, 'status', { get() { throw new Error('status unreadable'); } });
+  const message = formatAmbiguousFolderError('Archive', [unreadableStatus, folder('Archive', null, 'a6')], 'folderId');
+  assert.equal(message, 'Folder name "Archive" is ambiguous - 2 folders match: "Archive" (id: a5), "Archive" (id: a6). Use the full "Parent > Child" path, or pass folderId.');
 });

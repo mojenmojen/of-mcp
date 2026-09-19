@@ -1,5 +1,6 @@
 // Shared utilities for OmniJS scripts
-// These functions are prepended to OmniJS scripts at execution time
+// Inserted at the top of each script's IIFE at execution time, after the
+// injected parameters (see executeOmniFocusScript in src/utils/scriptExecution.ts)
 
 /**
  * Parse date strings as local time.
@@ -92,33 +93,38 @@ function toLocalDateKey(date) {
 /**
  * Build the full ancestor path for a folder (e.g. "Work > Projects > Active").
  * Walks up the parent chain. Returns the folder's own name if it has no parent.
+ * Throws if the chain can't be read, rather than returning the bare name: a
+ * bare name makes a nested folder look top-level, so resolveFolderRef would
+ * skip it without a trace. Callers that only display a path (listProjects.js,
+ * getFolderByName.js) catch the error themselves.
  * @param {Folder} folder - An OmniFocus Folder object
  * @returns {string} - Full path with " > " separators
  */
 function getFolderPath(folder) {
   // In OmniJS, folder.parent is falsy for root-level folders (verified via
   // osascript testing), so the loop naturally stops without hitting Database.
-  try {
-    const parts = [];
-    let current = folder;
-    while (current) {
-      parts.unshift(current.name);
-      current = current.parent || null;
-    }
-    return parts.join(' > ');
-  } catch (e) {
-    // Fall back to bare name if the parent chain is inaccessible (e.g. during sync)
-    return folder.name;
+  const parts = [];
+  let current = folder;
+  while (current) {
+    parts.unshift(current.name);
+    current = current.parent || null;
   }
+  return parts.join(' > ');
 }
 
 /**
  * Resolve a folder by plain name or " > "-separated path.
- * Case-insensitive. A path must match the folder's whole chain from the top
- * level: "Clients > Archive" does not match a folder whose full path is
- * "Work > Clients > Archive".
+ * Case-insensitive. Only " > " with spaces separates segments; path segments
+ * are trimmed, plain names are not, and a folder whose own name contains
+ * " > " can't be matched by name (see #147). A path must match the folder's
+ * whole chain from the top level: "Clients > Archive" does not match a folder
+ * whose full path is "Work > Clients > Archive".
  * Collects every match so callers can fail closed on ambiguity rather than
  * silently taking the first (issue #132; the folder side of #112).
+ * A path lookup reads the parent chain of every folder whose name matches the
+ * last segment, and throws if one can't be read: skipping that folder could
+ * hide a second match, or leave no match and send an edit tool to
+ * create-on-miss.
  * @param {string} folderName - Folder name or " > "-separated path
  * @param {Array} allFolders - flattenedFolders array
  * @returns {{folder: Folder|null, matches: Array, ambiguous: boolean}}
@@ -162,11 +168,45 @@ function resolveFolderRef(folderName, allFolders) {
 }
 
 /**
+ * Note a folder's dropped state for the ambiguity error: ", dropped" when the
+ * folder itself is dropped, ", inside a dropped folder" when an ancestor is,
+ * and "" when it is active. A project filed into either kind is effectively
+ * dropped too, which is how #112 hid projects. The ancestor walk mirrors
+ * isInDroppedFolder in listProjects.js.
+ * @param {Folder} folder - An OmniFocus Folder object
+ * @returns {string}
+ */
+function folderStateNote(folder) {
+  // Read outside the try: a missing Folder global is a programming error and
+  // must fail loudly. Only the folder's own reads below may fall back.
+  const dropped = Folder.Status.Dropped;
+  try {
+    let current = folder;
+    let isSelf = true;
+    while (current) {
+      if (current.status === dropped) {
+        return isSelf ? ', dropped' : ', inside a dropped folder';
+      }
+      current = current.parent;
+      isSelf = false;
+    }
+  } catch (e) {
+    // The note is advice inside an error that is already being returned. If
+    // a status or parent can't be read, print the candidate without a note
+    // rather than lose the message.
+  }
+  return '';
+}
+
+/**
  * Build the user-facing error for an ambiguous folder name.
  * Kept here so every call site builds the one message. Lists each
- * candidate's full path and folderId, so a top-level folder that shares its
- * name with a nested one (unreachable by path syntax alone) can still be
- * selected by ID.
+ * candidate's full path and folderId, so a candidate that path syntax can't
+ * select can still be chosen by ID: a top-level folder that shares its name
+ * with a nested one, or either of two folders with the same full path.
+ * After the ID a candidate may carry notes: "full path unreadable" when its
+ * parent chain can't be read (its own name is shown instead of the path),
+ * then "dropped" or "inside a dropped folder" from folderStateNote.
  * @param {string} folderName - The name the caller passed
  * @param {Array} matches - Folders that matched (length >= 2)
  * @param {string} idParam - The calling tool's folder-ID parameter, named in
@@ -176,7 +216,17 @@ function resolveFolderRef(folderName, allFolders) {
  */
 function formatAmbiguousFolderError(folderName, matches, idParam) {
   const candidates = matches.map(function (f) {
-    return '"' + getFolderPath(f) + '" (id: ' + f.id.primaryKey + ')';
+    let path;
+    let note = '';
+    try {
+      path = getFolderPath(f);
+    } catch (e) {
+      // resolveFolderRef's plain-name branch never reads the chain, so an
+      // unreadable candidate can reach here. Its ID still identifies it.
+      path = f.name;
+      note = ', full path unreadable';
+    }
+    return '"' + path + '" (id: ' + f.id.primaryKey + note + folderStateNote(f) + ')';
   }).join(', ');
   return 'Folder name "' + folderName + '" is ambiguous - ' + matches.length +
     ' folders match: ' + candidates +

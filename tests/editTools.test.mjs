@@ -64,6 +64,8 @@ function freshWorld() {
     this.id = { primaryKey: `new-${name}` };
     created.push(name);
   }
+  // formatAmbiguousFolderError reads Folder.Status.Dropped for its dropped note
+  Folder.Status = { Active: 'F-Active', Dropped: 'F-Dropped' };
   const globals = {
     flattenedFolders: [clients, nestedArchive, topArchive],
     flattenedProjects: [project],
