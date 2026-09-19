@@ -161,9 +161,9 @@ list_projects { "folderName": "Work > Areas" }
 get_folder_by_id { "folderName": "Areas" }
 ```
 
-Path syntax is supported everywhere a `folderName` parameter is accepted: `add_project`, `add_folder`, `edit_item`, `duplicate_project`, `batch_add_items`, `batch_edit_items`, `list_projects`, and `get_folder_by_id`.
+Path syntax is supported everywhere a folder-name parameter (`folderName`, `parentFolderName` or `newFolderName`) is accepted: `add_project`, `add_folder`, `edit_item`, `duplicate_project`, `batch_add_items`, `batch_edit_items`, `list_projects`, and `get_folder_by_id`.
 
-**Duplicate folder names:** if a folder name or path (`folderName`, `newFolderName` or `parentFolderName`) matches more than one folder, the call fails with an error listing each candidate's full path and folder ID. Disambiguate with `"Parent > Child"` path syntax, or pass the candidate's ID (`folderId`, `newFolderId` or `parentFolderId`; the error names the one your tool takes). When a top-level folder shares its name with a nested one, the path selects the nested copy, so only the top-level copy needs its ID. Two folders with the same full path both need their IDs. `edit_item` and `batch_edit_items` check the folder before changing anything else. Known limitation (v2.0.0): a `batch_add_items` or `batch_edit_items` call in which every item fails shows a generic error instead of the candidate list (#146).
+**Duplicate folder names:** if a folder name or path (`folderName`, `newFolderName` or `parentFolderName`) matches more than one folder, the call fails (in `batch_add_items` and `batch_edit_items`, only that item fails) with an error listing each candidate's full path and folder ID. Disambiguate with `"Parent > Child"` path syntax, or pass the candidate's ID (`folderId`, `newFolderId` or `parentFolderId`; the error names the one your tool takes). When a top-level folder shares its name with a nested one, the path selects the nested copy, so only the top-level copy needs its ID. Two folders with the same full path both need their IDs. A candidate that is dropped, or sits inside a dropped folder, is marked `dropped` or `inside a dropped folder` after its ID, because a project filed into it would be dropped too. `edit_item` and `batch_edit_items` check the folder before changing anything else. Known limitation (v2.0.0): a `batch_add_items` or `batch_edit_items` call in which every item fails shows a generic error instead of the candidate list (#146).
 
 ### 3. 🔍 Perspective Views
 
@@ -803,7 +803,12 @@ All tools support both name and ID parameters. **IDs are more reliable** because
 |------|--------------|----------------|
 | `add_omnifocus_task` | `projectId` | `projectName` |
 | `add_project` | `folderId` | `folderName` |
+| `add_folder` | `parentFolderId` | `parentFolderName` |
+| `duplicate_project` | `sourceProjectId`, `folderId` | name equivalents |
+| `get_folder_by_id` | `folderId` | `folderName` |
+| `list_projects` | `folderId` | `folderName` |
 | `edit_item` | `newProjectId`, `newFolderId` | name equivalents |
+| `batch_edit_items` | `newProjectId`, `newFolderId` | name equivalents |
 | `batch_add_items` | `projectId`, `folderId` | name equivalents |
 | `filter_tasks` | `projectId`, `tagId` | `projectFilter`, `tagFilter` |
 | `get_tasks_by_tag` | `tagId` | `tagName` |
@@ -811,7 +816,7 @@ All tools support both name and ID parameters. **IDs are more reliable** because
 | `get_custom_perspective_tasks` | `perspectiveId` | `perspectiveName` |
 | `batch_filter_tasks` | `projectIds` | `projectNames` |
 
-**Rule:** When both ID and name are provided, ID takes priority.
+**Rule:** When both ID and name are provided, ID takes priority. If a folder ID matches no folder, tools differ (#148). `add_folder` and `duplicate_project` fail. `list_projects` returns an empty list without consulting the name. `add_project`, `batch_add_items`, `edit_item`, `batch_edit_items` and `get_folder_by_id` fall back to the name, and fail if that doesn't resolve either.
 
 ### Batch Operations for Writes
 

@@ -41,7 +41,7 @@ const editItemSchema = z.object({
 
   // Project-specific fields
   newSequential: z.boolean().optional().describe("Whether the project should be sequential"),
-  newFolderName: z.string().optional().describe("Move project to a different folder, by name or \"Parent > Child\" path. If it matches more than one folder, that edit fails before changing anything and lists each candidate's path and ID; pass newFolderId to choose one. A name that matches no folder creates a new top-level folder with that name. When every edit in the call fails, per-item messages are currently hidden (#146)."),
+  newFolderName: z.string().optional().describe("Move project to a different folder, by name or \"Parent > Child\" path. If it matches more than one folder, that edit fails before changing anything and lists each candidate's path and ID; pass newFolderId to choose one. A name or path that matches no folder creates a new top-level folder named with that exact text, so check spelling and the spaces around \" > \" (#147). When every edit in the call fails, per-item messages are currently hidden (#146)."),
   newFolderId: z.string().optional().describe("Move project to a different folder (by ID)"),
   newProjectStatus: z.enum(['active', 'completed', 'dropped', 'onHold']).optional().describe("New status for projects"),
 

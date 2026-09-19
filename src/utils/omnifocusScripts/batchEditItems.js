@@ -145,9 +145,12 @@
         const originalName = foundItem.name;
         const originalId = foundItem.id.primaryKey;
 
-        // Resolve the target folder BEFORE any write, so a folder error can't
-        // leave this item's earlier edits half-applied. The move itself (and
-        // create-on-miss) still happens after the other edits, below.
+        // Resolve the target folder BEFORE any write, so a folder lookup error
+        // (ambiguous name, unknown ID) can't leave this item's earlier edits
+        // half-applied. The move itself (and create-on-miss) still happens
+        // later, after every other edit except markReviewed. A failure from
+        // the move, or from markReviewed after it, leaves the earlier changes
+        // in place (#150).
         let targetFolder = null;
         if (itemType === 'project' && (edit.newFolderId || edit.newFolderName)) {
           // Try ID first

@@ -40,7 +40,7 @@ export const schema = z.object({
 
   // Project-specific fields
   newSequential: z.boolean().optional().describe("Whether the project should be sequential"),
-  newFolderName: z.string().optional().describe("New folder to move the project to, by name or \"Parent > Child\" path. If it matches more than one folder, the call fails before changing anything and lists each candidate's path and ID; pass newFolderId to choose one. A name that matches no folder creates a new top-level folder with that name."),
+  newFolderName: z.string().optional().describe("New folder to move the project to, by name or \"Parent > Child\" path. If it matches more than one folder, the call fails before changing anything and lists each candidate's path and ID; pass newFolderId to choose one. A name or path that matches no folder creates a new top-level folder named with that exact text, so check spelling and the spaces around \" > \" (#147)."),
   newFolderId: z.string().optional().describe("New folder to move the project to (by folder ID)"),
   newProjectStatus: z.enum(['active', 'completed', 'dropped', 'onHold']).optional().describe("New status for projects"),
 

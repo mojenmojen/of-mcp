@@ -44,7 +44,7 @@ Create two folders that share a name, one nested:
 
 | # | Call | Expected |
 |---|------|----------|
-| TC1 | `add_project` with `folderName: "SMOKE-dup"` | Error naming both candidates by full path and folder ID; **no project created** |
+| TC1 | `add_project` with `folderName: "SMOKE-dup"` | Error naming both candidates by full path and folder ID (folder ID added after this run; see the note under Results); **no project created** |
 | TC2 | `add_project` with `folderName: "SMOKE-parent > SMOKE-dup"` | Succeeds, project lands in the nested folder |
 | TC3 | `add_project` with the nested folder's `folderId` | Succeeds |
 | TC4 | `batch_add_items` with one item using `folderName: "SMOKE-dup"` and one unambiguous item | Ambiguous item errors; the other still succeeds |
@@ -69,10 +69,11 @@ ambiguity error. It is read-only.
 
 Remove every project created by TC2/TC3/TC4 with `remove_item`. of-mcp has no
 folder-delete tool, so remove both `SMOKE-dup` folders, `SMOKE-parent`, and
-`SMOKE-brand-new` (created by TC10) with a one-off guarded OmniJS call —
-`Folder.byIdentifier(id)` then `deleteObject(folder)` inside
-`app.evaluateJavascript`, refusing unless the name matches and the folder is
-empty (repo precedent: `removeTask.js:61`).
+`SMOKE-brand-new` (created by TC10) with a one-off OmniJS call —
+`Folder.byIdentifier(id)` then `deleteObject(folder)` (as in
+`removeTask.js:61`) inside `app.evaluateJavascript`. Guard the call so it
+refuses unless the name matches and the folder is empty; the guard is
+specific to this cleanup.
 
 ---
 
@@ -122,7 +123,7 @@ Output: `✅ Project "SMOKE-TC2" (id: <id>) created successfully in folder "SMOK
 
 **TC3** — `add_project {"name":"SMOKE-TC3","folderId":"<nested SMOKE-dup id>"}`
 Output: `✅ Project "SMOKE-TC3" (id: <id>) created successfully at the root level (parallel).`
-Verification: the confirmation text says "at the root level", which looked like a placement bug. `list_projects` scoped to the nested folder id, and `get_project_by_id`, both confirmed SMOKE-TC3 is actually filed under "SMOKE-parent > SMOKE-dup" — the project *is* in the right place; only the success message's placement text is wrong when a project is created by `folderId` directly. This is a pre-existing cosmetic issue in the confirmation message, not a folder-resolution defect, and unrelated to the #132 ambiguity fix.
+Verification: the confirmation text says "at the root level", which looked like a placement bug. `list_projects` scoped to the nested folder id, and `get_project_by_id`, both confirmed SMOKE-TC3 is actually filed under "SMOKE-parent > SMOKE-dup" — the project *is* in the right place; only the success message's placement text is wrong when a project is created by `folderId` directly. This is a pre-existing cosmetic issue in the confirmation message, not a folder-resolution defect, and unrelated to the #132 ambiguity fix. Tracked in #151.
 **PASS** (functional outcome correct; message-text defect noted above and in Unexpected findings).
 
 **TC4** — `batch_add_items` with `SMOKE-TC4-ambiguous` (`folderName: "SMOKE-dup"`) and `SMOKE-TC4-ok` (`folderName: "SMOKE-parent"`)
@@ -206,7 +207,7 @@ The call succeeded even though `folderName` was the ambiguous plain name, becaus
    correctly filed in the nested folder — confirmed independently via
    `list_projects` and `get_project_by_id`. This is a pre-existing cosmetic
    bug in the confirmation-message text when a project is created directly
-   by `folderId`, unrelated to the #132 ambiguity fix.
+   by `folderId`, unrelated to the #132 ambiguity fix. Tracked in #151.
 2. **TC6 message-delivery gap.** When every item in a `batch_edit_items` call
    fails, the tool prints `Failed to process batch edit: undefined` and drops the
    per-item ambiguity message naming the candidates. The fail-closed behaviour
@@ -214,7 +215,7 @@ The call succeeded even though `folderName` was the ambiguous plain name, becaus
    not introduced by the #132 fix. It was confirmed by reading the source to be
    systemic across all three batch tools: the OmniJS scripts return `success:
    successCount > 0` with no top-level `error` when every item fails
-   (`batchAddItems.js:360`, `batchEditItems.js:425`, `batchRemoveItems.js:172`),
+   (`batchAddItems.js:360`, `batchEditItems.js:425`, `batchRemoveItems.js:172`; these and the handler line numbers below are as of `d23ff50`, the build this run tested),
    and the TypeScript handlers render per-item details only when `success` is
    `true` (`src/tools/definitions/batchAddItems.ts:43/83`,
    `batchEditItems.ts:71/99`, `batchRemoveItems.ts:35/65`). So a

@@ -112,6 +112,9 @@ app.evaluateJavascript(`(() => {
 **Shared utilities** - `lib/sharedUtils.js` is auto-injected into scripts at runtime. Available functions:
 - `parseLocalDate(dateStr)` - Parse dates as local time
 - `buildRRule(rule)` - Build iCal RRULE strings
+- `resolveFolderRef(folderName, allFolders)` - Resolve a folder by name or "Parent > Child" path; returns `{ folder, matches, ambiguous }` so callers can fail closed on duplicates
+- `formatAmbiguousFolderError(folderName, matches, idParam)` - The one error message for an ambiguous folder name; `idParam` is the calling tool's folder-ID parameter
+- `getFolderPath(folder)` - A folder's full "Parent > Child" path; throws if the parent chain can't be read
 
 **Bridge-only operations** - These require `evaluateJavascript()`:
 - Tag assignment
