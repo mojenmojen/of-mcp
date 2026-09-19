@@ -86,7 +86,7 @@ This is an enhanced Model Context Protocol (MCP) server that provides AI assista
 
 **Subtask Support**: Enhanced with hierarchical task relationships using `parentTaskName` or `parentTaskId` parameters.
 
-**Testing**: Manual testing required with OmniFocus application. No automated test suite due to AppleScript/OmniFocus dependency.
+**Testing**: `npm test` runs the automated suite, which needs no OmniFocus: unit tests for the pure TypeScript utilities and for `lib/sharedUtils.js`, and script-level tests that run the OmniJS scripts in `node:vm` with stand-in OmniFocus globals (shared harness: `tests/helpers/omnijsHarness.mjs`). Live OmniFocus behaviour still needs the manual `tests/test-*.mjs` runs.
 
 ## Performance Guidelines
 
