@@ -1,4 +1,4 @@
-// Note: parseLocalDate is provided by sharedUtils.js
+// Note: parseLocalDate, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
 (() => {
   try {
     const args = typeof injectedArgs !== 'undefined' ? injectedArgs : {};
@@ -43,7 +43,14 @@
       }
     }
     if (!targetFolder && folderName) {
-      targetFolder = resolveFolderByName(folderName, flattenedFolders);
+      const ref = resolveFolderRef(folderName, flattenedFolders);
+      if (ref.ambiguous) {
+        return JSON.stringify({
+          success: false,
+          error: formatAmbiguousFolderError(folderName, ref.matches, 'folderId')
+        });
+      }
+      targetFolder = ref.folder;
       if (!targetFolder) {
         return JSON.stringify({
           success: false,

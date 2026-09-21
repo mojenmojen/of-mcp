@@ -1,6 +1,6 @@
 // OmniJS script to edit a task
 // This avoids AppleScript escaping issues with special characters like $
-// Note: parseLocalDate and buildRRule are provided by sharedUtils.js
+// Note: parseLocalDate, buildRRule, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
 (() => {
   // Helper function to find a tag by name (direct iteration to keep OmniJS proxy alive)
   // If tag doesn't exist, creates it
@@ -94,6 +94,47 @@
     const changedProperties = [];
     const originalName = foundItem.name;
     const originalId = foundItem.id.primaryKey;
+
+    // Resolve the target folder BEFORE any write, so a folder lookup error
+    // (ambiguous name, unknown ID) can't leave earlier edits half-applied.
+    // The move itself (and create-on-miss) still happens later: after the
+    // field, tag and status edits, but before the review edits. A failure
+    // from the move, or from a review edit after it, leaves the earlier
+    // changes in place (#150).
+    let targetFolder = null;
+    if (itemType === 'project' && (args.newFolderId || args.newFolderName)) {
+      // Try ID first
+      if (args.newFolderId) {
+        for (const f of allFolders) {
+          if (f.id.primaryKey === args.newFolderId) {
+            targetFolder = f;
+            break;
+          }
+        }
+      }
+
+      // Fall back to name (supports "Parent > Child" paths)
+      if (!targetFolder && args.newFolderName) {
+        const ref = resolveFolderRef(args.newFolderName, allFolders);
+        if (ref.ambiguous) {
+          // Must not fall through to the create-folder branch below: that would
+          // add another folder sharing the duplicated name (issue #132).
+          return JSON.stringify({
+            success: false,
+            error: formatAmbiguousFolderError(args.newFolderName, ref.matches, 'newFolderId')
+          });
+        }
+        targetFolder = ref.folder;
+      }
+
+      // An ID that matches no folder is an error, unless the name resolved
+      if (!targetFolder && args.newFolderId) {
+        return JSON.stringify({
+          success: false,
+          error: `Folder not found with ID "${args.newFolderId}"`
+        });
+      }
+    }
 
     // Apply changes
 
@@ -307,25 +348,8 @@
       changedProperties.push("status");
     }
 
-    // Project-specific: Move to folder (using Map lookup - ID takes priority)
+    // Project-specific: Move to folder (target resolved before any write, above)
     if (itemType === 'project' && (args.newFolderId || args.newFolderName)) {
-      let targetFolder = null;
-
-      // Try ID first
-      if (args.newFolderId) {
-        for (const f of allFolders) {
-          if (f.id.primaryKey === args.newFolderId) {
-            targetFolder = f;
-            break;
-          }
-        }
-      }
-
-      // Fall back to name (supports "Parent > Child" paths)
-      if (!targetFolder && args.newFolderName) {
-        targetFolder = resolveFolderByName(args.newFolderName, allFolders);
-      }
-
       if (targetFolder) {
         // Check if project is already in this folder
         const currentFolder = foundItem.parentFolder;
@@ -336,14 +360,8 @@
           moveSections([foundItem], targetFolder);
           changedProperties.push("moved to folder");
         }
-      } else if (args.newFolderId) {
-        // If ID was provided but not found, return error
-        return JSON.stringify({
-          success: false,
-          error: `Folder not found with ID "${args.newFolderId}"`
-        });
       } else {
-        // Create the folder if only name was provided and not found
+        // Only a name (plain or path) that matched nothing reaches here: create a top-level folder with that literal name (#147)
         const newFolder = new Folder(args.newFolderName);
         moveSections([foundItem], newFolder);
         changedProperties.push("moved to new folder");

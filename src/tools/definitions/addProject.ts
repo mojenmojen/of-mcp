@@ -15,7 +15,7 @@ export const schema = z.object({
   flagged: z.boolean().optional().describe("Whether the project is flagged or not"),
   estimatedMinutes: z.number().optional().describe("Estimated time to complete the project, in minutes"),
   tags: z.array(z.string()).optional().describe("Tags to assign to the project"),
-  folderName: z.string().optional().describe("The name of the folder to add the project to (will add to root if not specified)"),
+  folderName: z.string().optional().describe("The name or \"Parent > Child\" path of the folder to add the project to (will add to root if not specified). If it matches more than one folder, the call fails and lists each candidate's path and ID; pass folderId to choose one."),
   folderId: z.string().optional().describe("The ID of the folder to add the project to (alternative to folderName)"),
   sequential: z.boolean().optional().describe("Whether tasks in the project should be sequential (default: false)")
 });

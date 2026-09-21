@@ -1,6 +1,34 @@
-# OmniFocus MCP Server - What's New (v1.33.0)
+# OmniFocus MCP Server - What's New (v2.0.0)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v2.0.0 Ambiguous folder names now fail closed (#142)
+
+Passing a folder name (`folderName`, `newFolderName` or `parentFolderName`) that matches more than one folder, whether a plain name shared by several folders or a full path shared by two, previously resolved to whichever folder came first in outline order, silently. Tools now return an explicit error naming every candidate by its full path and folder ID, for example:
+
+> Folder name "Archive" is ambiguous - 2 folders match: "Clients > Archive" (id: abc123), "Archive" (id: def456). Use the full "Parent > Child" path, or pass folderId.
+
+The error names the ID parameter of the tool you called: `folderId`, `newFolderId` (`edit_item`, `batch_edit_items`) or `parentFolderId` (`add_folder`).
+
+A candidate that is dropped, or sits inside a dropped folder, is marked after its ID, for example `"Archive" (id: def456, dropped)` or `(id: <id>, inside a dropped folder)`. A project filed into such a folder is effectively dropped too, which is how #112 hid projects, so choose an active candidate unless you mean to file it there.
+
+**This is a breaking change**, hence the major version, for callers that relied on first-match with duplicate folder names. Unique folder names are unaffected. Disambiguate with the `"Parent > Child"` path syntax or with the candidate's ID (`folderId`, `newFolderId` or `parentFolderId`). Path syntax can't reach a top-level folder that shares its name with a nested one, or either of two folders with the same full path; pass that candidate's ID from the error instead.
+
+Affected tools: `add_project`, `add_folder` (`parentFolderName`), `batch_add_items`, `edit_item`, `batch_edit_items`, `duplicate_project`, `list_projects`, `get_folder_by_id`.
+
+**`edit_item` and `batch_edit_items` check the folder first.** A folder lookup error (an ambiguous `newFolderName`, or a `newFolderId` that doesn't exist when no `newFolderName` resolves either) now stops the edit before anything else changes. Previously the name, dates, tags and other fields were already saved when the folder error came back. Other edit errors can still leave earlier changes in place (#150).
+
+**Folder paths fail loudly when OmniFocus can't read a folder's parent chain.** A `"Parent > Child"` lookup used to skip, without any message, a same-named folder whose parent chain couldn't be read. The path could then resolve to the wrong folder or, in `edit_item` and `batch_edit_items`, create a new top-level folder named with the path. That lookup now fails with an error instead. In an ambiguity error, such a candidate is shown by its own name and marked `full path unreadable`. In `list_projects`, such a project is now counted in the processing warnings, with a sample naming it, and its Folder column reads `(root)` because its path couldn't be read.
+
+**`list_projects` errors are flagged as errors.** Its ambiguity and not-found replies now set `isError`, like other tools.
+
+**Tool descriptions** for every folder-name parameter now mention path syntax, the ambiguity error and, for the edit tools, that a name or path matching no folder creates a top-level folder named with that exact text (#147).
+
+**Known limitation:** when every item in a `batch_add_items` or `batch_edit_items` call fails, the tool currently shows a generic error instead of each item's message, so a batch whose only item names an ambiguous folder fails safely but doesn't show the candidates. This includes the common case of a batch that creates a project with its tasks: if the project fails, its tasks fail too, so every item fails. Batches where at least one item succeeds show every message. Tracked in #146.
+
+Closes #132. For folders, this removes the root-cause class behind #112, where a duplicate folder name (one copy dropped) caused projects to be created in the dropped folder, making them and their tasks invisible to active queries. Duplicate project names can still resolve to different projects in different tools; that is tracked in #149.
+
+---
 
 ## v1.33.0 Build-staleness gate: `get_server_version` reports build provenance (#126)
 
@@ -35,7 +63,7 @@ The script built the echoed range with `completedAfter.toISOString().split('T')[
 
 **Folder path disambiguation:**
 - All tools accepting `folderName` now support `"Parent > Child"` path syntax to disambiguate folders with the same name at different hierarchy levels (e.g., `"Work > Areas"` vs `"Personal > Areas"`)
-- Plain folder names still work (first match, backwards compatible)
+- Plain folder names still work (first match, backwards compatible) *(Superseded in v2.0.0: a plain name that matches more than one folder now fails with an error listing each candidate.)*
 - Affected tools: `get_folder_by_id`, `add_project`, `add_folder`, `edit_item`, `duplicate_project`, `batch_add_items`, `batch_edit_items`, `list_projects`
 
 **Full folder paths in output:**
@@ -43,7 +71,7 @@ The script built the echoed range with `completedAfter.toISOString().split('T')[
 - `get_folder_by_id` now includes a `path` field in its response
 
 **Stricter folder filtering in `list_projects`:**
-- When a `folderName` filter doesn't resolve (typo, deleted folder, or an ambiguous name), `list_projects` now returns an explicit `Folder not found` error instead of silently returning *every* project. This matches the existing fail-closed behaviour of `add_project`, `duplicate_project`, and `get_folder_by_id`.
+- When a `folderName` filter doesn't resolve (typo, deleted folder, or an ambiguous name), `list_projects` now returns an explicit `Folder not found` error instead of silently returning *every* project. This matches the existing fail-closed behaviour of `add_project`, `duplicate_project`, and `get_folder_by_id`. *(Correction: this line was inaccurate for ambiguous names. Until v2.0.0 an ambiguous `folderName` silently resolved to the first matching folder and never reached `Folder not found`. Since v2.0.0 it gets its own error listing each candidate.)*
 
 **Server version fix:**
 - `get_server_version` no longer fails with ENOENT when the MCP server runs from a directory without a `package.json`
