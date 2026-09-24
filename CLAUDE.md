@@ -84,7 +84,9 @@ This is an enhanced Model Context Protocol (MCP) server that provides AI assista
 
 **Error Handling**: AppleScript execution errors are caught and propagated through the MCP protocol with descriptive error messages. `executeOmniFocusScript` throws an `OmniFocusError`, which is a real `Error` carrying the structured fields, so the usual `error instanceof Error ? error.message : String(error)` unwrapping in tool handlers shows the message rather than `[object Object]` (#152).
 
-**Retry policy**: a timeout is only retried for scripts listed in `RETRY_SAFE_SCRIPTS` (`src/utils/retryPolicy.ts`). Killing the `osascript` subprocess does not cancel the script running inside OmniFocus, so retrying a timed-out write lands it again: one `add_folder` call once produced four folders (#154). **Do not make writes retryable on timeout, and add every new OmniJS script to that module** — anything unlisted is treated as unsafe to repeat, and `tests/retryPolicy.test.mjs` fails if a script file is left unclassified.
+**Retry policy** (`src/utils/retryPolicy.ts`): killing the `osascript` subprocess does not cancel the script running inside OmniFocus, so retrying a timed-out write lands it again — one `add_folder` call once produced four folders (#154). Two separate questions decide what happens after a timeout, and conflating them is a bug: `isRetrySafeScript()` asks whether the script may be run again, `mayHaveWritten()` asks whether it could have changed anything. A read can answer no to the first (`diagnoseConnection`, `getCustomPerspectiveTasks`) without being a write, and must not be described to the user as a change that may have landed.
+
+**Add every new OmniJS script to `READ_SCRIPTS` or `WRITE_SCRIPTS`**, and never make a write retryable on timeout. An unclassified script is treated as unsafe to repeat and as having possibly written, which fails in the harmless direction. `tests/retryPolicy.test.mjs` fails if a script file is left unclassified, if an entry has no file, or if anything in the retry-safe set contains a mutation call.
 
 **Subtask Support**: Enhanced with hierarchical task relationships using `parentTaskName` or `parentTaskId` parameters.
 

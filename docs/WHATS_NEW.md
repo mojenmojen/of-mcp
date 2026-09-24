@@ -16,7 +16,9 @@ Other retries are unchanged. If OmniFocus is not running, for example, the scrip
 > - This was NOT retried: a timeout does not mean the change failed.
 > - Check OmniFocus before running this again, because running it again may create a duplicate.
 
-Affected tools, all of which write: `add_folder`, `add_project`, `add_omnifocus_task`, `edit_item`, `edit_tag`, `remove_item`, `duplicate_project`, `batch_add_items`, `batch_edit_items`, `batch_remove_items`, `batch_mark_reviewed`. `get_custom_perspective_tasks` is also treated as unsafe to repeat, because with `ignoreFocus` it clears and restores the window's Focus, and a run killed mid-flight would leave that state for a retry to get wrong.
+Affected tools, all of which write: `add_folder`, `add_project`, `add_omnifocus_task`, `edit_item`, `edit_tag`, `remove_item`, `duplicate_project`, `batch_add_items`, `batch_edit_items`, `batch_remove_items`, `batch_mark_reviewed`.
+
+Two reads are also not repeated after a timeout, for reasons of their own, and neither is ever described as a change that may have landed. `get_custom_perspective_tasks` clears and restores the window's Focus when given `ignoreFocus`, so a run killed mid-flight would leave that state for a retry to get wrong. `diagnose_connection` exists to explain an unresponsive OmniFocus, and retrying it three times pushed its answer past the two minutes a client typically waits — which is exactly what happened when the problem was first investigated. It now answers once, promptly.
 
 **Script failures now show their message instead of `[object Object]`.** A failing script threw a plain object, and tool handlers unwrap a caught value with `error instanceof Error ? error.message : String(error)`, so the real text never reached the caller: a two-minute timeout arrived as `Failed to create folder: [object Object]`. Failures are now thrown as a real `Error` that still carries the structured fields, which fixes every tool at once.
 

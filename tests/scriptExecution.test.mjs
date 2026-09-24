@@ -9,6 +9,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+// Note on the bundles: test:unit builds errors.ts on its own AND inlines it into
+// scriptExecution.mjs, so each bundle carries its own copy of the OmniFocusError
+// class. Structural checks (instanceof Error, isStructuredError) work across the
+// two, which is what the assertions below rely on; `instanceof OmniFocusError`
+// across bundles would silently be false.
+
 // Set before importing, because the logger reads it when the module loads.
 process.env.LOG_LEVEL = 'silent';
 const { executeOmniFocusScript } = await import('../dist/test-build/scriptExecution.mjs');

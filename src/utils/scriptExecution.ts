@@ -10,10 +10,9 @@ import {
   categorizeError,
   isStructuredError,
   isExecException,
-  OmniFocusError,
-  createWriteTimeoutError
+  OmniFocusError
 } from './errors.js';
-import { MAX_RETRIES, shouldRetry, isRetrySafeScript } from './retryPolicy.js';
+import { MAX_RETRIES, shouldRetry, finalizeTimeoutError } from './retryPolicy.js';
 import { logger } from './logger.js';
 
 const execAsync = promisify(exec);
@@ -233,12 +232,10 @@ export async function executeOmniFocusScript(
       return executeOmniFocusScript(scriptPath, args, retryCount + 1);
     }
 
-    // A script that is not safe to repeat may well have completed inside
-    // OmniFocus after we stopped waiting, so say so rather than report a clean
-    // failure the caller will answer by running it again (issue #154).
-    if (structuredError.error.type === 'timeout' && !isRetrySafeScript(scriptPath)) {
-      structuredError = createWriteTimeoutError(structuredError.error.details);
-    }
+    // A script that may have written can have completed inside OmniFocus after
+    // we stopped waiting, so say so rather than report a clean failure the
+    // caller will answer by running it again (issue #154).
+    structuredError = finalizeTimeoutError(structuredError, scriptPath);
 
     // Log final failure
     log.error('Script execution failed', {
