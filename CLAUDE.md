@@ -82,7 +82,9 @@ This is an enhanced Model Context Protocol (MCP) server that provides AI assista
 - TypeScript functions execute these scripts via `executeOmniFocusScript()`
 - Results are parsed as JSON and returned through MCP protocol
 
-**Error Handling**: AppleScript execution errors are caught and propagated through the MCP protocol with descriptive error messages.
+**Error Handling**: AppleScript execution errors are caught and propagated through the MCP protocol with descriptive error messages. `executeOmniFocusScript` throws an `OmniFocusError`, which is a real `Error` carrying the structured fields, so the usual `error instanceof Error ? error.message : String(error)` unwrapping in tool handlers shows the message rather than `[object Object]` (#152).
+
+**Retry policy**: a timeout is only retried for scripts listed in `RETRY_SAFE_SCRIPTS` (`src/utils/retryPolicy.ts`). Killing the `osascript` subprocess does not cancel the script running inside OmniFocus, so retrying a timed-out write lands it again: one `add_folder` call once produced four folders (#154). **Do not make writes retryable on timeout, and add every new OmniJS script to that module** — anything unlisted is treated as unsafe to repeat, and `tests/retryPolicy.test.mjs` fails if a script file is left unclassified.
 
 **Subtask Support**: Enhanced with hierarchical task relationships using `parentTaskName` or `parentTaskId` parameters.
 

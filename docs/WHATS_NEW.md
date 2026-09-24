@@ -1,6 +1,30 @@
-# OmniFocus MCP Server - What's New (v2.0.0)
+# OmniFocus MCP Server - What's New (v2.1.0)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v2.1.0 A timed-out write is no longer retried (#154), and errors say what went wrong (#152)
+
+**Writes are no longer repeated after a timeout.** Script execution is given 30 seconds before the `osascript` subprocess is killed, but killing it does not cancel the script already running inside OmniFocus. When OmniFocus was merely slow rather than broken, every retry therefore landed as another write: one `add_folder` call created four identical folders, which is one attempt plus the three retries. Each OmniJS script is now classified as safe or unsafe to repeat, and a timeout is only retried for the safe ones. Anything unclassified counts as unsafe, so a script added later can never silently duplicate a user's data.
+
+Other retries are unchanged. If OmniFocus is not running, for example, the script never ran, so repeating it cannot duplicate anything.
+
+**A timed-out write now says it may have landed**, instead of reading as a clean failure that invites you to run it again:
+
+> Script execution timed out after 30 seconds. The change may still have been applied.
+>
+> - OmniFocus may be unresponsive or busy syncing.
+> - This was NOT retried: a timeout does not mean the change failed.
+> - Check OmniFocus before running this again, because running it again may create a duplicate.
+
+Affected tools, all of which write: `add_folder`, `add_project`, `add_omnifocus_task`, `edit_item`, `edit_tag`, `remove_item`, `duplicate_project`, `batch_add_items`, `batch_edit_items`, `batch_remove_items`, `batch_mark_reviewed`. `get_custom_perspective_tasks` is also treated as unsafe to repeat, because with `ignoreFocus` it clears and restores the window's Focus, and a run killed mid-flight would leave that state for a retry to get wrong.
+
+**Script failures now show their message instead of `[object Object]`.** A failing script threw a plain object, and tool handlers unwrap a caught value with `error instanceof Error ? error.message : String(error)`, so the real text never reached the caller: a two-minute timeout arrived as `Failed to create folder: [object Object]`. Failures are now thrown as a real `Error` that still carries the structured fields, which fixes every tool at once.
+
+**`diagnose_connection` can give its specific advice again.** It chose between its timeout, permission and not-running branches by searching the message text, which was always `[object object]`, so every script failure fell through to the generic "Unknown error" advice — the opposite of the tool's purpose. It now matches on the error's structured type, and surfaces the error's own instructions when it has any.
+
+Closes #154 and #152.
+
+---
 
 ## v2.0.0 Ambiguous folder names now fail closed (#142)
 
