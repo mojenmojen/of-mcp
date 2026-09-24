@@ -3,12 +3,17 @@
  *
  * A timeout is not a failure. EXEC_OPTIONS kills the osascript subprocess after
  * 30 seconds, but that only severs our view of the work: the OmniJS script is
- * already running inside OmniFocus and carries on to completion. When OmniFocus
- * is merely slow, every retry therefore lands as another write. One add_folder
- * call produced four identical folders, which is 1 attempt + MAX_RETRIES.
+ * already running inside OmniFocus and, unless OmniFocus itself is wedged, it
+ * carries on to completion. When OmniFocus is merely slow, every retry therefore
+ * lands as another write. One add_folder call produced four identical folders,
+ * which is 1 attempt + MAX_RETRIES.
  *
- * Two separate questions decide what happens after a timeout, and they are not
- * the same question:
+ * The same is true of every failure raised after the osascript child process
+ * starts, not only the SIGTERM one, so both questions below are asked of any
+ * post-dispatch failure rather than of the error's type (see shouldRetry).
+ *
+ * Two separate questions decide what happens then, and they are not the same
+ * question:
  *
  *   1. May this script be run again?   -> isRetrySafeScript()
  *   2. Could it have changed anything?  -> mayHaveWritten()
@@ -22,7 +27,11 @@
  * unit-tested on its own.
  */
 
-import { createWriteTimeoutError, type StructuredError } from './errors.js';
+import {
+  createWriteTimeoutError,
+  createUnverifiedWriteError,
+  type StructuredError
+} from './errors.js';
 
 /** One initial attempt plus this many retries. */
 export const MAX_RETRIES = 3;
@@ -31,7 +40,7 @@ export const MAX_RETRIES = 3;
  * The OmniJS scripts that only read. Nothing here can have changed the
  * database, whatever else happened to the attempt.
  */
-export const READ_SCRIPTS: ReadonlySet<string> = new Set([
+const READ_SCRIPT_NAMES = [
   'batchFilterTasks.js',
   'completionStats.js',
   'diagnoseConnection.js',
@@ -52,7 +61,12 @@ export const READ_SCRIPTS: ReadonlySet<string> = new Set([
   'systemHealth.js',
   'tasksByTag.js',
   'todayCompletedTasks.js'
-]);
+] as const;
+
+/** One of the read scripts above, by name. */
+type ReadScript = typeof READ_SCRIPT_NAMES[number];
+
+export const READ_SCRIPTS: ReadonlySet<string> = new Set(READ_SCRIPT_NAMES);
 
 /**
  * The OmniJS scripts that change the database. Running one of these a second
@@ -73,20 +87,34 @@ export const WRITE_SCRIPTS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Reads that still must not be repeated after a timeout.
+ * Reads that still must not be repeated.
  *
- * getCustomPerspectiveTasks: with ignoreFocus it sets document.focus to null
- * and restores it at the end, so a run killed mid-flight leaves Focus cleared
- * and a retry would read that cleared state as the original and restore the
- * wrong thing.
+ * Both exceptions are about the case the header sets aside: OmniFocus wedged
+ * badly enough that the script never finishes. A run that does finish restores
+ * its own state and needs no exception here.
+ *
+ * getCustomPerspectiveTasks: ignoreFocus defaults to true, so when a Focus is
+ * set it clears document.focus and restores it in a finally. A run that never
+ * finishes leaves Focus cleared. A retry then reads that cleared state as the
+ * original: focusWasActive is false, so it neither re-clears nor restores, and
+ * it reports focus {wasActive: false, cleared: false} for a window that did
+ * have a Focus. The user's Focus is gone and the answer says it never existed.
+ * (A retry racing a first run that is still going is the same hazard from the
+ * other end: two runs mutating one piece of window state.)
  *
  * diagnoseConnection: retrying it is harmless, but pointless and actively
  * unhelpful. It exists to explain why OmniFocus is not responding, and a
  * wedged OmniFocus makes the full ladder run 30 + 1 + 30 + 2 + 30 + 4 + 30
  * seconds, past the two minutes a client typically waits. Repeating a
  * diagnostic tells the user nothing that waiting would not.
+ *
+ * Typed as ReadScript rather than string so a typo here is a compile error
+ * instead of a silent no-op that would quietly make the real script repeatable
+ * again. Only this set is narrowed: the exported ones must stay
+ * ReadonlySet<string>, because Set.has is checked contravariantly and the
+ * functions below pass an arbitrary filename.
  */
-const NOT_REPEATABLE_READS: ReadonlySet<string> = new Set([
+const NOT_REPEATABLE_READS: ReadonlySet<ReadScript> = new Set<ReadScript>([
   'diagnoseConnection.js',
   'getCustomPerspectiveTasks.js'
 ]);
@@ -100,7 +128,7 @@ const NOT_REPEATABLE_READS: ReadonlySet<string> = new Set([
  * unclassified and a rename cannot leave a phantom entry.
  */
 export const RETRY_SAFE_SCRIPTS: ReadonlySet<string> = new Set(
-  [...READ_SCRIPTS].filter(name => !NOT_REPEATABLE_READS.has(name))
+  READ_SCRIPT_NAMES.filter(name => !NOT_REPEATABLE_READS.has(name))
 );
 
 /**
@@ -138,16 +166,26 @@ export function mayHaveWritten(scriptPath: string): boolean {
 /**
  * Should this failed attempt be retried?
  *
- * The timeout clause is the fix for #154; the rest is the original policy.
+ * `dispatched` is whether the osascript child process was started. It is the
+ * honest form of the question the first version of this fix asked as
+ * "was it a timeout?": the point is never the error's type, it is that once the
+ * script has been handed to OmniFocus we can no longer tell what it did. A
+ * timeout is simply the post-dispatch failure we saw first; an exit-0 run whose
+ * stdout will not parse is another, and an app_unavailable raised from the child
+ * process is a third. Repeating a script that is not safe to repeat is ruled out
+ * for all of them alike, with no per-type reasoning to get wrong later.
+ *
+ * Before dispatch nothing was sent, so the original policy stands.
  */
 export function shouldRetry(
   error: StructuredError,
   attempt: number,
-  scriptPath: string
+  scriptPath: string,
+  dispatched: boolean
 ): boolean {
   if (attempt >= MAX_RETRIES) return false;
   if (!error.error.retryable) return false;
-  if (error.error.type === 'timeout' && !isRetrySafeScript(scriptPath)) return false;
+  if (dispatched && !isRetrySafeScript(scriptPath)) return false;
   return true;
 }
 
@@ -157,13 +195,19 @@ export function shouldRetry(
  * A script that may have written something can have completed inside OmniFocus
  * after we stopped waiting, so say so rather than report a clean failure the
  * caller will answer by running it again. Everything else is returned
- * unchanged.
+ * unchanged: a failure before dispatch really is clean, and a read has nothing
+ * to warn about however it failed.
+ *
+ * Pure, so the decision can be tested without an OmniFocus or a child process.
  */
-export function finalizeTimeoutError(
+export function finalizeUnverifiedWrite(
   error: StructuredError,
-  scriptPath: string
+  scriptPath: string,
+  dispatched: boolean
 ): StructuredError {
-  if (error.error.type !== 'timeout') return error;
+  if (!dispatched) return error;
   if (!mayHaveWritten(scriptPath)) return error;
-  return createWriteTimeoutError(error.error.details);
+  // A timeout keeps its own code and its own advice about a wedged OmniFocus.
+  if (error.error.type === 'timeout') return createWriteTimeoutError(error.error.details);
+  return createUnverifiedWriteError(error.error);
 }

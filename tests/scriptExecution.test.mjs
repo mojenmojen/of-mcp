@@ -45,3 +45,22 @@ test('the thrown Error is still a structured error', async () => {
     }
   );
 });
+
+test('a write that fails before osascript starts is still a clean failure', async () => {
+  // Reading the script file throws before the child process is created, so
+  // nothing reached OmniFocus. The name is a write script's, so this fails only
+  // if the dispatch flag is wired wrongly -- which would tell every caller with
+  // a missing script that their change may have been applied (issue #154).
+  await assert.rejects(
+    executeOmniFocusScript('/tmp/of-mcp-no-such-directory/addFolder.js'),
+    (error) => {
+      assert.ok(
+        !/may still have been applied/.test(error.message),
+        `warned about an unapplied change: ${error.message}`
+      );
+      assert.notEqual(error.error.code, 'WRITE_UNVERIFIED');
+      assert.notEqual(error.error.code, 'TIMEOUT_WRITE_UNVERIFIED');
+      return true;
+    }
+  );
+});

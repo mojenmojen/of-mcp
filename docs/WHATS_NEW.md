@@ -4,9 +4,11 @@
 
 ## v2.1.0 A timed-out write is no longer retried (#154), and errors say what went wrong (#152)
 
-**Writes are no longer repeated after a timeout.** Script execution is given 30 seconds before the `osascript` subprocess is killed, but killing it does not cancel the script already running inside OmniFocus. When OmniFocus was merely slow rather than broken, every retry therefore landed as another write: one `add_folder` call created four identical folders, which is one attempt plus the three retries. Each OmniJS script is now classified as safe or unsafe to repeat, and a timeout is only retried for the safe ones. Anything unclassified counts as unsafe, so a script added later can never silently duplicate a user's data.
+**Writes are no longer repeated once the script has been sent to OmniFocus.** Script execution is given 30 seconds before the `osascript` subprocess is killed, but killing it does not cancel the script already running inside OmniFocus. When OmniFocus was merely slow rather than broken, every retry therefore landed as another write: one `add_folder` call created four identical folders, which is one attempt plus the three retries. Each OmniJS script is now classified as safe or unsafe to repeat, and a write is not repeated once the subprocess has been started — whatever the failure was. Anything unclassified counts as unsafe, so a script added later cannot silently duplicate a user's data this way.
 
-Other retries are unchanged. If OmniFocus is not running, for example, the script never ran, so repeating it cannot duplicate anything.
+The deciding question is how far the attempt got, not what the error said. A timeout is one way a sent script can fail; another is an `osascript` run that exits successfully with output that will not parse, which means the write has already been made inside OmniFocus. Reported as a plain failure, that reads as "nothing happened" and invites you to run it again.
+
+A failure raised *before* the subprocess starts — a missing script file, for example — is still a clean failure and is still retried where the error allows, because nothing was sent.
 
 **A timed-out write now says it may have landed**, instead of reading as a clean failure that invites you to run it again:
 
@@ -16,13 +18,25 @@ Other retries are unchanged. If OmniFocus is not running, for example, the scrip
 > - This was NOT retried: a timeout does not mean the change failed.
 > - Check OmniFocus before running this again, because running it again may create a duplicate.
 
+A write that fails after being sent for any other reason now carries the same caveat, keeping its own first line:
+
+> Failed to parse OmniFocus script output as JSON. The change may still have been applied.
+>
+> - The script was sent to OmniFocus, so the change may have been made before this failed.
+> - This was NOT retried, because running it again may create a duplicate.
+> - Check OmniFocus before running this again.
+
 Affected tools, all of which write: `add_folder`, `add_project`, `add_omnifocus_task`, `edit_item`, `edit_tag`, `remove_item`, `duplicate_project`, `batch_add_items`, `batch_edit_items`, `batch_remove_items`, `batch_mark_reviewed`.
 
-Two reads are also not repeated after a timeout, for reasons of their own, and neither is ever described as a change that may have landed. `get_custom_perspective_tasks` clears and restores the window's Focus when given `ignoreFocus`, so a run killed mid-flight would leave that state for a retry to get wrong. `diagnose_connection` exists to explain an unresponsive OmniFocus, and retrying it three times pushed its answer past the two minutes a client typically waits — which is exactly what happened when the problem was first investigated. It now answers once, promptly.
+Two reads are also not repeated, for reasons of their own, and neither is ever described as a change that may have landed. `get_custom_perspective_tasks` clears the window's Focus and restores it at the end (`ignoreFocus` is on by default, and this only applies when a Focus is set). If OmniFocus never finishes the run, the Focus stays cleared — and a retry reads that cleared state as the original, so it neither re-clears nor restores it, and reports that no Focus was ever set. The Focus is lost and the answer says it never existed. `diagnose_connection` exists to explain an unresponsive OmniFocus, and retrying it three times pushed its answer past the two minutes a client typically waits — which is exactly what happened when the problem was first investigated. It now answers after a single 30-second wait rather than about two minutes.
 
 **Script failures now show their message instead of `[object Object]`.** A failing script threw a plain object, and tool handlers unwrap a caught value with `error instanceof Error ? error.message : String(error)`, so the real text never reached the caller: a two-minute timeout arrived as `Failed to create folder: [object Object]`. Failures are now thrown as a real `Error` that still carries the structured fields, which fixes every tool at once.
 
 **`diagnose_connection` can give its specific advice again.** It chose between its timeout, permission and not-running branches by searching the message text, which was always `[object object]`, so every script failure fell through to the generic "Unknown error" advice — the opposite of the tool's purpose. It now matches on the error's structured type, and surfaces the error's own instructions when it has any.
+
+Two of those branches had a second problem, which the fix above would not have reached. A denied automation permission and a stopped OmniFocus never arrive as thrown errors at all: the wrapper that runs each script catches the underlying exception and returns it as ordinary output, so `osascript` exits successfully and nothing is thrown. Those failures landed in a separate branch that reported `Script error: …` **with no instructions whatsoever** — so the tool written to say "open System Settings > Privacy & Security > Automation" answered a permission denial with an empty list. Both routes are now classified the same way, and every branch ends with at least one instruction.
+
+**Temporary script files no longer collide.** Each call wrote its script to `jxa_wrapper_<milliseconds>.js`. Two requests handled in the same millisecond wrote the same path, so one call could execute the other's script — a `list_projects` call running a delete, and being told about projects. The name now includes the process ID and a random UUID.
 
 Closes #154 and #152.
 

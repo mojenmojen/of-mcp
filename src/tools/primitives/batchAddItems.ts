@@ -1,6 +1,6 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 import { RepetitionRule } from './addOmniFocusTask.js';
-import { createValidationError, isStructuredError } from '../../utils/errors.js';
+import { createValidationError, isStructuredError, OmniFocusError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
 import { queryCache } from '../../utils/cache.js';
 
@@ -133,10 +133,14 @@ export async function batchAddItems(items: BatchAddItemsParams[]): Promise<Batch
     if (cycle) {
       const cycleStr = cycle.join(' → ');
       log.warn('Cycle detected in batch items', { cycle: cycleStr });
-      throw createValidationError(
+      // Thrown as an OmniFocusError so the rule "everything thrown is an Error"
+      // holds everywhere in src/ (issue #152). Its own catch below handles it
+      // either way, but a bare structured object thrown from here would print as
+      // "[object Object]" in any handler that did not check for one first.
+      throw new OmniFocusError(createValidationError(
         `Circular parent reference detected: ${cycleStr}`,
         'Remove the circular dependency between items'
-      );
+      ));
     }
 
     log.debug(`Executing batch add for ${items.length} items`);
