@@ -1,12 +1,19 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { writeFileSync, unlinkSync, readFileSync } from 'fs';
+import { randomUUID } from 'crypto';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { existsSync } from 'fs';
-import { categorizeError, StructuredError, isStructuredError, isExecException } from './errors.js';
+import {
+  categorizeError,
+  isStructuredError,
+  isExecException,
+  OmniFocusError
+} from './errors.js';
+import { MAX_RETRIES, shouldRetry, finalizeUnverifiedWrite } from './retryPolicy.js';
 import { logger } from './logger.js';
 
 const execAsync = promisify(exec);
@@ -19,23 +26,21 @@ const EXEC_OPTIONS = {
   timeout: 30000
 };
 
-// Retry configuration
-const MAX_RETRIES = 3;
+// Retry configuration. MAX_RETRIES and the policy itself live in retryPolicy.ts,
+// which knows which scripts are safe to repeat after a timeout (issue #154).
 const INITIAL_DELAY_MS = 1000;
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function shouldRetry(error: StructuredError, attempt: number): boolean {
-  if (attempt >= MAX_RETRIES) return false;
-  return error.error.retryable;
-}
-
 // Helper function to execute OmniFocus scripts
 export async function executeJXA(script: string): Promise<any[]> {
   // Write the script to a temporary file in the system temp directory
-  const tempFile = join(tmpdir(), `jxa_script_${Date.now()}.js`);
+  // Date.now() alone collides: two concurrent MCP requests in the same
+  // millisecond write the same path, so one call can execute the other's script
+  // and the finally unlinks a file the other is still reading.
+  const tempFile = join(tmpdir(), `jxa_script_${process.pid}_${randomUUID()}.js`);
 
   try {
     // Write the script to the temporary file
@@ -82,6 +87,12 @@ export async function executeOmniFocusScript(
   args?: any,
   retryCount = 0
 ): Promise<any> {
+  // Whether the osascript child process was started. Everything that fails
+  // after this flips is a failure we cannot interpret: the OmniJS script is
+  // inside OmniFocus and finishes on its own schedule, whatever our side does
+  // next (issue #154).
+  let dispatched = false;
+
   try {
     // Get the actual script path (existing code remains the same)
     let actualPath;
@@ -186,13 +197,14 @@ export async function executeOmniFocusScript(
     `;
 
     // Create a temporary file for our JXA wrapper script
-    const tempFile = join(tmpdir(), `jxa_wrapper_${Date.now()}.js`);
+    const tempFile = join(tmpdir(), `jxa_wrapper_${process.pid}_${randomUUID()}.js`);
 
     try {
       // Write the JXA script to the temporary file
       writeFileSync(tempFile, jxaScript);
 
       // Execute the JXA script using osascript
+      dispatched = true;
       const { stdout, stderr } = await execAsync(`osascript -l JavaScript ${tempFile}`, EXEC_OPTIONS);
 
       if (stderr) {
@@ -217,10 +229,10 @@ export async function executeOmniFocusScript(
     }
   } catch (error) {
     // If it's already a structured error, use it directly
-    const structuredError = isStructuredError(error) ? error : categorizeError(error);
+    let structuredError = isStructuredError(error) ? error : categorizeError(error);
 
     // Check if we should retry
-    if (shouldRetry(structuredError, retryCount)) {
+    if (shouldRetry(structuredError, retryCount, scriptPath, dispatched)) {
       const delayMs = INITIAL_DELAY_MS * Math.pow(2, retryCount);
       log.warn(`Retry attempt ${retryCount + 1}/${MAX_RETRIES}, retrying in ${delayMs}ms`, {
         error: structuredError.error.message,
@@ -231,6 +243,11 @@ export async function executeOmniFocusScript(
       return executeOmniFocusScript(scriptPath, args, retryCount + 1);
     }
 
+    // A script that may have written can have completed inside OmniFocus after
+    // we stopped waiting, so say so rather than report a clean failure the
+    // caller will answer by running it again (issue #154).
+    structuredError = finalizeUnverifiedWrite(structuredError, scriptPath, dispatched);
+
     // Log final failure
     log.error('Script execution failed', {
       code: structuredError.error.code,
@@ -238,7 +255,10 @@ export async function executeOmniFocusScript(
       retries: retryCount > 0 ? retryCount : undefined
     });
 
-    throw structuredError;
+    // Thrown as a real Error so that the tool handlers, which unwrap with
+    // `instanceof Error ? error.message : ...`, show the message instead of
+    // "[object Object]" (issue #152).
+    throw new OmniFocusError(structuredError);
   }
 }
     
