@@ -36,12 +36,34 @@ export const ErrorCodes = {
   PERMISSION_DENIED: 'PERMISSION_DENIED',
   APP_NOT_RUNNING: 'APP_NOT_RUNNING',
   TIMEOUT: 'TIMEOUT',
+  TIMEOUT_WRITE_UNVERIFIED: 'TIMEOUT_WRITE_UNVERIFIED',
   SCRIPT_SYNTAX_ERROR: 'SCRIPT_SYNTAX_ERROR',
   SCRIPT_EXECUTION_ERROR: 'SCRIPT_EXECUTION_ERROR',
   ITEM_NOT_FOUND: 'ITEM_NOT_FOUND',
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   UNKNOWN_ERROR: 'UNKNOWN_ERROR'
 } as const;
+
+/**
+ * A StructuredError that is also a real Error (issue #152).
+ *
+ * Tool handlers unwrap a caught value with
+ * `error instanceof Error ? error.message : String(error)`, so throwing a plain
+ * object gave the user "[object Object]" and lost the message entirely. Throwing
+ * this instead fixes every handler without touching any of them: `message` is the
+ * real text, while `success` and `error` stay own enumerable properties so
+ * isStructuredError still recognises it and JSON.stringify still works.
+ */
+export class OmniFocusError extends Error implements StructuredError {
+  readonly success = false as const;
+  readonly error: StructuredError['error'];
+
+  constructor(structured: StructuredError) {
+    super(structured.error.message);
+    this.name = 'OmniFocusError';
+    this.error = structured.error;
+  }
+}
 
 // Error factory functions
 export function createPermissionError(details?: string): StructuredError {
@@ -92,6 +114,35 @@ export function createTimeoutError(details?: string): StructuredError {
         'Try restarting OmniFocus and run the command again.'
       ],
       retryable: true
+    }
+  };
+}
+
+/**
+ * The timeout error for a script that may have written something (issue #154).
+ *
+ * Killing the osascript subprocess does not cancel the OmniJS script already
+ * running inside OmniFocus, so a timed-out write may well have landed. Saying
+ * "failed" invites the caller to run it again and create a duplicate, which is
+ * how one add_folder call produced four folders.
+ *
+ * The type stays 'timeout' so that type-based matching, such as
+ * diagnose_connection's, keeps working; only the code and the wording differ.
+ */
+export function createWriteTimeoutError(details?: string): StructuredError {
+  return {
+    success: false,
+    error: {
+      code: ErrorCodes.TIMEOUT_WRITE_UNVERIFIED,
+      type: 'timeout',
+      message: 'Script execution timed out after 30 seconds. The change may still have been applied.',
+      details,
+      instructions: [
+        'OmniFocus may be unresponsive or busy syncing.',
+        'This was NOT retried: a timeout does not mean the change failed.',
+        'Check OmniFocus before running this again, because running it again may create a duplicate.'
+      ],
+      retryable: false
     }
   };
 }

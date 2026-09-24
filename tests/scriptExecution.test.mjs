@@ -1,0 +1,41 @@
+#!/usr/bin/env node
+// Tests at the real throw site (issues #152 and #154).
+//
+// These need no OmniFocus: a script name that does not exist fails before any
+// osascript call, which is enough to pin the shape of what executeOmniFocusScript
+// throws. Before #152 it threw a plain object and every tool handler printed
+// "[object Object]".
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+
+// Set before importing, because the logger reads it when the module loads.
+process.env.LOG_LEVEL = 'silent';
+const { executeOmniFocusScript } = await import('../dist/test-build/scriptExecution.mjs');
+const { isStructuredError } = await import('../dist/test-build/errors.mjs');
+
+test('a failure is thrown as a real Error carrying its message', async () => {
+  await assert.rejects(
+    executeOmniFocusScript('@thisScriptDoesNotExist.js'),
+    (error) => {
+      assert.ok(error instanceof Error, 'must be an Error');
+      // What the tool handlers would show the user.
+      const shown = error instanceof Error ? error.message : String(error);
+      assert.match(shown, /thisScriptDoesNotExist\.js/);
+      assert.ok(!shown.includes('[object Object]'));
+      return true;
+    }
+  );
+});
+
+test('the thrown Error is still a structured error', async () => {
+  await assert.rejects(
+    executeOmniFocusScript('@thisScriptDoesNotExist.js'),
+    (error) => {
+      assert.ok(isStructuredError(error));
+      assert.equal(error.success, false);
+      assert.equal(typeof error.error.code, 'string');
+      return true;
+    }
+  );
+});

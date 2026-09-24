@@ -1,7 +1,7 @@
 {
   "name": "of-mcp",
   "type": "module",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "MCP server for OmniFocus with batch operations, custom perspectives, hierarchical tasks, and comprehensive task management",
   "main": "dist/server.js",
   "bin": {
@@ -15,7 +15,7 @@
     "dev": "tsc -w",
     "prepublishOnly": "npm run build",
     "test": "npm run test:unit",
-    "test:unit": "esbuild src/utils/dateUtils.ts --bundle --outfile=dist/test-build/dateUtils.mjs --format=esm --platform=node && esbuild src/utils/buildInfo.ts --bundle --outfile=dist/test-build/buildInfo.mjs --format=esm --platform=node && node --test tests/*.test.mjs"
+    "test:unit": "esbuild src/utils/dateUtils.ts --bundle --outfile=dist/test-build/dateUtils.mjs --format=esm --platform=node && esbuild src/utils/buildInfo.ts --bundle --outfile=dist/test-build/buildInfo.mjs --format=esm --platform=node && esbuild src/utils/errors.ts --bundle --outfile=dist/test-build/errors.mjs --format=esm --platform=node && esbuild src/utils/retryPolicy.ts --bundle --outfile=dist/test-build/retryPolicy.mjs --format=esm --platform=node && esbuild src/utils/scriptExecution.ts --bundle --outfile=dist/test-build/scriptExecution.mjs --format=esm --platform=node && node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.8.0",

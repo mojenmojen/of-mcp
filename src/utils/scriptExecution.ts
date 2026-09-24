@@ -6,7 +6,14 @@ import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { existsSync } from 'fs';
-import { categorizeError, StructuredError, isStructuredError, isExecException } from './errors.js';
+import {
+  categorizeError,
+  isStructuredError,
+  isExecException,
+  OmniFocusError,
+  createWriteTimeoutError
+} from './errors.js';
+import { MAX_RETRIES, shouldRetry, isRetrySafeScript } from './retryPolicy.js';
 import { logger } from './logger.js';
 
 const execAsync = promisify(exec);
@@ -19,17 +26,12 @@ const EXEC_OPTIONS = {
   timeout: 30000
 };
 
-// Retry configuration
-const MAX_RETRIES = 3;
+// Retry configuration. MAX_RETRIES and the policy itself live in retryPolicy.ts,
+// which knows which scripts are safe to repeat after a timeout (issue #154).
 const INITIAL_DELAY_MS = 1000;
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function shouldRetry(error: StructuredError, attempt: number): boolean {
-  if (attempt >= MAX_RETRIES) return false;
-  return error.error.retryable;
 }
 
 // Helper function to execute OmniFocus scripts
@@ -217,10 +219,10 @@ export async function executeOmniFocusScript(
     }
   } catch (error) {
     // If it's already a structured error, use it directly
-    const structuredError = isStructuredError(error) ? error : categorizeError(error);
+    let structuredError = isStructuredError(error) ? error : categorizeError(error);
 
     // Check if we should retry
-    if (shouldRetry(structuredError, retryCount)) {
+    if (shouldRetry(structuredError, retryCount, scriptPath)) {
       const delayMs = INITIAL_DELAY_MS * Math.pow(2, retryCount);
       log.warn(`Retry attempt ${retryCount + 1}/${MAX_RETRIES}, retrying in ${delayMs}ms`, {
         error: structuredError.error.message,
@@ -231,6 +233,13 @@ export async function executeOmniFocusScript(
       return executeOmniFocusScript(scriptPath, args, retryCount + 1);
     }
 
+    // A script that is not safe to repeat may well have completed inside
+    // OmniFocus after we stopped waiting, so say so rather than report a clean
+    // failure the caller will answer by running it again (issue #154).
+    if (structuredError.error.type === 'timeout' && !isRetrySafeScript(scriptPath)) {
+      structuredError = createWriteTimeoutError(structuredError.error.details);
+    }
+
     // Log final failure
     log.error('Script execution failed', {
       code: structuredError.error.code,
@@ -238,7 +247,10 @@ export async function executeOmniFocusScript(
       retries: retryCount > 0 ? retryCount : undefined
     });
 
-    throw structuredError;
+    // Thrown as a real Error so that the tool handlers, which unwrap with
+    // `instanceof Error ? error.message : ...`, show the message instead of
+    // "[object Object]" (issue #152).
+    throw new OmniFocusError(structuredError);
   }
 }
     

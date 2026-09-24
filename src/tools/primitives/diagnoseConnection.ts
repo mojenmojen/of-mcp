@@ -1,4 +1,5 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
+import { isStructuredError } from '../../utils/errors.js';
 
 export interface DiagnosticResult {
   success: boolean;
@@ -68,13 +69,22 @@ export async function diagnoseConnection(): Promise<DiagnosticResult> {
     const errorMsg = error instanceof Error ? error.message : String(error);
     const message = errorMsg.toLowerCase();
 
-    if (message.includes('timed out')) {
+    // Match on the structured type where we have one. The message text is only a
+    // fallback now: before #152 the thrown value was a plain object, so every
+    // branch below saw "[object object]" and fell through to Unknown error,
+    // which is exactly the advice this tool exists to give.
+    const errorType = isStructuredError(error) ? error.error.type : null;
+
+    if (errorType === 'timeout' || (!errorType && message.includes('timed out'))) {
       errors.push('Script execution timed out');
       instructions.push(
         'OmniFocus may be unresponsive or busy syncing.',
         'Try restarting OmniFocus and run this diagnostic again.'
       );
-    } else if (message.includes('not authorized') || message.includes('-1743') || message.includes('permission')) {
+    } else if (
+      errorType === 'permission_denied' ||
+      (!errorType && (message.includes('not authorized') || message.includes('-1743') || message.includes('permission')))
+    ) {
       checks.omnifocusRunning = true; // It tried to connect, so OF is probably running
       errors.push('Automation permission denied');
       instructions.push(
@@ -83,15 +93,22 @@ export async function diagnoseConnection(): Promise<DiagnosticResult> {
         '3. Enable the checkbox for OmniFocus',
         '4. Restart the MCP server'
       );
-    } else if (message.includes('not running') || message.includes('-600') || message.includes("application isn't running")) {
+    } else if (
+      errorType === 'app_unavailable' ||
+      (!errorType && (message.includes('not running') || message.includes('-600') || message.includes("application isn't running")))
+    ) {
       errors.push('OmniFocus is not running');
       instructions.push('Start OmniFocus and try again');
     } else {
       errors.push(`Unknown error: ${errorMsg}`);
+      // A structured error carries its own advice; prefer it to the generic list.
+      const structuredInstructions = isStructuredError(error) ? error.error.instructions : undefined;
       instructions.push(
-        'Check that OmniFocus is installed and running.',
-        'Ensure automation permissions are granted.',
-        'Try restarting OmniFocus and the MCP server.'
+        ...(structuredInstructions?.length ? structuredInstructions : [
+          'Check that OmniFocus is installed and running.',
+          'Ensure automation permissions are granted.',
+          'Try restarting OmniFocus and the MCP server.'
+        ])
       );
     }
   }
