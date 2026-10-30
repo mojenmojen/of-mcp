@@ -5,7 +5,7 @@
 Date: 2026-10-30
 Branch: `worktree-fix-136-pin-typescript`
 Base: `e9dd11e` (v2.1.0)
-Status: approved 2026-10-30; the Task 1 gate fell back to ~5.6.3.
+Status: approved 2026-10-30. **What shipped is `~5.6.3`, not the `~5.8.3` this plan describes.** The Task 1 gate showed that TypeScript 5.8.3 also runs out of memory against MCP SDK 1.25.2, so the fallback applies: read 5.6 for 5.8 throughout (see Global constraints). Do not restore `~5.8.3`.
 
 **Goal:** A plain `npm ci` gives a working toolchain (`npm run build`, `npm run build:fast` and `npm test`), and the live server runs current `main` on the dependencies the lockfile names.
 

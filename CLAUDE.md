@@ -95,7 +95,7 @@ Two separate questions decide what happens then, and conflating them is a bug: `
 
 **Testing**: `npm test` runs the automated suite, which needs no OmniFocus: unit tests for the pure TypeScript utilities and for `lib/sharedUtils.js`, and script-level tests that run the OmniJS scripts in `node:vm` with stand-in OmniFocus globals (shared harness: `tests/helpers/omnijsHarness.mjs`). Live OmniFocus behaviour still needs the manual `tests/test-*.mjs` runs.
 
-**TypeScript is capped at `~5.6.3`** (#136). TypeScript 5.8.3 and 5.9.3 run out of memory type-checking this project against MCP SDK 1.25.2, so `npm run build` never finishes on them. `tests/toolchain.test.mjs` fails if the cap, or the lockfile's resolved version, moves off 5.6. Raise the cap only after `npx tsc --noEmit` finishes on the new version, and update that test in the same change. The SDK's types are part of the trigger, because 5.8.3 checks the same code cleanly against SDK 1.17.0. Run `npx tsc --noEmit` again after any `@modelcontextprotocol/sdk` bump, too.
+**TypeScript is capped at `~5.6.3`** (#136). TypeScript 5.8.3 and 5.9.3 run out of memory type-checking this project against MCP SDK 1.25.2, so `npm run build` never finishes on them. `tests/toolchain.test.mjs` fails if the cap, or the lockfile's resolved version, moves off 5.6. Raise the cap only after `npx tsc --noEmit` finishes on the new version, and update that test in the same change. The SDK's types are part of the trigger, because 5.8.3 checks the same code cleanly against SDK 1.17.0. So the same test pins the lockfile's `@modelcontextprotocol/sdk` to 1.25.x: an SDK bump fails `npm test` until `npx tsc --noEmit` has finished on the new version and `SDK_LOCKED` is updated.
 
 ## Performance Guidelines
 
