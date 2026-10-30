@@ -1,6 +1,22 @@
-# OmniFocus MCP Server - What's New (v2.1.1)
+# OmniFocus MCP Server - What's New (v2.1.4)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v2.1.4 A batch in which every item fails shows each item's error (#146)
+
+**`batch_add_items`, `batch_edit_items` and `batch_remove_items` no longer answer `Failed to process batch …: undefined` when every item fails.** The per-item errors were there all along, but the reply only listed them when at least one item had succeeded. An all-fail batch now lists every item with its own error, under a header that says nothing succeeded, and is marked as an error:
+
+> ❌ Batch edit failed: 0 succeeded, 1 failed
+>
+> - ❌ project "abc123": Folder name "Archive" is ambiguous - 2 folders match: "Clients > Archive" (id: f-nested), "Archive" (id: f-top). Use the full "Parent > Child" path, or pass folderId.
+
+This matters most for the ambiguous-folder error from v2.0.0, which names each candidate folder and its ID: a batch whose only item named an ambiguous folder failed safely but hid the candidates. It also covers a batch that creates a project with its tasks, where a failed project makes every item fail.
+
+A batch where at least one item succeeds reads exactly as before. A batch that fails as a whole, before any item is processed, still shows its own error.
+
+Closes #146.
+
+---
 
 ## v2.1.1 `npm run build` works again: TypeScript is capped at 5.6.x (#136)
 
@@ -70,7 +86,7 @@ Affected tools: `add_project`, `add_folder` (`parentFolderName`), `batch_add_ite
 
 **Tool descriptions** for every folder-name parameter now mention path syntax, the ambiguity error and, for the edit tools, that a name or path matching no folder creates a top-level folder named with that exact text (#147).
 
-**Known limitation:** when every item in a `batch_add_items` or `batch_edit_items` call fails, the tool currently shows a generic error instead of each item's message, so a batch whose only item names an ambiguous folder fails safely but doesn't show the candidates. This includes the common case of a batch that creates a project with its tasks: if the project fails, its tasks fail too, so every item fails. Batches where at least one item succeeds show every message. Tracked in #146.
+**Known limitation:** when every item in a `batch_add_items` or `batch_edit_items` call fails, the tool currently shows a generic error instead of each item's message, so a batch whose only item names an ambiguous folder fails safely but doesn't show the candidates. This includes the common case of a batch that creates a project with its tasks: if the project fails, its tasks fail too, so every item fails. Batches where at least one item succeeds show every message. Fixed in v2.1.4 (#146).
 
 Closes #132. For folders, this removes the root-cause class behind #112, where a duplicate folder name (one copy dropped) caused projects to be created in the dropped folder, making them and their tasks invisible to active queries. Duplicate project names can still resolve to different projects in different tools; that is tracked in #149.
 
