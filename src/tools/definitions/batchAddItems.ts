@@ -3,6 +3,7 @@ import { batchAddItems, BatchAddItemsParams } from '../primitives/batchAddItems.
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 import { logger } from '../../utils/logger.js';
+import { formatBatchAddReply } from '../../utils/batchReply.js';
 
 const log = logger.child('batchAddItems:handler');
 
@@ -29,7 +30,7 @@ export const schema = z.object({
     parentTaskName: z.string().optional().describe("For tasks: The name of the parent task to create this task as a subtask"),
 
     // Project-specific properties
-    folderName: z.string().optional().describe("For projects: The name or \"Parent > Child\" path of the folder to add the project to. If it matches more than one folder, that item fails and the error lists each candidate's path and ID; pass folderId to choose one. When every item in the call fails, per-item messages are currently hidden (#146)."),
+    folderName: z.string().optional().describe("For projects: The name or \"Parent > Child\" path of the folder to add the project to. If it matches more than one folder, that item fails and the error lists each candidate's path and ID; pass folderId to choose one."),
     folderId: z.string().optional().describe("For projects: The ID of the folder to add the project to (alternative to folderName)"),
     sequential: z.boolean().optional().describe("For projects: Whether tasks in the project should be sequential")
   })).describe("Array of items (tasks or projects) to add")
@@ -40,51 +41,22 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
     // Call the batchAddItems function (now uses true batching - single OmniJS script)
     const result = await batchAddItems(args.items as BatchAddItemsParams[]);
 
-    if (result.success) {
-      let message = `✅ Successfully added ${result.successCount} items.`;
+    const reply = formatBatchAddReply(result, (item, index) => {
+      // ID should always exist on success - log if missing
+      log.warn('Batch item created successfully but no ID returned', {
+        itemName: item.name,
+        itemType: item.type,
+        itemIndex: index
+      });
+    });
 
-      if (result.failureCount > 0) {
-        message += ` ⚠️ Failed to add ${result.failureCount} items.`;
-      }
-
-      // Include details about added items (use result.name since items may be reordered)
-      // IMPORTANT: Include IDs so callers can reference the created items
-      const details = result.results.map((item, index) => {
-        if (item.success) {
-          // ID should always exist on success - log if missing and inform user
-          let idText = '';
-          if (item.id) {
-            idText = ` (id: ${item.id})`;
-          } else {
-            log.warn('Batch item created successfully but no ID returned', {
-              itemName: item.name,
-              itemType: item.type,
-              itemIndex: index
-            });
-            idText = ' (Note: ID not available)';
-          }
-          return `- ✅ ${item.type}: "${item.name}"${idText}`;
-        } else {
-          return `- ❌ ${item.type || 'item'}: "${item.name || 'unknown'}" - Error: ${item.error}`;
-        }
-      }).join('\n');
-
-      return {
-        content: [{
-          type: "text" as const,
-          text: `${message}\n\n${details}`
-        }]
-      };
-    } else {
-      // Batch operation failed completely
-      return {
-        content: [{
-          type: "text" as const,
-          text: `Failed to process batch operation: ${result.error}`
-        }],
-        isError: true
-      };
-    }
+    return {
+      content: [{
+        type: "text" as const,
+        text: reply.text
+      }],
+      ...(reply.isError ? { isError: true } : {})
+    };
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     log.error('Tool execution error', {

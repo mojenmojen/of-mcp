@@ -3,6 +3,7 @@ import { batchRemoveItems, BatchRemoveItemsParams } from '../primitives/batchRem
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 import { logger } from '../../utils/logger.js';
+import { formatBatchRemoveReply } from '../../utils/batchReply.js';
 
 const log = logger.child('def:batchRemoveItems');
 
@@ -32,41 +33,15 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
     // Call the batchRemoveItems function (now uses true batching - single OmniJS script)
     const result = await batchRemoveItems(args.items as BatchRemoveItemsParams[]);
 
-    if (result.success) {
-      let message = `✅ Successfully removed ${result.successCount} items.`;
+    const reply = formatBatchRemoveReply(result, args.items);
 
-      if (result.failureCount > 0) {
-        message += ` ⚠️ Failed to remove ${result.failureCount} items.`;
-      }
-      
-      // Include details about removed items
-      const details = result.results.map((item, index) => {
-        if (item.success) {
-          const itemType = args.items[index].itemType;
-          return `- ✅ ${itemType}: "${item.name}"`;
-        } else {
-          const itemType = args.items[index].itemType;
-          const identifier = args.items[index].id || args.items[index].name;
-          return `- ❌ ${itemType}: ${identifier} - Error: ${item.error}`;
-        }
-      }).join('\n');
-      
-      return {
-        content: [{
-          type: "text" as const,
-          text: `${message}\n\n${details}`
-        }]
-      };
-    } else {
-      // Batch operation failed completely
-      return {
-        content: [{
-          type: "text" as const,
-          text: `Failed to process batch removal: ${result.error}`
-        }],
-        isError: true
-      };
-    }
+    return {
+      content: [{
+        type: "text" as const,
+        text: reply.text
+      }],
+      ...(reply.isError ? { isError: true } : {})
+    };
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     log.error('Tool execution error', { error: errorMessage });
