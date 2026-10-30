@@ -2,12 +2,22 @@
 
 If `tsc` crashes with an out-of-memory error or hangs indefinitely when building this project, try these solutions in order.
 
+## Known cause: TypeScript 5.8.3 and 5.9.3 (#136)
+
+TypeScript 5.8.3 and 5.9.3 run out of memory type-checking this project against MCP SDK 1.25.2. 5.9.3 did so even with a 12 GB heap. `package.json` caps TypeScript at `~5.6.3` for that reason. Check your version first:
+
+```bash
+npx tsc --version
+```
+
+If it says anything newer than 5.6, your `node_modules` was installed before the cap. Reinstall from the lockfile with `npm ci`. The rest of this page covers other causes.
+
 ## If tsc Hangs Completely (Even Diagnostics)
 
 If tsc hangs and you can't even get diagnostics output, skip it entirely and use esbuild. This one-liner does a complete build:
 
 ```bash
-npm install -D esbuild && npx esbuild src/server.ts --bundle --platform=node --outfile=dist/server.js --format=esm --external:@modelcontextprotocol/sdk --external:zod && mkdir -p dist/utils/omnifocusScripts/lib && cp src/utils/omnifocusScripts/*.js dist/utils/omnifocusScripts/ && cp src/utils/omnifocusScripts/lib/*.js dist/utils/omnifocusScripts/lib/ && chmod 755 dist/server.js
+npm run build:fast
 ```
 
 This takes ~1 second and produces a working build.
@@ -17,8 +27,10 @@ This takes ~1 second and produces a working build.
 A corrupted `node_modules` or mismatched lockfile can cause tsc to hang indefinitely during module resolution:
 
 ```bash
-rm -rf node_modules package-lock.json && npm install
+rm -rf node_modules && npm ci
 ```
+
+Keep `package-lock.json`: without it, every dependency floats to the newest version `package.json` allows.
 
 Then try `npm run build` again.
 
@@ -84,11 +96,9 @@ If you just need a working build and don't care about type errors, use esbuild (
 
 ### Using esbuild (Fastest, Lowest Memory) - RECOMMENDED
 
-Install and run esbuild as an alternative to tsc:
+esbuild is already a devDependency, and `npm run build:fast` runs these steps for you. To run them by hand:
 
 ```bash
-npm install -D esbuild
-
 # Build the server
 npx esbuild src/server.ts --bundle --platform=node --outfile=dist/server.js --format=esm --external:@modelcontextprotocol/sdk --external:zod
 
@@ -138,10 +148,10 @@ This project requires:
 
 ## Try an Older TypeScript Version
 
-TypeScript 5.8.x has been reported to have performance regressions. Try downgrading:
+The project already caps TypeScript at `~5.6.3`, the only version verified against the lockfile's dependencies. If `npx tsc --version` shows anything else, try 5.6.3 without changing `package.json`:
 
 ```bash
-npm install -D typescript@5.6.3
+npm install --no-save typescript@5.6.3
 npx tsc --version  # Verify it's 5.6.3
 npm run build
 ```
@@ -150,4 +160,4 @@ npm run build
 
 The `@modelcontextprotocol/sdk` and `zod` dependencies have complex TypeScript generic types. During type checking, TypeScript must resolve these types, which can consume significant memory. The codebase itself is small (~8K lines), but the type inference for these libraries is intensive.
 
-TypeScript 5.8.x introduced changes to type inference that can exacerbate this issue on some systems.
+On this project the known trigger is TypeScript 5.8.3 or 5.9.3 together with the types in MCP SDK 1.25.2 (#136). TypeScript 5.6.3 checks the same code in seconds. So does 5.8.3 against the older SDK 1.17.0, which means a later SDK bump could bring the failure back on 5.6.3 too.

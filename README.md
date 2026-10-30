@@ -59,7 +59,7 @@ Enhanced Model Context Protocol (MCP) server for OmniFocus featuring **project r
    npm install && npm run build
    ```
 
-   **Alternative build** (if `npm run build` hangs or runs out of memory):
+   **Faster build** (skips type checking):
    ```bash
    npm run build:fast
    ```
@@ -875,9 +875,8 @@ filter_tasks {
 ### Troubleshooting
 
 **Build issues:**
-- If `npm run build` hangs or crashes with OOM, use `npm run build:fast` instead
-- The `build:fast` script uses esbuild which skips type checking but produces identical output
-- This can happen due to complex type inference in the MCP SDK and Zod dependencies
+- If `npm run build` hangs or runs out of memory, check `npx tsc --version`. TypeScript 5.8.3 and 5.9.3 run out of memory type-checking this project against MCP SDK 1.25.2 (#136), so `package.json` caps it at `~5.6.3`. An install made before the cap may still have a newer version; run `npm ci` to reinstall from the lockfile.
+- `npm run build:fast` uses esbuild, which skips type checking but produces a working server
 - For type checking, run `npx tsc --noEmit` separately or rely on your IDE
 
 **Runtime issues:**

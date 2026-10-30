@@ -1,6 +1,12 @@
-# OmniFocus MCP Server - What's New (v2.1.0)
+# OmniFocus MCP Server - What's New (v2.1.1)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v2.1.1 `npm run build` works again: TypeScript is capped at 5.6.x (#136)
+
+**The full TypeScript build no longer runs out of memory.** The lockfile had let TypeScript float to 5.9.3, and 5.9.3 runs out of memory type-checking this project against MCP SDK 1.25.2: it never finished, even with a 12 GB heap. TypeScript 5.8.3 runs out of memory against the same SDK too. `package.json` now caps TypeScript at `~5.6.3`, which checks the same code in a few seconds. A fresh `npm install` or `npm ci` gives a working `npm run build` again, and `npm run build:fast` works as before.
+
+**No tool behaves differently.** This release changes the build only. A new test fails if the cap is lifted, so the lockfile can't drift to a newer TypeScript unnoticed, which is how it reached 5.9.3 before.
 
 ## v2.1.0 A timed-out write is no longer retried (#154), and errors say what went wrong (#152)
 
