@@ -183,11 +183,24 @@
       }
     }
 
+    // Report where the task landed, read back from the created task, so the
+    // reply doesn't have to guess from the arguments (#157)
+    let location;
+    if (containerType === 'parentTask') {
+      location = { type: 'parentTask', name: container.name, id: container.id.primaryKey };
+    } else if (containerType === 'project') {
+      const landedIn = newTask.containingProject || container;
+      location = { type: 'project', name: landedIn.name, id: landedIn.id.primaryKey };
+    } else {
+      location = { type: 'inbox' };
+    }
+
     const result = {
       success: true,
       taskId: newTask.id.primaryKey,
       name: newTask.name,
-      isRepeating: newTask.repetitionRule !== null
+      isRepeating: newTask.repetitionRule !== null,
+      location: location
     };
     if (repetitionWarning) {
       result.warning = repetitionWarning;
