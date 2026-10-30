@@ -1,6 +1,18 @@
-# OmniFocus MCP Server - What's New (v2.1.1)
+# OmniFocus MCP Server - What's New (v2.1.2)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v2.1.2 `add_omnifocus_task` names the project a task was filed in (#157)
+
+**A task created with `projectId` no longer reports "in your inbox".** The success message was built from the arguments and only checked `projectName`, so a call that passed `projectId` alone fell through to the inbox wording, even though the task was filed in the right project. The script now reports where the task actually landed, read back from the created task, and the message names it with its ID:
+
+> ✅ Task "Buy milk" (id: abc123) created successfully in project "Errands" (id: def456).
+
+Subtasks are named the same way, `as a subtask of "Plan trip" (id: …)`, and an inbox task still says `in your inbox`. Because the location comes from OmniFocus rather than the arguments, the message also names the right project when a `projectName` matched with different capitalisation. You no longer need to confirm the location with `get_task_by_id` after creating a task.
+
+Closes #157.
+
+---
 
 ## v2.1.1 `npm run build` works again: TypeScript is capped at 5.6.x (#136)
 
