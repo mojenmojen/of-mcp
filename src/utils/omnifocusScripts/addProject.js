@@ -109,10 +109,27 @@
       }
     }
 
+    // Report where the project landed, read back from the created project,
+    // so the reply doesn't have to guess from the arguments (#151)
+    let location = { type: 'root' };
+    const landedIn = newProject.parentFolder || container;
+    if (landedIn) {
+      // The project already exists, so an unreadable parent chain must not
+      // turn this into a failure; fall back to the folder's own name
+      let path;
+      try {
+        path = getFolderPath(landedIn);
+      } catch (pathError) {
+        path = landedIn.name;
+      }
+      location = { type: 'folder', path: path, id: landedIn.id.primaryKey };
+    }
+
     return JSON.stringify({
       success: true,
       projectId: newProject.id.primaryKey,
-      name: newProject.name
+      name: newProject.name,
+      location: location
     });
 
   } catch (error) {

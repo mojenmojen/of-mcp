@@ -4,6 +4,7 @@ import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.j
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 import { logger } from '../../utils/logger.js';
 import { formatDateSafe } from '../../utils/dateUtils.js';
+import { describeProjectLocation } from '../../utils/projectLocation.js';
 
 const log = logger.child('addProject:handler');
 
@@ -27,9 +28,7 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
     
     if (result.success) {
       // Project was added successfully
-      let locationText = args.folderName 
-        ? `in folder "${args.folderName}"` 
-        : "at the root level";
+      const locationText = describeProjectLocation(result.location, args);
         
       let tagText = args.tags && args.tags.length > 0
         ? ` with tags: ${args.tags.join(', ')}`
@@ -52,7 +51,8 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
         // This should not happen - log for investigation and inform user
         log.warn('Project created successfully but no ID returned', {
           projectName: args.name,
-          folderName: args.folderName
+          folderName: args.folderName,
+          folderId: args.folderId
         });
         idText = ' (Note: ID not available - use list_projects to find this project)';
       }
@@ -78,7 +78,8 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
     log.error('Tool execution error', {
       error: errorMessage,
       projectName: args.name,
-      folderName: args.folderName
+      folderName: args.folderName,
+      folderId: args.folderId
     });
     return {
       content: [{
