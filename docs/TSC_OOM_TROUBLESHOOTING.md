@@ -27,10 +27,10 @@ This takes ~1 second and produces a working build. If it fails with `esbuild: co
 A corrupted `node_modules` or mismatched lockfile can cause tsc to hang indefinitely during module resolution:
 
 ```bash
-rm -rf node_modules && npm ci
+npm ci
 ```
 
-Keep `package-lock.json`: without it, every dependency floats to the newest version `package.json` allows. If `npm ci` stops because `package.json` and `package-lock.json` are out of sync, run `npm install` instead. It brings the lockfile in line with `package.json` and keeps the locked versions that still fit.
+`npm ci` replaces `node_modules` itself, and only after checking the lockfile, so a run that stops early leaves your old install in place. Keep `package-lock.json`: without it, every dependency floats to the newest version `package.json` allows. If `npm ci` stops because `package.json` and `package-lock.json` are out of sync, run `npm install` instead. It brings the lockfile in line with `package.json` and keeps the locked versions that still fit.
 
 Then try `npm run build` again.
 
@@ -57,7 +57,9 @@ If `--extendedDiagnostics` shows it's stuck on "Check time", the issue is comple
 
 ### 1. Increase Node.js Memory Limit
 
-The default heap size may be too small. Run the build with more memory:
+Check `npx tsc --version` first. On 5.8.3 or 5.9.3 the fix is `npm ci` (see Known cause above), not more memory: 5.9.3 still ran out of memory with a 12 GB heap.
+
+Otherwise, the default heap size may be too small. Run the build with more memory:
 
 ```bash
 NODE_OPTIONS="--max-old-space-size=8192" npm run build
@@ -146,7 +148,7 @@ This project requires:
 - Recommended: 8GB+ RAM for comfortable builds
 - Minimum: 4GB RAM (use memory limit increase)
 
-## Try an Older TypeScript Version
+## Make Sure the Capped Version Is Installed
 
 The project already caps TypeScript at `~5.6.3`, the only version verified against the lockfile's dependencies. If `npx tsc --version` shows anything else, reinstall from the lockfile, which installs 5.6.3:
 
