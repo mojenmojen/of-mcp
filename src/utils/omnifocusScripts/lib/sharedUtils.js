@@ -65,6 +65,39 @@ function buildRRule(rule) {
 }
 
 /**
+ * Build the Task.RepetitionRule for an RRULE string and a repeatFrom value.
+ * All four write paths (addTask, batchAddItems, editItem, batchEditItems) call
+ * this, so they can't drift apart (#162).
+ * - 'completion': (rrule, RepetitionMethod.DeferUntilDate), as before #162.
+ * - 'due', or anything else including an omitted repeatFrom: a fixed schedule
+ *   based on the due date. From OmniFocus 4.7 that is
+ *   (rrule, null, RepetitionScheduleType.Regularly, AnchorDateKey.DueDate, false).
+ *   `method` must be null there, because Omni Automation says passing it with
+ *   a schedule type and anchor throws. The last argument is
+ *   catchUpAutomatically: false is what the rules written before #162 read
+ *   back as, and true would make a task completed late skip the occurrences
+ *   it missed, which changes the schedule a caller asked for. Before 4.7,
+ *   with no RepetitionScheduleType, it is (rrule, RepetitionMethod.Fixed), a
+ *   deprecated form kept for backwards compatibility.
+ * The DueDate repetition method is never used: OmniFocus stores it as "due
+ * again after completion", so a deadline drifts each time it is completed.
+ * @param {string} rruleString - iCal RRULE string, from buildRRule
+ * @param {string} [repeatFrom] - 'due' (the default) or 'completion'
+ * @returns {Task.RepetitionRule}
+ */
+function buildRepetitionRule(rruleString, repeatFrom) {
+  if (repeatFrom === 'completion') {
+    return new Task.RepetitionRule(rruleString, Task.RepetitionMethod.DeferUntilDate);
+  }
+  if (Task.RepetitionScheduleType) {
+    return new Task.RepetitionRule(
+      rruleString, null, Task.RepetitionScheduleType.Regularly, Task.AnchorDateKey.DueDate, false
+    );
+  }
+  return new Task.RepetitionRule(rruleString, Task.RepetitionMethod.Fixed);
+}
+
+/**
  * Format a Date object to ISO string, safely handling null/undefined.
  * @param {Date|null|undefined} date - The date to format
  * @returns {string|null} - ISO string or null if date is falsy

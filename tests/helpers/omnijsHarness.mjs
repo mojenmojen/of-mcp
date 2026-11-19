@@ -52,3 +52,36 @@ export const PROJECT_STATUS = { Active: 'P-Active', Done: 'P-Done', Dropped: 'P-
 export function folder(name, parent, id, status = FOLDER_STATUS.Active) {
   return { name, parent, id: { primaryKey: id }, status };
 }
+
+// Stand-ins for the OmniJS repetition enums. The values only need to be
+// distinct. OmniFocus has RepetitionScheduleType and AnchorDateKey from 4.7.
+export const REPETITION_METHOD = {
+  DeferUntilDate: 'M-DeferUntilDate', DueDate: 'M-DueDate', Fixed: 'M-Fixed', None: 'M-None',
+};
+export const REPETITION_SCHEDULE_TYPE = {
+  FromCompletion: 'S-FromCompletion', None: 'S-None', Regularly: 'S-Regularly',
+};
+export const ANCHOR_DATE_KEY = {
+  DeferDate: 'A-DeferDate', DueDate: 'A-DueDate', PlannedDate: 'A-PlannedDate',
+};
+
+// Stand-in for Task.RepetitionRule. Each rule keeps the arguments it was built
+// with in `.args`, so a test can check which constructor form a script used.
+export class RepetitionRule {
+  constructor(...args) {
+    this.args = args;
+  }
+}
+
+// Adds the repetition stand-ins to a Task stand-in, as OmniFocus 4.7 and later
+// have them, and returns it. Pass { scheduleTypes: false } to leave out
+// RepetitionScheduleType and AnchorDateKey, as before 4.7.
+export function addRepetitionGlobals(Task, { scheduleTypes = true } = {}) {
+  Task.RepetitionRule = RepetitionRule;
+  Task.RepetitionMethod = REPETITION_METHOD;
+  if (scheduleTypes) {
+    Task.RepetitionScheduleType = REPETITION_SCHEDULE_TYPE;
+    Task.AnchorDateKey = ANCHOR_DATE_KEY;
+  }
+  return Task;
+}

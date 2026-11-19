@@ -1,6 +1,6 @@
 // OmniJS script to edit multiple items in a single execution
 // This provides true batching - all edits happen in one OmniFocus session
-// Note: parseLocalDate, buildRRule, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
+// Note: parseLocalDate, buildRRule, buildRepetitionRule, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
 (() => {
   // Build tag lookup Map once for O(1) lookups (instead of O(n) per lookup)
   const tagLookupMap = new Map();
@@ -347,12 +347,7 @@
           } else if (edit.newRepetitionRule && edit.newRepetitionRule.frequency) {
             try {
               const rruleString = buildRRule(edit.newRepetitionRule);
-              const repeatFromCompletion = edit.newRepetitionRule.repeatFrom === 'completion';
-              if (repeatFromCompletion) {
-                foundItem.repetitionRule = new Task.RepetitionRule(rruleString, Task.RepetitionMethod.DeferUntilDate);
-              } else {
-                foundItem.repetitionRule = new Task.RepetitionRule(rruleString, Task.RepetitionMethod.DueDate);
-              }
+              foundItem.repetitionRule = buildRepetitionRule(rruleString, edit.newRepetitionRule.repeatFrom);
               changedProperties.push("repetition");
             } catch (repError) {
               results.push({

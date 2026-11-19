@@ -1,6 +1,20 @@
-# OmniFocus MCP Server - What's New (v2.1.4)
+# OmniFocus MCP Server - What's New (v2.1.5)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v2.1.5 `repeatFrom: "due"` keeps a fixed schedule (#162)
+
+**A repeating task created or edited with `repeatFrom: "due"`, or with no `repeatFrom`, now repeats on a fixed schedule.** Before this, OmniFocus saved those rules as "due again after completion", so a deadline task's next due date depended on the day it was completed, and drifted every cycle. A yearly task due on 10 December and completed on 20 November would next fall due on 20 November the following year. `add_omnifocus_task`, `edit_item` and `batch_edit_items` now build the rule in one shared place, so they can't drift apart again. (`batch_add_items` has no `repetitionRule` parameter, so it can't create repeating tasks.)
+
+On OmniFocus 4.7 and later, the rule is saved as a fixed repetition that repeats regularly from the due date. On earlier versions, of-mcp uses the older fixed-repetition form, which hasn't been tested on a real OmniFocus. `repeatFrom: "completion"` builds the same rule as before.
+
+Tasks already saved as "due again after completion" don't change. To move one to the fixed schedule, re-set its rule with `edit_item` or `batch_edit_items`, with `repeatFrom: "due"` or no `repeatFrom`. The new rule replaces the old one, so give the whole pattern again, such as `weekdayOfMonth` for "first Monday", and read it from OmniFocus's own repeat settings first. of-mcp can't yet show which tasks have the old method (#128), so check them in OmniFocus's own repeat settings, or re-set every repeating task that should keep a fixed schedule.
+
+of-mcp can no longer create "due again after completion" rules.
+
+Closes #162.
+
+---
 
 ## v2.1.4 A batch in which every item fails shows each item's error (#146)
 
