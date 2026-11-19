@@ -22,7 +22,7 @@ export const repetitionRuleSchema = z.object({
     day: z.number().min(0).max(6).describe("Day of week: 0=Sunday, 1=Monday, ..., 6=Saturday")
   }).optional().describe("Weekday-of-month pattern (e.g., first Monday, last Friday). Only for monthly frequency. Mutually exclusive with dayOfMonth."),
   month: z.number().min(1).max(12).optional().describe("Month to repeat in. Only for yearly frequency."),
-  repeatFrom: z.enum(['due', 'completion']).optional().describe("Repeat from due date or completion date (default: due)")
+  repeatFrom: z.enum(['due', 'completion']).optional().describe("\"due\" (the default) keeps a fixed schedule based on the due date, so the next due date doesn't depend on when the task was completed. \"completion\" repeats from the completion date.")
 }).refine(
   data => !(data.dayOfMonth && data.weekdayOfMonth),
   { message: "Cannot specify both dayOfMonth and weekdayOfMonth" }

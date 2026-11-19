@@ -1,6 +1,6 @@
 // OmniJS script to edit a task
 // This avoids AppleScript escaping issues with special characters like $
-// Note: parseLocalDate, buildRRule, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
+// Note: parseLocalDate, buildRRule, buildRepetitionRule, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
 (() => {
   // Helper function to find a tag by name (direct iteration to keep OmniJS proxy alive)
   // If tag doesn't exist, creates it
@@ -310,13 +310,7 @@
         // Set new repetition rule
         try {
           const rruleString = buildRRule(args.newRepetitionRule);
-          const repeatFromCompletion = args.newRepetitionRule.repeatFrom === 'completion';
-
-          if (repeatFromCompletion) {
-            foundItem.repetitionRule = new Task.RepetitionRule(rruleString, Task.RepetitionMethod.DeferUntilDate);
-          } else {
-            foundItem.repetitionRule = new Task.RepetitionRule(rruleString, Task.RepetitionMethod.DueDate);
-          }
+          foundItem.repetitionRule = buildRepetitionRule(rruleString, args.newRepetitionRule.repeatFrom);
           changedProperties.push("repetition");
         } catch (repError) {
           return JSON.stringify({

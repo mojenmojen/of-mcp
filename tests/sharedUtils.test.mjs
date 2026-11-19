@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Unit tests for the pure folder-resolution helpers in
-// src/utils/omnifocusScripts/lib/sharedUtils.js.
+// src/utils/omnifocusScripts/lib/sharedUtils.js. The last test, with its own
+// loader, covers buildRepetitionRule's fallback before OmniFocus 4.7 (#162).
 //
 // sharedUtils.js is concatenated into OmniJS scripts and has no exports, so it
 // cannot be imported. Instead it is read and evaluated with `new Function`,
@@ -13,6 +14,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { addRepetitionGlobals, REPETITION_METHOD } from './helpers/omnijsHarness.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SHARED_UTILS = join(
@@ -211,4 +213,24 @@ test('error message leaves out the dropped note when a status cannot be read', (
   Object.defineProperty(unreadableStatus, 'status', { get() { throw new Error('status unreadable'); } });
   const message = formatAmbiguousFolderError('Archive', [unreadableStatus, folder('Archive', null, 'a6')], 'folderId');
   assert.equal(message, 'Folder name "Archive" is ambiguous - 2 folders match: "Archive" (id: a5), "Archive" (id: a6). Use the full "Parent > Child" path, or pass folderId.');
+});
+
+// The repetition-rule helper's fallback before OmniFocus 4.7 (#162). This test
+// brings its own loader, because its Task stand-in has no
+// RepetitionScheduleType or AnchorDateKey, as before 4.7. The 4.7 form is
+// tested through the four write scripts in tests/repetitionRule.test.mjs.
+test('buildRepetitionRule falls back to the Fixed method without RepetitionScheduleType', () => {
+  const source = readFileSync(SHARED_UTILS, 'utf8');
+  const taskBefore47 = addRepetitionGlobals({ ...TASK_STUB }, { scheduleTypes: false });
+  const { buildRepetitionRule } = new Function(
+    'Task', 'Folder',
+    `${source}\nreturn { buildRepetitionRule };`
+  )(taskBefore47, FOLDER_STUB);
+  for (const repeatFrom of ['due', undefined]) {
+    assert.deepEqual(
+      buildRepetitionRule('FREQ=YEARLY', repeatFrom).args,
+      ['FREQ=YEARLY', REPETITION_METHOD.Fixed],
+      `repeatFrom: ${repeatFrom}`
+    );
+  }
 });

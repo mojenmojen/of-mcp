@@ -1,6 +1,6 @@
 // OmniJS script to add a task
 // This avoids AppleScript issues with ISO date parsing and special characters
-// Note: parseLocalDate and buildRRule are provided by sharedUtils.js
+// Note: parseLocalDate, buildRRule and buildRepetitionRule are provided by sharedUtils.js
 (() => {
   try {
     const args = typeof injectedArgs !== 'undefined' ? injectedArgs : {};
@@ -162,19 +162,7 @@
     if (repetitionRule && repetitionRule.frequency) {
       try {
         const rruleString = buildRRule(repetitionRule);
-
-        // Determine repetition method based on repeatFrom
-        // 'due' = repeat from due date (Task.RepetitionMethod.DueDate)
-        // 'completion' = repeat from completion (Task.RepetitionMethod.DeferUntilDate)
-        const repeatFromCompletion = repetitionRule.repeatFrom === 'completion';
-
-        // Create the repetition rule
-        // OmniJS uses Task.RepetitionRule with method parameter
-        if (repeatFromCompletion) {
-          newTask.repetitionRule = new Task.RepetitionRule(rruleString, Task.RepetitionMethod.DeferUntilDate);
-        } else {
-          newTask.repetitionRule = new Task.RepetitionRule(rruleString, Task.RepetitionMethod.DueDate);
-        }
+        newTask.repetitionRule = buildRepetitionRule(rruleString, repetitionRule.repeatFrom);
       } catch (repError) {
         // If repetition rule fails, task is still created, just not repeating
         // Capture warning to return to user instead of silently logging

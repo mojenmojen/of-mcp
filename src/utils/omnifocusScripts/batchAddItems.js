@@ -1,6 +1,6 @@
 // OmniJS script to add multiple items in a single execution
 // This provides true batching - all adds happen in one OmniFocus session
-// Note: parseLocalDate, buildRRule, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
+// Note: parseLocalDate, buildRRule, buildRepetitionRule, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
 (() => {
   try {
     const args = typeof injectedArgs !== 'undefined' ? injectedArgs : {};
@@ -224,12 +224,7 @@
           if (repetitionRule && repetitionRule.frequency) {
             try {
               const rruleString = buildRRule(repetitionRule);
-              const repeatFromCompletion = repetitionRule.repeatFrom === 'completion';
-              if (repeatFromCompletion) {
-                newTask.repetitionRule = new Task.RepetitionRule(rruleString, Task.RepetitionMethod.DeferUntilDate);
-              } else {
-                newTask.repetitionRule = new Task.RepetitionRule(rruleString, Task.RepetitionMethod.DueDate);
-              }
+              newTask.repetitionRule = buildRepetitionRule(rruleString, repetitionRule.repeatFrom);
             } catch (repError) {
               // Task created, just not repeating - capture warning for user
               repetitionWarning = `Could not set repetition rule: ${repError}`;
