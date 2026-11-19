@@ -1,6 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 import { queryCache } from '../../utils/cache.js';
 import { logger } from '../../utils/logger.js';
+import { ProjectLocation } from '../../utils/projectLocation.js';
 
 const log = logger.child('addProject');
 
@@ -22,7 +23,7 @@ export interface AddProjectParams {
  * Add a project to OmniFocus
  * Uses OmniJS to correctly parse ISO date formats and handle special characters
  */
-export async function addProject(params: AddProjectParams): Promise<{success: boolean, projectId?: string, error?: string}> {
+export async function addProject(params: AddProjectParams): Promise<{success: boolean, projectId?: string, location?: ProjectLocation, error?: string}> {
   try {
     // Validate parameters
     if (!params.name) {
@@ -70,7 +71,8 @@ export async function addProject(params: AddProjectParams): Promise<{success: bo
       queryCache.invalidateOnWrite();
       return {
         success: true,
-        projectId: parsed.projectId
+        projectId: parsed.projectId,
+        location: parsed.location
       };
     } else {
       return {

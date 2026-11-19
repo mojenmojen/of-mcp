@@ -18,6 +18,30 @@ Closes #146.
 
 ---
 
+## v2.1.3 `add_project` names the folder a project was filed in (#151)
+
+**A project created with `folderId` no longer reports "at the root level".** The success message was built from the arguments and only checked `folderName`, so a call that passed `folderId` alone fell through to the root-level wording, even though the project was filed in the right folder. The script now reports where the project actually landed, read back from the created project, and the message names that folder by its full path and ID:
+
+> ✅ Project "Website refresh" (id: abc123) created successfully in folder "Clients > Archive" (id: def456) (parallel).
+
+This applies to `folderName` calls too, so the reply shows the full path of the folder the project landed in, rather than echoing the name you passed. If that folder's path can't be read, the reply names the folder by its own name. A project with no folder still says `at the root level`. If the location can't be read back at all, the project is still reported as created, and the message describes what was asked for instead.
+
+Closes #151.
+
+---
+
+## v2.1.2 `add_omnifocus_task` names the project a task was filed in (#157)
+
+**A task created with `projectId` no longer reports "in your inbox".** The success message was built from the arguments and only checked `projectName`, so a call that passed `projectId` alone fell through to the inbox wording, even though the task was filed in the right project. The script now reports where the task actually landed, read back from the created task, and the message names it with its ID:
+
+> ✅ Task "Buy milk" (id: abc123) created successfully in project "Errands" (id: def456).
+
+Subtasks are named the same way, `as a subtask of "Plan trip" (id: …)`, and the parent is read back from the created task too. An inbox task still says `in your inbox`. Because the location comes from OmniFocus rather than the arguments, the message also names the right project when a `projectName` matched with different capitalisation. If the location can't be read back, the task is still reported as created, and the message describes what was asked for instead.
+
+Closes #157.
+
+---
+
 ## v2.1.1 `npm run build` works again: TypeScript is capped at 5.6.x (#136)
 
 **The full TypeScript build no longer runs out of memory.** The lockfile had let TypeScript float to 5.9.3, and 5.9.3 runs out of memory type-checking this project against MCP SDK 1.25.2: it never finished, even with a 12 GB heap. TypeScript 5.8.3 runs out of memory against the same SDK too. `package.json` now caps TypeScript at `~5.6.3`, which checks the same code in a few seconds. A fresh `npm install` or `npm ci` gives a working `npm run build` again, and `npm run build:fast` works as before.

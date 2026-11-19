@@ -1,6 +1,7 @@
 import { executeOmniFocusScript } from '../../utils/scriptExecution.js';
 import { queryCache } from '../../utils/cache.js';
 import { logger } from '../../utils/logger.js';
+import { TaskLocation } from '../../utils/taskLocation.js';
 
 const log = logger.child('addOmniFocusTask');
 
@@ -62,7 +63,7 @@ function validateParentTaskParams(params: AddOmniFocusTaskParams): {valid: boole
  * Add a task to OmniFocus
  * Uses OmniJS to correctly parse ISO date formats and handle special characters
  */
-export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<{success: boolean, taskId?: string, error?: string}> {
+export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<{success: boolean, taskId?: string, location?: TaskLocation, error?: string}> {
   try {
     // Validate parameters
     if (!params.name) {
@@ -122,7 +123,8 @@ export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<
       queryCache.invalidateOnWrite();
       return {
         success: true,
-        taskId: parsed.taskId
+        taskId: parsed.taskId,
+        location: parsed.location
       };
     } else {
       return {
