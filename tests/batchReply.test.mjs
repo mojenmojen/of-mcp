@@ -19,11 +19,12 @@ const AMBIGUOUS = 'Folder name "Archive" is ambiguous - 2 folders match: "Client
 const allFailed = (results) => ({ success: false, successCount: 0, failureCount: results.length, results });
 
 test('batch_add_items: an all-fail batch shows each item error and is an error (#146)', () => {
+  // A failed item as batchAddItems.js returns it: no `type` on a failure result
   const reply = formatBatchAddReply(allFailed([
-    { success: false, type: 'project', name: 'New', error: AMBIGUOUS },
+    { success: false, name: 'New', error: AMBIGUOUS },
   ]));
   assert.equal(reply.isError, true);
-  assert.equal(reply.text, `❌ Failed to add all 1 items.\n\n- ❌ project: "New" - Error: ${AMBIGUOUS}`);
+  assert.equal(reply.text, `❌ Failed to add all 1 items.\n\n- ❌ item: "New" - Error: ${AMBIGUOUS}`);
   assert.doesNotMatch(reply.text, /undefined/);
 });
 
