@@ -4,6 +4,7 @@ import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.j
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 import { repetitionRuleSchema } from '../../schemas/repetitionRule.js';
 import { logger } from '../../utils/logger.js';
+import { formatBatchEditReply } from '../../utils/batchReply.js';
 
 const log = logger.child('def:batchEditItems');
 
@@ -41,7 +42,7 @@ const editItemSchema = z.object({
 
   // Project-specific fields
   newSequential: z.boolean().optional().describe("Whether the project should be sequential"),
-  newFolderName: z.string().optional().describe("Move project to a different folder, by name or \"Parent > Child\" path. If it matches more than one folder, that edit fails before changing anything and lists each candidate's path and ID; pass newFolderId to choose one. A name or path that matches no folder creates a new top-level folder named with that exact text, so check spelling and the spaces around \" > \" (#147). When every edit in the call fails, per-item messages are currently hidden (#146)."),
+  newFolderName: z.string().optional().describe("Move project to a different folder, by name or \"Parent > Child\" path. If it matches more than one folder, that edit fails before changing anything and lists each candidate's path and ID; pass newFolderId to choose one. A name or path that matches no folder creates a new top-level folder named with that exact text, so check spelling and the spaces around \" > \" (#147)."),
   newFolderId: z.string().optional().describe("Move project to a different folder (by ID)"),
   newProjectStatus: z.enum(['active', 'completed', 'dropped', 'onHold']).optional().describe("New status for projects"),
 
@@ -68,39 +69,15 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
     // Call the batchEditItems function
     const result = await batchEditItems(args.edits as BatchEditItemParams[]);
 
-    if (result.success) {
-      let message = `✅ Batch edit complete: ${result.successCount} succeeded`;
-      if (result.failureCount > 0) {
-        message += `, ${result.failureCount} failed`;
-      }
+    const reply = formatBatchEditReply(result, args.edits);
 
-      // Include details about each edit
-      const details = result.results.map((item, index) => {
-        const edit = args.edits[index];
-        const identifier = edit.id || edit.name || `item ${index + 1}`;
-        if (item.success) {
-          const changes = item.changedProperties || 'no changes';
-          return `- ✅ ${edit.itemType} "${identifier}": ${changes}`;
-        } else {
-          return `- ❌ ${edit.itemType} "${identifier}": ${item.error}`;
-        }
-      }).join('\n');
-
-      return {
-        content: [{
-          type: "text" as const,
-          text: `${message}\n\n${details}`
-        }]
-      };
-    } else {
-      return {
-        content: [{
-          type: "text" as const,
-          text: `Failed to process batch edit: ${result.error}`
-        }],
-        isError: true
-      };
-    }
+    return {
+      content: [{
+        type: "text" as const,
+        text: reply.text
+      }],
+      ...(reply.isError ? { isError: true } : {})
+    };
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     log.error('Tool execution error', { error: errorMessage });
