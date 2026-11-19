@@ -183,16 +183,27 @@
       }
     }
 
-    // Report where the task landed, read back from the created task, so the
-    // reply doesn't have to guess from the arguments (#157)
+    // Report where the task landed, read back from the created task only, so
+    // the reply names where OmniFocus put it rather than what was asked for
+    // (#157). The read has its own guard because the task already exists: a
+    // throw reaching the outer catch would report success:false, and a caller
+    // told the add failed retries it and duplicates the task (#154). On a
+    // throw, location stays undefined and the reply describes what was asked.
     let location;
-    if (containerType === 'parentTask') {
-      location = { type: 'parentTask', name: container.name, id: container.id.primaryKey };
-    } else if (containerType === 'project') {
-      const landedIn = newTask.containingProject || container;
-      location = { type: 'project', name: landedIn.name, id: landedIn.id.primaryKey };
-    } else {
-      location = { type: 'inbox' };
+    try {
+      const parent = newTask.parent;
+      if (parent && !parent.project) {
+        // A real parent task. A task at a project's top level has the
+        // project's root task as its parent, and that one has .project set.
+        location = { type: 'parentTask', name: parent.name, id: parent.id.primaryKey };
+      } else {
+        const project = newTask.containingProject;
+        location = project
+          ? { type: 'project', name: project.name, id: project.id.primaryKey }
+          : { type: 'inbox' };
+      }
+    } catch (locationError) {
+      console.log(`Warning: could not read the new task's location: ${locationError}`);
     }
 
     const result = {

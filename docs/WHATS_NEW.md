@@ -8,7 +8,7 @@
 
 > ✅ Task "Buy milk" (id: abc123) created successfully in project "Errands" (id: def456).
 
-Subtasks are named the same way, `as a subtask of "Plan trip" (id: …)`, and an inbox task still says `in your inbox`. Because the location comes from OmniFocus rather than the arguments, the message also names the right project when a `projectName` matched with different capitalisation. You no longer need to confirm the location with `get_task_by_id` after creating a task.
+Subtasks are named the same way, `as a subtask of "Plan trip" (id: …)`, and the parent is read back from the created task too. An inbox task still says `in your inbox`. Because the location comes from OmniFocus rather than the arguments, the message also names the right project when a `projectName` matched with different capitalisation. If the location can't be read back, the task is still reported as created, and the message describes what was asked for instead.
 
 Closes #157.
 
