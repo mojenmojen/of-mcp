@@ -183,11 +183,35 @@
       }
     }
 
+    // Report where the task landed, read back from the created task only, so
+    // the reply names where OmniFocus put it rather than what was asked for
+    // (#157). The read has its own guard because the task already exists: a
+    // throw reaching the outer catch would report success:false, and a caller
+    // told the add failed retries it and duplicates the task (#154). On a
+    // throw, location stays undefined and the reply describes what was asked.
+    let location;
+    try {
+      const parent = newTask.parent;
+      if (parent && !parent.project) {
+        // A real parent task. A task at a project's top level has the
+        // project's root task as its parent, and that one has .project set.
+        location = { type: 'parentTask', name: parent.name, id: parent.id.primaryKey };
+      } else {
+        const project = newTask.containingProject;
+        location = project
+          ? { type: 'project', name: project.name, id: project.id.primaryKey }
+          : { type: 'inbox' };
+      }
+    } catch (locationError) {
+      console.log(`Warning: could not read the new task's location: ${locationError}`);
+    }
+
     const result = {
       success: true,
       taskId: newTask.id.primaryKey,
       name: newTask.name,
-      isRepeating: newTask.repetitionRule !== null
+      isRepeating: newTask.repetitionRule !== null,
+      location: location
     };
     if (repetitionWarning) {
       result.warning = repetitionWarning;
