@@ -8,7 +8,7 @@
 
 > ✅ Project "Website refresh" (id: abc123) created successfully in folder "Clients > Archive" (id: def456) (parallel).
 
-This applies to `folderName` calls too, so the reply always shows the full path of the folder actually used, rather than echoing the name you passed. A project with no folder still says `at the root level`.
+This applies to `folderName` calls too, so the reply shows the full path of the folder the project landed in, rather than echoing the name you passed. If that folder's path can't be read, the reply names the folder by its own name. A project with no folder still says `at the root level`. If the location can't be read back at all, the project is still reported as created, and the message describes what was asked for instead.
 
 Closes #151.
 

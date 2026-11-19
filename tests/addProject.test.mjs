@@ -11,10 +11,13 @@ import { runScript, folder, TASK_STATUS, PROJECT_STATUS } from './helpers/omnijs
 const clients = folder('Clients', null, 'f-clients');
 const archive = folder('Archive', clients, 'f-archive');
 
-function freshWorld(folders = [clients, archive]) {
+// `landIn` (a folder, or null for the root) makes `new Project` put every
+// project there, whatever was asked for, so a test can tell the read-back
+// apart from the request.
+function freshWorld(folders = [clients, archive], { landIn } = {}) {
   function Project(name, container) {
     this.name = name;
-    this.parentFolder = container || null;
+    this.parentFolder = (landIn !== undefined ? landIn : container) || null;
     this.id = { primaryKey: `new-${name}` };
     this.addTag = () => {};
   }
@@ -46,4 +49,35 @@ test('an unreadable parent chain still succeeds, naming the folder alone', () =>
   const result = runScript('addProject.js', { name: 'New', folderId: 'f-orphan' }, freshWorld([broken]));
   assert.equal(result.success, true);
   assert.deepEqual(result.location, { type: 'folder', path: 'Orphan', id: 'f-orphan' });
+});
+
+test('read-back wins: a project that lands in a different folder is reported there', () => {
+  const result = runScript('addProject.js', { name: 'New', folderId: 'f-archive' }, freshWorld(undefined, { landIn: clients }));
+  assert.equal(result.success, true);
+  assert.deepEqual(result.location, { type: 'folder', path: 'Clients', id: 'f-clients' });
+});
+
+test('a project that lands at the root although a folder was asked for is reported at the root', () => {
+  const result = runScript('addProject.js', { name: 'New', folderId: 'f-archive' }, freshWorld(undefined, { landIn: null }));
+  assert.equal(result.success, true);
+  assert.deepEqual(result.location, { type: 'root' });
+});
+
+test('an unreadable location still reports success, with no location (#154)', () => {
+  // The project already exists by the time its folder is read, so a failure
+  // here must not be reported: a caller told "failed" retries and duplicates it.
+  const world = freshWorld();
+  const RealProject = world.Project;
+  world.Project = function (name, container) {
+    const project = new RealProject(name, container);
+    Object.defineProperty(project, 'parentFolder', {
+      get() { throw new Error('parentFolder unreadable'); },
+    });
+    return project;
+  };
+  world.Project.Status = PROJECT_STATUS;
+  const result = runScript('addProject.js', { name: 'New', folderId: 'f-archive' }, world);
+  assert.equal(result.success, true);
+  assert.equal(result.projectId, 'new-New');
+  assert.equal(result.location, undefined);
 });

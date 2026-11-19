@@ -1,6 +1,6 @@
 // OmniJS script to add a project
 // This avoids AppleScript issues with ISO date parsing and special characters
-// Note: parseLocalDate, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
+// Note: parseLocalDate, resolveFolderRef, formatAmbiguousFolderError and getFolderPath are provided by sharedUtils.js
 (() => {
   try {
     const args = typeof injectedArgs !== 'undefined' ? injectedArgs : {};
@@ -109,20 +109,30 @@
       }
     }
 
-    // Report where the project landed, read back from the created project,
-    // so the reply doesn't have to guess from the arguments (#151)
-    let location = { type: 'root' };
-    const landedIn = newProject.parentFolder || container;
-    if (landedIn) {
-      // The project already exists, so an unreadable parent chain must not
-      // turn this into a failure; fall back to the folder's own name
-      let path;
-      try {
-        path = getFolderPath(landedIn);
-      } catch (pathError) {
-        path = landedIn.name;
+    // Report where the project landed, read back from the created project
+    // only, so the reply names where OmniFocus put it rather than what was
+    // asked for (#151). The read has its own guard because the project
+    // already exists: a throw reaching the outer catch would report
+    // success:false, and a caller told the add failed retries it and
+    // duplicates the project (#154). On a throw, location stays undefined
+    // and the reply describes what was asked for.
+    let location;
+    try {
+      const landedIn = newProject.parentFolder;
+      if (landedIn) {
+        // An unreadable parent chain still names the folder, by its own name
+        let path;
+        try {
+          path = getFolderPath(landedIn);
+        } catch (pathError) {
+          path = landedIn.name;
+        }
+        location = { type: 'folder', path: path, id: landedIn.id.primaryKey };
+      } else {
+        location = { type: 'root' };
       }
-      location = { type: 'folder', path: path, id: landedIn.id.primaryKey };
+    } catch (locationError) {
+      console.log(`Warning: could not read the new project's location: ${locationError}`);
     }
 
     return JSON.stringify({
