@@ -5,6 +5,7 @@ import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/typ
 import { repetitionRuleSchema } from '../../schemas/repetitionRule.js';
 import { logger } from '../../utils/logger.js';
 import { formatDateSafe } from '../../utils/dateUtils.js';
+import { describeTaskLocation } from '../../utils/taskLocation.js';
 
 const log = logger.child('addOmniFocusTask:handler');
 
@@ -17,7 +18,7 @@ export const schema = z.object({
   flagged: z.boolean().optional().describe("Whether the task is flagged or not"),
   estimatedMinutes: z.number().optional().describe("Estimated time to complete the task, in minutes"),
   tags: z.array(z.string()).optional().describe("Tags to assign to the task"),
-  projectName: z.string().optional().describe("The name of the project to add the task to (will add to inbox if not specified)"),
+  projectName: z.string().optional().describe("The name of the project to add the task to (alternative to projectId). With no project or parent task, the task goes to the inbox"),
   projectId: z.string().optional().describe("The ID of the project to add the task to (alternative to projectName)"),
   parentTaskId: z.string().optional().describe("The ID of the parent task to create this task as a subtask"),
   parentTaskName: z.string().optional().describe("The name of the parent task to create this task as a subtask (alternative to parentTaskId)"),
@@ -31,15 +32,7 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
     
     if (result.success) {
       // Task was added successfully
-      let locationText;
-      if (args.parentTaskId || args.parentTaskName) {
-        const parentRef = args.parentTaskId || args.parentTaskName;
-        locationText = `as a subtask of "${parentRef}"`;
-      } else if (args.projectName) {
-        locationText = `in project "${args.projectName}"`;
-      } else {
-        locationText = "in your inbox";
-      }
+      const locationText = describeTaskLocation(result.location, args);
         
       let tagText = args.tags && args.tags.length > 0
         ? ` with tags: ${args.tags.join(', ')}`
@@ -73,7 +66,8 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
         // This should not happen - log for investigation and inform user
         log.warn('Task created successfully but no ID returned', {
           taskName: args.name,
-          projectName: args.projectName
+          projectName: args.projectName,
+          projectId: args.projectId
         });
         idText = ' (Note: ID not available - use search to find this task)';
       }
@@ -99,7 +93,8 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
     log.error('Tool execution error', {
       error: errorMessage,
       taskName: args.name,
-      projectName: args.projectName
+      projectName: args.projectName,
+      projectId: args.projectId
     });
     return {
       content: [{

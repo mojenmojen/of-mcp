@@ -14,6 +14,18 @@ Closes #151.
 
 ---
 
+## v2.1.2 `add_omnifocus_task` names the project a task was filed in (#157)
+
+**A task created with `projectId` no longer reports "in your inbox".** The success message was built from the arguments and only checked `projectName`, so a call that passed `projectId` alone fell through to the inbox wording, even though the task was filed in the right project. The script now reports where the task actually landed, read back from the created task, and the message names it with its ID:
+
+> ✅ Task "Buy milk" (id: abc123) created successfully in project "Errands" (id: def456).
+
+Subtasks are named the same way, `as a subtask of "Plan trip" (id: …)`, and the parent is read back from the created task too. An inbox task still says `in your inbox`. Because the location comes from OmniFocus rather than the arguments, the message also names the right project when a `projectName` matched with different capitalisation. If the location can't be read back, the task is still reported as created, and the message describes what was asked for instead.
+
+Closes #157.
+
+---
+
 ## v2.1.1 `npm run build` works again: TypeScript is capped at 5.6.x (#136)
 
 **The full TypeScript build no longer runs out of memory.** The lockfile had let TypeScript float to 5.9.3, and 5.9.3 runs out of memory type-checking this project against MCP SDK 1.25.2: it never finished, even with a 12 GB heap. TypeScript 5.8.3 runs out of memory against the same SDK too. `package.json` now caps TypeScript at `~5.6.3`, which checks the same code in a few seconds. A fresh `npm install` or `npm ci` gives a working `npm run build` again, and `npm run build:fast` works as before.
