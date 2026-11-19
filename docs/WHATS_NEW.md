@@ -1,6 +1,18 @@
-# OmniFocus MCP Server - What's New (v2.1.2)
+# OmniFocus MCP Server - What's New (v2.1.3)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v2.1.3 `add_project` names the folder a project was filed in (#151)
+
+**A project created with `folderId` no longer reports "at the root level".** The success message was built from the arguments and only checked `folderName`, so a call that passed `folderId` alone fell through to the root-level wording, even though the project was filed in the right folder. The script now reports where the project actually landed, read back from the created project, and the message names that folder by its full path and ID:
+
+> ✅ Project "Website refresh" (id: abc123) created successfully in folder "Clients > Archive" (id: def456) (parallel).
+
+This applies to `folderName` calls too, so the reply shows the full path of the folder the project landed in, rather than echoing the name you passed. If that folder's path can't be read, the reply names the folder by its own name. A project with no folder still says `at the root level`. If the location can't be read back at all, the project is still reported as created, and the message describes what was asked for instead.
+
+Closes #151.
+
+---
 
 ## v2.1.2 `add_omnifocus_task` names the project a task was filed in (#157)
 
