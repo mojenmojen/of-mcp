@@ -86,7 +86,7 @@ Affected tools: `add_project`, `add_folder` (`parentFolderName`), `batch_add_ite
 
 **Tool descriptions** for every folder-name parameter now mention path syntax, the ambiguity error and, for the edit tools, that a name or path matching no folder creates a top-level folder named with that exact text (#147).
 
-**Known limitation:** when every item in a `batch_add_items` or `batch_edit_items` call fails, the tool showed a generic error instead of each item's message, so a batch whose only item names an ambiguous folder fails safely but doesn't show the candidates. This includes the common case of a batch that creates a project with its tasks: if the project fails, its tasks fail too, so every item fails. Batches where at least one item succeeds show every message. Fixed in v2.1.4 (#146), which also covers `batch_remove_items`.
+**Known limitation, fixed in v2.1.4 (#146):** when every item in a `batch_add_items` or `batch_edit_items` call failed, the tool showed a generic error instead of each item's message, so a batch whose only item named an ambiguous folder failed safely but didn't show the candidates. This included the common case of a batch that creates a project with its tasks: if the project failed, its tasks failed too, so every item failed. Batches where at least one item succeeded showed every message. The fix also covers `batch_remove_items`.
 
 Closes #132. For folders, this removes the root-cause class behind #112, where a duplicate folder name (one copy dropped) caused projects to be created in the dropped folder, making them and their tasks invisible to active queries. Duplicate project names can still resolve to different projects in different tools; that is tracked in #149.
 
