@@ -1,6 +1,6 @@
 // OmniJS script to add multiple items in a single execution
 // This provides true batching - all adds happen in one OmniFocus session
-// Note: parseLocalDate, buildRRule, buildRepetitionRule, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
+// Note: parseLocalDate, buildRRule, buildRepetitionRule, resolveFolderRef, formatAmbiguousFolderError, resolveProjectRef and formatAmbiguousProjectError are provided by sharedUtils.js
 (() => {
   try {
     const args = typeof injectedArgs !== 'undefined' ? injectedArgs : {};
@@ -22,10 +22,20 @@
     let cachedFolders = null;
     let foldersById = null;
 
+    // Every project of each lower-cased name, so resolveProjectRef can apply
+    // the duplicate-name rule (#149)
     function getProjectsByName() {
       if (!projectsByName) {
         projectsByName = new Map();
-        flattenedProjects.forEach(p => projectsByName.set(p.name.toLowerCase(), p));
+        flattenedProjects.forEach(p => {
+          const key = p.name.toLowerCase();
+          const sameName = projectsByName.get(key);
+          if (sameName) {
+            sameName.push(p);
+          } else {
+            projectsByName.set(key, [p]);
+          }
+        });
       }
       return projectsByName;
     }
@@ -176,7 +186,16 @@
               container = getProjectsById().get(projectId);
             }
             if (!container && projectName) {
-              container = getProjectsByName().get(projectName.toLowerCase());
+              const ref = resolveProjectRef(projectName, getProjectsByName().get(projectName.toLowerCase()) || []);
+              if (ref.ambiguous) {
+                results.push({
+                  success: false,
+                  name: itemName,
+                  error: formatAmbiguousProjectError(projectName, ref.matches, 'projectId')
+                });
+                continue;
+              }
+              container = ref.project;
             }
             if (container) {
               containerType = 'project';

@@ -267,6 +267,168 @@ function formatAmbiguousFolderError(folderName, matches, idParam) {
 }
 
 /**
+ * The project statuses the duplicate project-name rule knows, paired with
+ * the word list_projects uses for each (#149). Read here rather than when
+ * this file loads, and outside any try by every caller, so a missing
+ * Project global fails loudly and only on the path that needs it.
+ * @returns {Array} [statusValue, word] pairs
+ */
+function projectStatusWords() {
+  return [
+    [Project.Status.Active, 'Active'],
+    [Project.Status.OnHold, 'OnHold'],
+    [Project.Status.Done, 'Completed'],
+    [Project.Status.Dropped, 'Dropped'],
+  ];
+}
+
+/**
+ * Read what the duplicate project-name rule needs from one project (#149).
+ * Never throws: a read that fails is reported, so the resolver can fail
+ * closed and the error can mark the candidate.
+ * @param {Project} project - An OmniFocus Project
+ * @param {Array} statusWords - From projectStatusWords()
+ * @param {*} droppedFolder - Folder.Status.Dropped
+ * @returns {{status: string|null, chainReadable: boolean, inDroppedFolder: boolean, folderPath: string|null}}
+ *   status is the project's own status word, or null when it can't be read
+ *   or is none of the four. chainReadable is false when the folders above it
+ *   can't all be read. inDroppedFolder is true when a dropped folder was
+ *   found above it, even if the chain then failed. folderPath is the folders
+ *   above it joined with " > ", or null at the top level or when the chain
+ *   can't be read.
+ */
+function describeProjectCandidate(project, statusWords, droppedFolder) {
+  let status = null;
+  try {
+    const value = project.status;
+    for (const pair of statusWords) {
+      if (value === pair[0]) { status = pair[1]; break; }
+    }
+  } catch (e) {
+    // Left null: an unreadable status fails the lookup closed.
+  }
+  const names = [];
+  let chainReadable = true;
+  let inDroppedFolder = false;
+  try {
+    // The ancestor walk mirrors isInDroppedFolder in listProjects.js.
+    let current = project.parentFolder;
+    while (current) {
+      if (current.status === droppedFolder) inDroppedFolder = true;
+      names.unshift(current.name);
+      current = current.parent;
+    }
+  } catch (e) {
+    chainReadable = false;
+  }
+  return {
+    status: status,
+    chainReadable: chainReadable,
+    inDroppedFolder: inDroppedFolder,
+    folderPath: chainReadable && names.length > 0 ? names.join(' > ') : null
+  };
+}
+
+/**
+ * Resolve a project by name, applying the duplicate project-name rule (#149):
+ * 1. A name matching exactly one project resolves to it, whatever its status.
+ * 2. When two or more match, the single live one is used: status Active or
+ *    OnHold, with no dropped folder above it. Completed and Dropped projects,
+ *    and projects inside a dropped folder, are skipped.
+ * 3. Otherwise (none live, or two or more) it fails closed. So does any
+ *    candidate whose status or folder chain can't be read, even if another
+ *    is live, because skipping it could pick the wrong project.
+ * Names compare case-insensitively and are not trimmed. Status and folders
+ * are read only when two or more match, so a unique name costs what it did.
+ * Mirrors resolveFolderRef.
+ * @param {string} projectName - The name the caller passed
+ * @param {Array} projects - flattenedProjects, or any list holding every
+ *   project of that name (the batch scripts pass a per-name list)
+ * @returns {{project: Project|null, matches: Array, ambiguous: boolean}}
+ *   matches holds every project whose name matches, in the order given;
+ *   project is set when rule 1 or 2 picks one; ambiguous is true when two or
+ *   more match and none is picked.
+ */
+function resolveProjectRef(projectName, projects) {
+  const nameLower = projectName.toLowerCase();
+  const matches = [];
+  for (const project of projects) {
+    if (project.name.toLowerCase() === nameLower) {
+      matches.push(project);
+    }
+  }
+
+  if (matches.length === 0) {
+    return { project: null, matches: [], ambiguous: false };
+  }
+  if (matches.length === 1) {
+    return { project: matches[0], matches: matches, ambiguous: false };
+  }
+
+  // Read outside any try: a missing global is a programming error and must
+  // fail loudly, as in folderStateNote.
+  const statusWords = projectStatusWords();
+  const droppedFolder = Folder.Status.Dropped;
+  const live = [];
+  for (const project of matches) {
+    const candidate = describeProjectCandidate(project, statusWords, droppedFolder);
+    if (candidate.status === null || !candidate.chainReadable) {
+      return { project: null, matches: matches, ambiguous: true };
+    }
+    if ((candidate.status === 'Active' || candidate.status === 'OnHold') && !candidate.inDroppedFolder) {
+      live.push(project);
+    }
+  }
+  if (live.length === 1) {
+    return { project: live[0], matches: matches, ambiguous: false };
+  }
+  return { project: null, matches: matches, ambiguous: true };
+}
+
+/**
+ * A project's own status word ('Active', 'OnHold', 'Completed' or 'Dropped'),
+ * or null when it can't be read. The removal tools report it when they
+ * remove a project by a name two or more projects share (#149).
+ * @param {Project} project - An OmniFocus Project
+ * @returns {string|null}
+ */
+function projectStatusWord(project) {
+  return describeProjectCandidate(project, projectStatusWords(), Folder.Status.Dropped).status;
+}
+
+/**
+ * Build the user-facing error for an ambiguous project name (#149).
+ * Kept here so every lookup builds the one message. Each candidate is its
+ * folder path and name joined with " > " (just its name at the top level),
+ * then its ID and own status word. After the status come, in this order:
+ * "folder path unreadable" when its folder chain can't be read (its own name
+ * is then shown instead of the path), and "inside a dropped folder" when a
+ * dropped folder was found above it. An unreadable status shows as "status
+ * unreadable".
+ * @param {string} projectName - The name the caller passed, quoted as given
+ * @param {Array} matches - Projects that matched (length >= 2)
+ * @param {string} idParam - The calling tool's project-ID parameter, named
+ *   in the advice. Required: the MCP SDK drops unknown arguments, so naming
+ *   the wrong one would be ignored.
+ * @returns {string}
+ */
+function formatAmbiguousProjectError(projectName, matches, idParam) {
+  const statusWords = projectStatusWords();
+  const droppedFolder = Folder.Status.Dropped;
+  const candidates = matches.map(function (p) {
+    const candidate = describeProjectCandidate(p, statusWords, droppedFolder);
+    const shown = candidate.folderPath ? candidate.folderPath + ' > ' + p.name : p.name;
+    let notes = candidate.status || 'status unreadable';
+    if (!candidate.chainReadable) notes += ', folder path unreadable';
+    if (candidate.inDroppedFolder) notes += ', inside a dropped folder';
+    return '"' + shown + '" (id: ' + p.id.primaryKey + ', ' + notes + ')';
+  }).join(', ');
+  return 'Project name "' + projectName + '" is ambiguous - ' + matches.length +
+    ' projects match, and a name only resolves when exactly one is active or on hold outside a dropped folder: ' +
+    candidates + '. Pass ' + idParam + '.';
+}
+
+/**
  * Map of OmniFocus Task.Status enum values to human-readable strings.
  * Used for serializing task status in JSON responses.
  */

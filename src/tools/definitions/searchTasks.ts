@@ -16,7 +16,7 @@ export const schema = z.object({
   includeCompleted: z.boolean().optional().default(false)
     .describe("Include completed tasks in results"),
   projectName: z.string().optional()
-    .describe("Limit search to this project"),
+    .describe("Limit search to this project. A name shared by several projects resolves to the single active or on-hold one outside a dropped folder; otherwise the call fails and the error lists every candidate's ID, to pass as projectId"),
   projectId: z.string().optional()
     .describe("Limit search to project with this ID"),
   limit: z.number().optional().default(50)

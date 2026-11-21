@@ -125,6 +125,8 @@ app.evaluateJavascript(`(() => {
 - `resolveFolderRef(folderName, allFolders)` - Resolve a folder by name or "Parent > Child" path; returns `{ folder, matches, ambiguous }` so callers can fail closed on duplicates
 - `formatAmbiguousFolderError(folderName, matches, idParam)` - The one error message for an ambiguous folder name; `idParam` is the calling tool's folder-ID parameter
 - `getFolderPath(folder)` - A folder's full "Parent > Child" path; throws if the parent chain can't be read
+- `resolveProjectRef(projectName, projects)` - Resolve a project by name under the duplicate-name rule (#149): a unique name as is; among several, the single Active or OnHold one outside a dropped folder; otherwise `ambiguous`. Returns `{ project, matches, ambiguous }`. Status and folders are read only when two or more match. Every lookup that picks a single project by name uses it; `batch_filter_tasks`' `projectNames` filter deliberately takes every project of the name instead
+- `formatAmbiguousProjectError(projectName, matches, idParam)` - The one error message for an ambiguous project name, listing each candidate's folder path, ID and status; `idParam` is the calling tool's project-ID parameter
 
 **Bridge-only operations** - These require `evaluateJavascript()`:
 - Tag assignment

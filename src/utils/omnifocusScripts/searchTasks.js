@@ -54,11 +54,17 @@
     if (projectId || projectName) {
       let targetProjectId = projectId;
       if (!targetProjectId && projectName) {
-        const nameLower = projectName.toLowerCase();
-        const proj = flattenedProjects.find(p =>
-          p.name.toLowerCase() === nameLower
-        );
-        if (proj) targetProjectId = proj.id.primaryKey;
+        // A name shared by several projects resolves to the single live one,
+        // or fails closed (#149). A name matching nothing still searches
+        // every project (#168).
+        const ref = resolveProjectRef(projectName, flattenedProjects);
+        if (ref.ambiguous) {
+          return JSON.stringify({
+            success: false,
+            error: formatAmbiguousProjectError(projectName, ref.matches, 'projectId')
+          });
+        }
+        if (ref.project) targetProjectId = ref.project.id.primaryKey;
       }
 
       if (targetProjectId) {

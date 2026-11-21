@@ -10,7 +10,7 @@ const log = logger.child('def:batchRemoveItems');
 export const schema = z.object({
   items: z.array(z.object({
     id: z.string().optional().describe("The ID of the task or project to remove"),
-    name: z.string().optional().describe("The name of the task or project to remove (as fallback if ID not provided)"),
+    name: z.string().optional().describe("The name of the task or project to remove (as fallback if ID not provided). When itemType is \"project\", a name shared by several projects resolves to the single active or on-hold one outside a dropped folder; otherwise that item fails and the error lists every candidate's ID, to pass as id"),
     itemType: z.enum(['task', 'project']).describe("Type of item to remove ('task' or 'project')")
   })).describe("Array of items (tasks or projects) to remove")
 });

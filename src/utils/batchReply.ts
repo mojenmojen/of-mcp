@@ -1,5 +1,6 @@
-// The replies batch_add_items, batch_edit_items and batch_remove_items give.
-// Pure, so it is unit-tested.
+// The replies batch_add_items, batch_edit_items and batch_remove_items give,
+// and remove_item's success line, which shares batch_remove_items' wording
+// for a project removed by a shared name (#149). Pure, so it is unit-tested.
 //
 // The batch scripts report success only when at least one item succeeded,
 // and set a top-level error only when the whole batch threw. So a batch in
@@ -113,7 +114,40 @@ export function formatBatchEditReply(result: BatchOutcome<EditItemResult>, edits
 }
 
 export interface RemoveItemResult extends ItemResult {
+  id?: string;
   name?: string;
+  // Set by removeTask.js and batchRemoveItems.js only when a project was
+  // removed by a name that two or more projects matched (#149): its own
+  // status word (null if it couldn't be read), and how many other projects
+  // of that name matched.
+  status?: string | null;
+  otherMatches?: number;
+}
+
+// " (id: abc123, Active)" and " 2 other projects named "X" remain." for a
+// project removed by a shared name, or null for any other removal, which
+// keeps today's reply (#149). A removal can't be undone, so the reply says
+// which project went and how many of that name are left.
+// Keyed on otherMatches alone, so the ID and the count still show if the
+// status could not be read.
+function sharedNameRemoval(item: RemoveItemResult): { idPart: string; remaining: string } | null {
+  if (typeof item.otherMatches !== 'number') {
+    return null;
+  }
+  const others = item.otherMatches === 1
+    ? `1 other project named "${item.name}" remains.`
+    : `${item.otherMatches} other projects named "${item.name}" remain.`;
+  return { idPart: ` (id: ${item.id}, ${item.status || 'status unreadable'})`, remaining: ` ${others}` };
+}
+
+// The line remove_item gives when the removal succeeded.
+export function formatRemoveItemReply(itemType: 'task' | 'project', item: RemoveItemResult): string {
+  const label = itemType === 'task' ? 'Task' : 'Project';
+  const shared = sharedNameRemoval(item);
+  if (shared) {
+    return `✅ ${label} "${item.name}"${shared.idPart} removed successfully.${shared.remaining}`;
+  }
+  return `✅ ${label} "${item.name}" removed successfully.`;
 }
 
 export function formatBatchRemoveReply(result: BatchOutcome<RemoveItemResult>, items: EditRequest[]): BatchReply {
@@ -131,6 +165,10 @@ export function formatBatchRemoveReply(result: BatchOutcome<RemoveItemResult>, i
     const request = items[index];
     const itemType = request?.itemType || 'item';
     if (item.success) {
+      const shared = sharedNameRemoval(item);
+      if (shared) {
+        return `- ✅ ${itemType}: "${item.name}"${shared.idPart}.${shared.remaining}`;
+      }
       return `- ✅ ${itemType}: "${item.name}"`;
     }
     return `- ❌ ${itemType}: ${request?.id || request?.name} - Error: ${item.error}`;

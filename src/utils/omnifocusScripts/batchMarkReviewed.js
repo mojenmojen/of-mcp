@@ -12,12 +12,20 @@
       });
     }
 
-    // Build Maps for O(1) lookup
+    // Build Maps for O(1) lookup. The name Map keeps every project of each
+    // lower-cased name, so resolveProjectRef can apply the duplicate-name
+    // rule (#149).
     const projectsById = new Map();
     const projectsByName = new Map();
     flattenedProjects.forEach(p => {
       projectsById.set(p.id.primaryKey, p);
-      projectsByName.set(p.name.toLowerCase(), p);
+      const key = p.name.toLowerCase();
+      const sameName = projectsByName.get(key);
+      if (sameName) {
+        sameName.push(p);
+      } else {
+        projectsByName.set(key, [p]);
+      }
     });
 
     // Collect projects to mark reviewed - IDs take priority
@@ -36,8 +44,14 @@
     // Add projects by name (if not already added by ID)
     const addedProjectIds = new Set(projectsToMark.filter(p => p.project).map(p => p.project.id.primaryKey));
     for (const name of projectNames) {
-      const project = projectsByName.get(name.toLowerCase());
-      if (project) {
+      const ref = resolveProjectRef(name, projectsByName.get(name.toLowerCase()) || []);
+      const project = ref.project;
+      if (ref.ambiguous) {
+        projectsToMark.push({
+          project: null, identifier: name, type: 'name',
+          error: formatAmbiguousProjectError(name, ref.matches, 'projectIds')
+        });
+      } else if (project) {
         // Only add if not already added by ID
         if (!addedProjectIds.has(project.id.primaryKey)) {
           projectsToMark.push({ project, identifier: name, type: 'name' });

@@ -31,15 +31,17 @@
       }
     }
 
-    // If not found by ID, search by name (case-insensitive)
+    // If not found by ID, search by name (case-insensitive). A name shared by
+    // several projects resolves to the single live one, or fails closed (#149).
     if (!foundProject && projectName) {
-      const projectNameLower = projectName.toLowerCase();
-      for (const project of allProjects) {
-        if (project.name.toLowerCase() === projectNameLower) {
-          foundProject = project;
-          break;
-        }
+      const ref = resolveProjectRef(projectName, allProjects);
+      if (ref.ambiguous) {
+        return JSON.stringify({
+          success: false,
+          error: formatAmbiguousProjectError(projectName, ref.matches, 'projectId')
+        });
       }
+      foundProject = ref.project;
     }
 
     if (!foundProject) {

@@ -1,6 +1,6 @@
 // OmniJS script to edit a task
 // This avoids AppleScript escaping issues with special characters like $
-// Note: parseLocalDate, buildRRule, buildRepetitionRule, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
+// Note: parseLocalDate, buildRRule, buildRepetitionRule, resolveFolderRef, formatAmbiguousFolderError, resolveProjectRef and formatAmbiguousProjectError are provided by sharedUtils.js
 (() => {
   // Helper function to find a tag by name (direct iteration to keep OmniJS proxy alive)
   // If tag doesn't exist, creates it
@@ -40,13 +40,23 @@
       });
     }
 
-    // Build lookup Maps for O(1) access (optimization for multiple lookups)
+    // Build lookup Maps for O(1) access (optimization for multiple lookups).
+    // The project-name Map keeps every project of each lower-cased name, so
+    // resolveProjectRef can apply the duplicate-name rule (#149).
     const projectsByName = new Map();
     const projectsById = new Map();
     flattenedProjects.forEach(p => {
-      projectsByName.set(p.name.toLowerCase(), p);
+      const key = p.name.toLowerCase();
+      const sameName = projectsByName.get(key);
+      if (sameName) {
+        sameName.push(p);
+      } else {
+        projectsByName.set(key, [p]);
+      }
       projectsById.set(p.id.primaryKey, p);
     });
+    const resolveProjectName = (name) =>
+      resolveProjectRef(name, projectsByName.get(name.toLowerCase()) || []);
 
     const tasksByName = new Map();
     const tasksById = new Map();
@@ -72,7 +82,14 @@
         foundItem = projectsById.get(taskId);
       }
       if (!foundItem && taskName) {
-        foundItem = projectsByName.get(taskName.toLowerCase());
+        const ref = resolveProjectName(taskName);
+        if (ref.ambiguous) {
+          return JSON.stringify({
+            success: false,
+            error: formatAmbiguousProjectError(taskName, ref.matches, 'id')
+          });
+        }
+        foundItem = ref.project;
       }
     } else {
       // Search by ID first, then by name
@@ -225,9 +242,18 @@
         targetProject = projectsById.get(args.newProjectId);
       }
 
-      // Fall back to name if ID not found or not provided
+      // Fall back to name if ID not found or not provided. Looked up here,
+      // after the other edits, so an ambiguous name leaves them in place, as
+      // a name that isn't found does (#150).
       if (!targetProject && args.newProjectName) {
-        targetProject = projectsByName.get(args.newProjectName.toLowerCase());
+        const ref = resolveProjectName(args.newProjectName);
+        if (ref.ambiguous) {
+          return JSON.stringify({
+            success: false,
+            error: formatAmbiguousProjectError(args.newProjectName, ref.matches, 'newProjectId')
+          });
+        }
+        targetProject = ref.project;
       }
 
       if (targetProject) {

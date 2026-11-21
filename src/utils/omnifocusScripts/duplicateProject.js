@@ -1,4 +1,4 @@
-// Note: parseLocalDate, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
+// Note: parseLocalDate, resolveFolderRef, formatAmbiguousFolderError, resolveProjectRef and formatAmbiguousProjectError are provided by sharedUtils.js
 (() => {
   try {
     const args = typeof injectedArgs !== 'undefined' ? injectedArgs : {};
@@ -20,8 +20,16 @@
       sourceProject = flattenedProjects.find(p => p.id.primaryKey === sourceProjectId);
     }
     if (!sourceProject && sourceProjectName) {
-      const nameLower = sourceProjectName.toLowerCase();
-      sourceProject = flattenedProjects.find(p => p.name.toLowerCase() === nameLower);
+      // A name shared by several projects resolves to the single live one,
+      // or fails closed (#149).
+      const ref = resolveProjectRef(sourceProjectName, flattenedProjects);
+      if (ref.ambiguous) {
+        return JSON.stringify({
+          success: false,
+          error: formatAmbiguousProjectError(sourceProjectName, ref.matches, 'sourceProjectId')
+        });
+      }
+      sourceProject = ref.project;
     }
 
     if (!sourceProject) {
