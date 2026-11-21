@@ -8,7 +8,7 @@ const log = logger.child('def:batchMarkReviewed');
 
 export const schema = z.object({
   projectIds: z.array(z.string()).optional().describe("Array of project IDs to mark as reviewed"),
-  projectNames: z.array(z.string()).optional().describe("Array of project names to mark as reviewed (alternative to projectIds)")
+  projectNames: z.array(z.string()).optional().describe("Array of project names to mark as reviewed (alternative to projectIds). A name shared by several projects resolves to the single active or on-hold one outside a dropped folder; otherwise that name fails and its error lists every candidate's ID, to pass in projectIds")
 });
 
 export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {

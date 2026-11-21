@@ -11,7 +11,7 @@ const log = logger.child('def:batchEditItems');
 // Schema for a single edit operation
 const editItemSchema = z.object({
   id: z.string().optional().describe("The ID of the task or project to edit"),
-  name: z.string().optional().describe("The name of the task or project to edit (as fallback if ID not provided)"),
+  name: z.string().optional().describe("The name of the task or project to edit (as fallback if ID not provided). When itemType is \"project\", a name shared by several projects resolves to the single active or on-hold one outside a dropped folder; otherwise that edit fails and the error lists every candidate's ID, to pass as id"),
   itemType: z.enum(['task', 'project']).describe("Type of item to edit ('task' or 'project')"),
 
   // Common editable fields
@@ -34,7 +34,7 @@ const editItemSchema = z.object({
   newRepetitionRule: repetitionRuleSchema.nullable().optional().describe("New repetition rule (null to remove)"),
 
   // Task movement fields
-  newProjectName: z.string().optional().describe("Move task to a different project (by name)"),
+  newProjectName: z.string().optional().describe("Move task to a different project (by name). A name shared by several projects resolves to the single active or on-hold one outside a dropped folder; otherwise that edit's move fails and the error lists every candidate's ID, to pass as newProjectId"),
   newProjectId: z.string().optional().describe("Move task to a different project (by ID)"),
   newParentTaskId: z.string().optional().describe("Move task to be a subtask of another task (by ID)"),
   newParentTaskName: z.string().optional().describe("Move task to be a subtask of another task (by name)"),

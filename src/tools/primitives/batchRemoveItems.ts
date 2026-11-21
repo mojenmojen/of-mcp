@@ -16,6 +16,10 @@ type ItemResult = {
   success: boolean;
   id?: string;
   name?: string;
+  // Set only when a project was removed by a name that two or more projects
+  // matched (#149); status is null if it couldn't be read
+  status?: string | null;
+  otherMatches?: number;
   error?: string;
 };
 

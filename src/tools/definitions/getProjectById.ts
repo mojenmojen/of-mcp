@@ -9,7 +9,7 @@ const log = logger.child('def:getProjectById');
 
 export const schema = z.object({
   projectId: z.string().optional().describe("The ID of the project to retrieve"),
-  projectName: z.string().optional().describe("The name of the project to retrieve (alternative to projectId)")
+  projectName: z.string().optional().describe("The name of the project to retrieve (alternative to projectId). A name shared by several projects resolves to the single active or on-hold one outside a dropped folder; otherwise the call fails and the error lists every candidate's ID, to pass as projectId")
 });
 
 export async function handler(args: z.infer<typeof schema>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) {

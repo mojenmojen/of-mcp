@@ -1,6 +1,6 @@
 // OmniJS script to add a task
 // This avoids AppleScript issues with ISO date parsing and special characters
-// Note: parseLocalDate, buildRRule and buildRepetitionRule are provided by sharedUtils.js
+// Note: parseLocalDate, buildRRule, buildRepetitionRule, resolveProjectRef and formatAmbiguousProjectError are provided by sharedUtils.js
 (() => {
   try {
     const args = typeof injectedArgs !== 'undefined' ? injectedArgs : {};
@@ -79,15 +79,20 @@
         }
       }
 
-      // Fall back to name lookup if ID not found or not provided
+      // Fall back to name lookup if ID not found or not provided. A name
+      // shared by several projects resolves to the single live one, or
+      // fails closed (#149).
       if (!container && projectName) {
-        const projectNameLower = projectName.toLowerCase();
-        for (const proj of allProjects) {
-          if (proj.name.toLowerCase() === projectNameLower) {
-            container = proj;
-            containerType = 'project';
-            break;
-          }
+        const ref = resolveProjectRef(projectName, allProjects);
+        if (ref.ambiguous) {
+          return JSON.stringify({
+            success: false,
+            error: formatAmbiguousProjectError(projectName, ref.matches, 'projectId')
+          });
+        }
+        if (ref.project) {
+          container = ref.project;
+          containerType = 'project';
         }
       }
 

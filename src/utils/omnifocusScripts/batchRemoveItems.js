@@ -26,10 +26,20 @@
       return projectsById;
     }
 
+    // Every project of each lower-cased name, so resolveProjectRef can apply
+    // the duplicate-name rule (#149)
     function getProjectsByName() {
       if (!projectsByName) {
         projectsByName = new Map();
-        flattenedProjects.forEach(p => projectsByName.set(p.name.toLowerCase(), p));
+        flattenedProjects.forEach(p => {
+          const key = p.name.toLowerCase();
+          const sameName = projectsByName.get(key);
+          if (sameName) {
+            sameName.push(p);
+          } else {
+            projectsByName.set(key, [p]);
+          }
+        });
       }
       return projectsByName;
     }
@@ -54,6 +64,14 @@
       return tasksByName;
     }
 
+    // Lower-cased names of projects removed earlier in this batch, by ID or
+    // by name. A later item giving one of these names fails with "Item not
+    // found", even if other projects of that name remain (#149). Kept apart
+    // from the name Map, which is built lazily: built after a removal, the
+    // Map would no longer hold the removed project, and would resolve the
+    // name to a copy nobody named.
+    const removedProjectNames = new Set();
+
     const results = [];
 
     // Process each item
@@ -73,10 +91,28 @@
 
         // Find the item - use fast byIdentifier for ID lookups
         let foundItem = null;
+        let sharedNameMatches = 0;
 
         if (itemType === 'project') {
           if (itemId) foundItem = Project.byIdentifier(itemId);
-          if (!foundItem && itemName) foundItem = getProjectsByName().get(itemName.toLowerCase());
+          if (!foundItem && itemName && !removedProjectNames.has(itemName.toLowerCase())) {
+            // A name shared by several projects resolves to the single live
+            // one, or fails closed (#149).
+            const ref = resolveProjectRef(itemName, getProjectsByName().get(itemName.toLowerCase()) || []);
+            if (ref.ambiguous) {
+              results.push({
+                success: false,
+                id: itemId,
+                name: itemName,
+                error: formatAmbiguousProjectError(itemName, ref.matches, 'id')
+              });
+              continue;
+            }
+            foundItem = ref.project;
+            if (foundItem && ref.matches.length > 1) {
+              sharedNameMatches = ref.matches.length;
+            }
+          }
         } else {
           if (itemId) foundItem = Task.byIdentifier(itemId);
           if (!foundItem && itemName) foundItem = getTasksByName().get(itemName.toLowerCase());
@@ -112,6 +148,11 @@
           throw accessError;
         }
 
+        // A removal can't be undone, so when the name was shared the reply
+        // says which project went and how many of that name are left (#149).
+        // Read before the delete.
+        const removedStatus = sharedNameMatches > 1 ? projectStatusWord(foundItem) : null;
+
         // Try to delete the item
         try {
           deleteObject(foundItem);
@@ -134,17 +175,22 @@
         // Remove from maps so subsequent lookups don't find deleted items
         if (itemType === 'project') {
           if (projectsById) projectsById.delete(deletedId);
-          if (projectsByName) projectsByName.delete(deletedName.toLowerCase());
+          removedProjectNames.add(deletedName.toLowerCase());
         } else {
           if (tasksById) tasksById.delete(deletedId);
           if (tasksByName) tasksByName.delete(deletedName.toLowerCase());
         }
 
-        results.push({
+        const removal = {
           success: true,
           id: deletedId,
           name: deletedName
-        });
+        };
+        if (sharedNameMatches > 1) {
+          removal.status = removedStatus;
+          removal.otherMatches = sharedNameMatches - 1;
+        }
+        results.push(removal);
 
       } catch (itemError) {
         // Check if this is a "scheduled for deletion" error

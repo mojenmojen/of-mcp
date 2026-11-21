@@ -36,12 +36,30 @@
       }
     }
 
-    // If not found by ID, search by name
+    // If not found by ID, search by name. A project name compares
+    // case-insensitively, and a name shared by several projects resolves to
+    // the single live one, or fails closed (#149). A task name still takes
+    // the first exact-case match.
+    let sharedNameMatches = 0;
     if (!foundItem && taskName) {
-      for (const item of allItems) {
-        if (item.name === taskName) {
-          foundItem = item;
-          break;
+      if (itemType === 'project') {
+        const ref = resolveProjectRef(taskName, allItems);
+        if (ref.ambiguous) {
+          return JSON.stringify({
+            success: false,
+            error: formatAmbiguousProjectError(taskName, ref.matches, 'id')
+          });
+        }
+        foundItem = ref.project;
+        if (foundItem && ref.matches.length > 1) {
+          sharedNameMatches = ref.matches.length;
+        }
+      } else {
+        for (const item of allItems) {
+          if (item.name === taskName) {
+            foundItem = item;
+            break;
+          }
         }
       }
     }
@@ -54,17 +72,22 @@
     }
 
     // Store info before deletion
-    const deletedId = foundItem.id.primaryKey;
-    const deletedName = foundItem.name;
+    const removal = {
+      success: true,
+      id: foundItem.id.primaryKey,
+      name: foundItem.name
+    };
+    // A removal can't be undone, so when the name was shared the reply says
+    // which project went and how many of that name are left (#149).
+    if (sharedNameMatches > 1) {
+      removal.status = projectStatusWord(foundItem);
+      removal.otherMatches = sharedNameMatches - 1;
+    }
 
     // Delete the item
     deleteObject(foundItem);
 
-    return JSON.stringify({
-      success: true,
-      id: deletedId,
-      name: deletedName
-    });
+    return JSON.stringify(removal);
 
   } catch (error) {
     return JSON.stringify({

@@ -3,12 +3,13 @@ import { removeItem, RemoveItemParams } from '../primitives/removeItem.js';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js';
 import { logger } from '../../utils/logger.js';
+import { formatRemoveItemReply } from '../../utils/batchReply.js';
 
 const log = logger.child('def:removeItem');
 
 export const schema = z.object({
   id: z.string().optional().describe("The ID of the task or project to remove"),
-  name: z.string().optional().describe("The name of the task or project to remove (as fallback if ID not provided)"),
+  name: z.string().optional().describe("The name of the task or project to remove (as fallback if ID not provided). When itemType is \"project\", the name matches regardless of case, and a name shared by several projects resolves to the single active or on-hold one outside a dropped folder; otherwise nothing is removed and the error lists every candidate's ID, to pass as id"),
   itemType: z.enum(['task', 'project']).describe("Type of item to remove ('task' or 'project')")
 });
 
@@ -43,13 +44,12 @@ export async function handler(args: z.infer<typeof schema>, _extra: RequestHandl
     const result = await removeItem(args as RemoveItemParams);
     
     if (result.success) {
-      // Item was removed successfully
-      const itemTypeLabel = args.itemType === 'task' ? 'Task' : 'Project';
-      
+      // Item was removed successfully. A project removed by a shared name
+      // also gets its ID, status and how many of that name remain (#149).
       return {
         content: [{
           type: "text" as const,
-          text: `✅ ${itemTypeLabel} "${result.name}" removed successfully.`
+          text: formatRemoveItemReply(args.itemType, result)
         }]
       };
     } else {

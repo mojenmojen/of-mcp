@@ -1,6 +1,38 @@
-# OmniFocus MCP Server - What's New (v2.1.5)
+# OmniFocus MCP Server - What's New (v3.0.0)
 
 > Summary of changes from Sprints 1-10 for AI assistants using this MCP server.
+
+## v3.0.0 Duplicate project names resolve the same way in every tool (#149)
+
+**A project name shared by several projects now means the same project in every tool.** Before this, tools that looked a project up by name disagreed: some took the first match and others the last. So `get_project_by_id` could show one project while `batch_remove_items` deleted another, and neither was usually the Active project the caller meant. Shared names are common: completing a repeating project leaves a Completed copy with the same name.
+
+Every project-name lookup now follows one rule:
+
+1. A name that matches exactly one project resolves to it, whatever its status.
+2. When several projects share the name, the single live one is used: Active or On Hold, with no dropped folder above it. Completed and Dropped copies, and projects inside a dropped folder, are skipped. A reply that uses the live project doesn't mention the skipped copies.
+3. If there isn't exactly one live project, the call fails and lists every candidate with its folder path, ID and status, for example:
+
+> Project name "SMOKE-dup" is ambiguous - 3 projects match, and a name only resolves when exactly one is active or on hold outside a dropped folder: "SMOKE-a > SMOKE-dup" (id: abc123, Active), "SMOKE-dup" (id: def456, OnHold), "SMOKE-b > SMOKE-dup" (id: ghi789, Active, inside a dropped folder). Pass projectId.
+
+The error names the ID parameter of the tool you called: `projectId`, `sourceProjectId` (`duplicate_project`), `id` (finding a project in `edit_item`, `batch_edit_items`, `remove_item`, `batch_remove_items`), `newProjectId` (`newProjectName` in `edit_item`, `batch_edit_items`) or `projectIds` (`batch_mark_reviewed`). A candidate whose status or folders can't be read also makes the call fail, and is marked `status unreadable` or `folder path unreadable`. In the batch tools, only that item or name fails, and the rest still apply.
+
+Names still compare regardless of case. Unique names are unaffected, apart from `remove_item`, which now matches project names regardless of case, as `batch_remove_items` already did.
+
+**This is a breaking change**, hence the major version, for callers that relied on first-match or last-match with duplicate project names: they now get the live project or an error. Pass the project's ID to choose a particular copy.
+
+Affected tools: `add_omnifocus_task`, `batch_add_items`, `get_project_by_id`, `search_tasks`, `duplicate_project`, `edit_item`, `batch_edit_items`, `remove_item`, `batch_remove_items`, `batch_mark_reviewed`.
+
+**Removing a project by a shared name says which one went.** Because a removal can't be undone, `remove_item` and `batch_remove_items` name the removed project's ID and status, and how many projects of that name remain:
+
+> ✅ Project "SMOKE-dup" (id: abc123, Active) removed successfully. 2 other projects named "SMOKE-dup" remain.
+
+A removal by ID, or by a name only one project has, reads as before. In `batch_remove_items`, once an item has removed a project, a later item giving the same name fails with `Item not found`, even if other projects of that name remain.
+
+**An ambiguous `newProjectName` in `edit_item` or `batch_edit_items` is reported like a project that isn't found.** It is looked up after the item's other changes, so those changes stay (#150).
+
+Closes #149.
+
+---
 
 ## v2.1.5 `repeatFrom: "due"` keeps a fixed schedule (#162)
 

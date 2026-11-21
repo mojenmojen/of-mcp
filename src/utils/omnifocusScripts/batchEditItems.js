@@ -1,6 +1,6 @@
 // OmniJS script to edit multiple items in a single execution
 // This provides true batching - all edits happen in one OmniFocus session
-// Note: parseLocalDate, buildRRule, buildRepetitionRule, resolveFolderRef and formatAmbiguousFolderError are provided by sharedUtils.js
+// Note: parseLocalDate, buildRRule, buildRepetitionRule, resolveFolderRef, formatAmbiguousFolderError, resolveProjectRef and formatAmbiguousProjectError are provided by sharedUtils.js
 (() => {
   // Build tag lookup Map once for O(1) lookups (instead of O(n) per lookup)
   const tagLookupMap = new Map();
@@ -44,12 +44,26 @@
     let cachedFolders = null;
     let foldersById = null;
 
+    // Every project of each lower-cased name, so resolveProjectRef can apply
+    // the duplicate-name rule (#149)
     function getProjectsByName() {
       if (!projectsByName) {
         projectsByName = new Map();
-        flattenedProjects.forEach(p => projectsByName.set(p.name.toLowerCase(), p));
+        flattenedProjects.forEach(p => {
+          const key = p.name.toLowerCase();
+          const sameName = projectsByName.get(key);
+          if (sameName) {
+            sameName.push(p);
+          } else {
+            projectsByName.set(key, [p]);
+          }
+        });
       }
       return projectsByName;
+    }
+
+    function resolveProjectName(name) {
+      return resolveProjectRef(name, getProjectsByName().get(name.toLowerCase()) || []);
     }
 
     function getProjectsById() {
@@ -125,7 +139,19 @@
 
         if (itemType === 'project') {
           if (itemId) foundItem = Project.byIdentifier(itemId);
-          if (!foundItem && itemName) foundItem = getProjectsByName().get(itemName.toLowerCase());
+          if (!foundItem && itemName) {
+            const ref = resolveProjectName(itemName);
+            if (ref.ambiguous) {
+              results.push({
+                success: false,
+                id: itemId,
+                name: itemName,
+                error: formatAmbiguousProjectError(itemName, ref.matches, 'id')
+              });
+              continue;
+            }
+            foundItem = ref.project;
+          }
         } else {
           if (itemId) foundItem = Task.byIdentifier(itemId);
           if (!foundItem && itemName) foundItem = getTasksByName().get(itemName.toLowerCase());
@@ -266,9 +292,21 @@
             targetProject = getProjectsById().get(edit.newProjectId);
           }
 
-          // Fall back to name if ID not found or not provided
+          // Fall back to name if ID not found or not provided. Looked up here,
+          // after this item's other edits, so an ambiguous name leaves them in
+          // place, as a name that isn't found does (#150).
           if (!targetProject && edit.newProjectName) {
-            targetProject = getProjectsByName().get(edit.newProjectName.toLowerCase());
+            const ref = resolveProjectName(edit.newProjectName);
+            if (ref.ambiguous) {
+              results.push({
+                success: false,
+                id: originalId,
+                name: originalName,
+                error: formatAmbiguousProjectError(edit.newProjectName, ref.matches, 'newProjectId')
+              });
+              continue;
+            }
+            targetProject = ref.project;
           }
 
           if (targetProject) {

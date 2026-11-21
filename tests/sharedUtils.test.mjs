@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { addRepetitionGlobals, REPETITION_METHOD } from './helpers/omnijsHarness.mjs';
+import { addRepetitionGlobals, REPETITION_METHOD, PROJECT_STATUS } from './helpers/omnijsHarness.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SHARED_UTILS = join(
@@ -233,4 +233,186 @@ test('buildRepetitionRule falls back to the Fixed method without RepetitionSched
       `repeatFrom: ${repeatFrom}`
     );
   }
+});
+
+// The duplicate project-name rule (#149): resolveProjectRef and
+// formatAmbiguousProjectError. These tests bring their own loader, because
+// the one above supplies no Project and returns only the folder helpers. It
+// runs inside each test, so while the helpers are missing each test fails on
+// its own and the folder tests above still run. Folders come from folder()
+// above, whose statuses match FOLDER_STUB.
+
+function loadProjectHelpers() {
+  const source = readFileSync(SHARED_UTILS, 'utf8');
+  return new Function(
+    'Task', 'Folder', 'Project',
+    `${source}\nreturn { resolveProjectRef, formatAmbiguousProjectError };`
+  )(TASK_STUB, FOLDER_STUB, { Status: PROJECT_STATUS });
+}
+
+// Stand-in for an OmniJS Project: the resolver reads `.name`, and on its
+// two-or-more path `.status` and `.parentFolder`; the message reads
+// `.id.primaryKey`. Folders above it are walked through `.parent`.
+function project(name, id, status = PROJECT_STATUS.Active, parentFolder = null) {
+  return { name, id: { primaryKey: id }, status, parentFolder };
+}
+
+function throwingGetter(obj, field) {
+  Object.defineProperty(obj, field, { get() { throw new Error(`${field} unreadable`); } });
+  return obj;
+}
+
+const AMBIGUITY_PREFIX = (name, count) =>
+  `Project name "${name}" is ambiguous - ${count} projects match, and a name only resolves when exactly one is active or on hold outside a dropped folder: `;
+
+test('resolveProjectRef: a lone Completed match resolves (#149)', () => {
+  const { resolveProjectRef } = loadProjectHelpers();
+  const done = project('SMOKE-dup', 'p1', PROJECT_STATUS.Done);
+  const ref = resolveProjectRef('SMOKE-dup', [project('SMOKE-other', 'p0'), done]);
+  assert.equal(ref.project, done);
+  assert.deepEqual(ref.matches, [done]);
+  assert.equal(ref.ambiguous, false);
+});
+
+test('resolveProjectRef: a lone match with no status or parentFolder field resolves (#149)', () => {
+  const { resolveProjectRef } = loadProjectHelpers();
+  const bare = { name: 'SMOKE-dup', id: { primaryKey: 'p1' } };
+  const ref = resolveProjectRef('SMOKE-dup', [bare]);
+  assert.equal(ref.project, bare);
+  assert.equal(ref.ambiguous, false);
+});
+
+test('resolveProjectRef: no match returns nothing and is not ambiguous (#149)', () => {
+  const { resolveProjectRef } = loadProjectHelpers();
+  assert.deepEqual(
+    resolveProjectRef('SMOKE-none', [project('SMOKE-dup', 'p1')]),
+    { project: null, matches: [], ambiguous: false }
+  );
+});
+
+test('resolveProjectRef: among Completed, Active, Completed the Active one is picked (#149)', () => {
+  const { resolveProjectRef } = loadProjectHelpers();
+  const live = project('SMOKE-dup', 'p2');
+  const all = [project('SMOKE-dup', 'p1', PROJECT_STATUS.Done), live, project('SMOKE-dup', 'p3', PROJECT_STATUS.Done)];
+  const ref = resolveProjectRef('SMOKE-dup', all);
+  assert.equal(ref.project, live);
+  assert.deepEqual(ref.matches, all);
+  assert.equal(ref.ambiguous, false);
+});
+
+test('resolveProjectRef: OnHold counts as live (#149)', () => {
+  const { resolveProjectRef } = loadProjectHelpers();
+  const onHold = project('SMOKE-dup', 'p2', PROJECT_STATUS.OnHold);
+  const ref = resolveProjectRef('SMOKE-dup', [project('SMOKE-dup', 'p1', PROJECT_STATUS.Done), onHold]);
+  assert.equal(ref.project, onHold);
+});
+
+test('resolveProjectRef: a Dropped project is skipped (#149)', () => {
+  const { resolveProjectRef } = loadProjectHelpers();
+  const live = project('SMOKE-dup', 'p2');
+  const ref = resolveProjectRef('SMOKE-dup', [project('SMOKE-dup', 'p1', PROJECT_STATUS.Dropped), live]);
+  assert.equal(ref.project, live);
+});
+
+test('resolveProjectRef: a project directly inside a dropped folder is skipped (#149)', () => {
+  const { resolveProjectRef } = loadProjectHelpers();
+  const dropped = folder('SMOKE-old', null, 'f1', 'Dropped');
+  const live = project('SMOKE-dup', 'p2');
+  const ref = resolveProjectRef('SMOKE-dup', [project('SMOKE-dup', 'p1', PROJECT_STATUS.Active, dropped), live]);
+  assert.equal(ref.project, live);
+});
+
+test('resolveProjectRef: a project whose folder\'s parent is dropped is skipped (#149)', () => {
+  const { resolveProjectRef } = loadProjectHelpers();
+  const dropped = folder('SMOKE-old', null, 'f1', 'Dropped');
+  const inner = folder('SMOKE-inner', dropped, 'f2');
+  const live = project('SMOKE-dup', 'p2');
+  const ref = resolveProjectRef('SMOKE-dup', [project('SMOKE-dup', 'p1', PROJECT_STATUS.Active, inner), live]);
+  assert.equal(ref.project, live);
+});
+
+test('resolveProjectRef: no live match among several fails closed (#149)', () => {
+  const { resolveProjectRef } = loadProjectHelpers();
+  const none = [project('SMOKE-dup', 'p1', PROJECT_STATUS.Done), project('SMOKE-dup', 'p2', PROJECT_STATUS.Dropped)];
+  assert.deepEqual(resolveProjectRef('SMOKE-dup', none), { project: null, matches: none, ambiguous: true });
+  const two = [project('SMOKE-dup', 'p3'), project('SMOKE-dup', 'p4', PROJECT_STATUS.OnHold)];
+  assert.deepEqual(resolveProjectRef('SMOKE-dup', two), { project: null, matches: two, ambiguous: true });
+});
+
+test('resolveProjectRef: matching ignores case (#149)', () => {
+  const { resolveProjectRef } = loadProjectHelpers();
+  const live = project('Smoke-Dup', 'p2');
+  const all = [project('SMOKE-DUP', 'p1', PROJECT_STATUS.Done), live];
+  const ref = resolveProjectRef('smoke-dup', all);
+  assert.equal(ref.project, live);
+  assert.deepEqual(ref.matches, all);
+});
+
+test('resolveProjectRef: an unreadable status fails closed even with a live candidate, and is marked (#149)', () => {
+  const { resolveProjectRef, formatAmbiguousProjectError } = loadProjectHelpers();
+  const all = [project('SMOKE-dup', 'p1'), throwingGetter(project('SMOKE-dup', 'p2'), 'status')];
+  const ref = resolveProjectRef('SMOKE-dup', all);
+  assert.deepEqual(ref, { project: null, matches: all, ambiguous: true });
+  assert.equal(
+    formatAmbiguousProjectError('SMOKE-dup', ref.matches, 'projectId'),
+    AMBIGUITY_PREFIX('SMOKE-dup', 2) + '"SMOKE-dup" (id: p1, Active), "SMOKE-dup" (id: p2, status unreadable). Pass projectId.'
+  );
+});
+
+test('resolveProjectRef: a status outside Active, OnHold, Done and Dropped counts as unreadable (#149)', () => {
+  const { resolveProjectRef, formatAmbiguousProjectError } = loadProjectHelpers();
+  const all = [project('SMOKE-dup', 'p1'), project('SMOKE-dup', 'p2', 'P-Unknown')];
+  const ref = resolveProjectRef('SMOKE-dup', all);
+  assert.equal(ref.ambiguous, true);
+  assert.equal(ref.project, null);
+  assert.match(formatAmbiguousProjectError('SMOKE-dup', ref.matches, 'projectId'), /\(id: p2, status unreadable\)/);
+});
+
+test('resolveProjectRef: an unreadable folder chain fails closed even with a live candidate, and is marked (#149)', () => {
+  const { resolveProjectRef, formatAmbiguousProjectError } = loadProjectHelpers();
+  const all = [project('SMOKE-dup', 'p1'), throwingGetter(project('SMOKE-dup', 'p2'), 'parentFolder')];
+  const ref = resolveProjectRef('SMOKE-dup', all);
+  assert.deepEqual(ref, { project: null, matches: all, ambiguous: true });
+  assert.equal(
+    formatAmbiguousProjectError('SMOKE-dup', ref.matches, 'projectId'),
+    AMBIGUITY_PREFIX('SMOKE-dup', 2) + '"SMOKE-dup" (id: p1, Active), "SMOKE-dup" (id: p2, Active, folder path unreadable). Pass projectId.'
+  );
+});
+
+test('formatAmbiguousProjectError: a chain unreadable above a dropped folder carries both notes, in order (#149)', () => {
+  const { resolveProjectRef, formatAmbiguousProjectError } = loadProjectHelpers();
+  const dropped = throwingGetter(folder('SMOKE-old', null, 'f1', 'Dropped'), 'parent');
+  const all = [project('SMOKE-dup', 'p1'), project('SMOKE-dup', 'p2', PROJECT_STATUS.Active, dropped)];
+  const ref = resolveProjectRef('SMOKE-dup', all);
+  assert.equal(ref.ambiguous, true);
+  assert.equal(
+    formatAmbiguousProjectError('SMOKE-dup', ref.matches, 'projectId'),
+    AMBIGUITY_PREFIX('SMOKE-dup', 2) + '"SMOKE-dup" (id: p1, Active), "SMOKE-dup" (id: p2, Active, folder path unreadable, inside a dropped folder). Pass projectId.'
+  );
+});
+
+test('formatAmbiguousProjectError: the issue\'s example message, with folder paths and statuses (#149)', () => {
+  const { resolveProjectRef, formatAmbiguousProjectError } = loadProjectHelpers();
+  const a = folder('SMOKE-a', null, 'fa');
+  const b = folder('SMOKE-b', null, 'fb', 'Dropped');
+  const all = [
+    project('SMOKE-dup', 'abc123', PROJECT_STATUS.Active, a),
+    project('SMOKE-dup', 'def456', PROJECT_STATUS.OnHold),
+    project('SMOKE-dup', 'ghi789', PROJECT_STATUS.Active, b),
+  ];
+  const ref = resolveProjectRef('SMOKE-dup', all);
+  assert.equal(ref.ambiguous, true);
+  assert.equal(
+    formatAmbiguousProjectError('SMOKE-dup', ref.matches, 'projectId'),
+    'Project name "SMOKE-dup" is ambiguous - 3 projects match, and a name only resolves when exactly one is active or on hold outside a dropped folder: "SMOKE-a > SMOKE-dup" (id: abc123, Active), "SMOKE-dup" (id: def456, OnHold), "SMOKE-b > SMOKE-dup" (id: ghi789, Active, inside a dropped folder). Pass projectId.'
+  );
+});
+
+test('formatAmbiguousProjectError: names Done as Completed, quotes the name as passed, and names the idParam (#149)', () => {
+  const { formatAmbiguousProjectError } = loadProjectHelpers();
+  const all = [project('SMOKE-Dup', 'p1', PROJECT_STATUS.Done), project('SMOKE-Dup', 'p2', PROJECT_STATUS.Dropped)];
+  assert.equal(
+    formatAmbiguousProjectError('smoke-dup', all, 'sourceProjectId'),
+    AMBIGUITY_PREFIX('smoke-dup', 2) + '"SMOKE-Dup" (id: p1, Completed), "SMOKE-Dup" (id: p2, Dropped). Pass sourceProjectId.'
+  );
 });

@@ -8,7 +8,7 @@ export const schema = z.object({
   sourceProjectId: z.string().optional()
     .describe("ID of project to duplicate"),
   sourceProjectName: z.string().optional()
-    .describe("Name of project to duplicate (if ID not provided)"),
+    .describe("Name of project to duplicate (if ID not provided). A name shared by several projects resolves to the single active or on-hold one outside a dropped folder; otherwise the call fails and the error lists every candidate's ID, to pass as sourceProjectId"),
   newName: z.string()
     .describe("Name for the duplicated project"),
   folderName: z.string().optional()

@@ -24,7 +24,7 @@ export const schema = z.object({
     parentTempId: z.string().optional().describe("Reference to another item's tempId to create this as a child/subtask of that item"),
 
     // Task-specific properties
-    projectName: z.string().optional().describe("For tasks: The name of the project to add the task to"),
+    projectName: z.string().optional().describe("For tasks: The name of the project to add the task to. A name shared by several projects resolves to the single active or on-hold one outside a dropped folder; otherwise that item fails and the error lists every candidate's ID, to pass as projectId"),
     projectId: z.string().optional().describe("For tasks: The ID of the project to add the task to (alternative to projectName)"),
     parentTaskId: z.string().optional().describe("For tasks: The ID of the parent task to create this task as a subtask"),
     parentTaskName: z.string().optional().describe("For tasks: The name of the parent task to create this task as a subtask"),

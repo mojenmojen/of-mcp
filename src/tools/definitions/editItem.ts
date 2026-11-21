@@ -9,7 +9,7 @@ const log = logger.child('def:editItem');
 
 export const schema = z.object({
   id: z.string().optional().describe("The ID of the task or project to edit"),
-  name: z.string().optional().describe("The name of the task or project to edit (as fallback if ID not provided)"),
+  name: z.string().optional().describe("The name of the task or project to edit (as fallback if ID not provided). When itemType is \"project\", a name shared by several projects resolves to the single active or on-hold one outside a dropped folder; otherwise the call fails and the error lists every candidate's ID, to pass as id"),
   itemType: z.enum(['task', 'project']).describe("Type of item to edit ('task' or 'project')"),
   
   // Common editable fields
@@ -32,7 +32,7 @@ export const schema = z.object({
   newRepetitionRule: repetitionRuleSchema.nullable().optional().describe("New repetition rule for the task. Set to null to remove repetition, or provide object to set. Examples: null (remove), {frequency: 'daily'}, {frequency: 'weekly', daysOfWeek: [1,3,5]}"),
 
   // Task movement fields
-  newProjectName: z.string().optional().describe("Move task to a different project (by project name)"),
+  newProjectName: z.string().optional().describe("Move task to a different project (by project name). A name shared by several projects resolves to the single active or on-hold one outside a dropped folder; otherwise the move fails and the error lists every candidate's ID, to pass as newProjectId"),
   newProjectId: z.string().optional().describe("Move task to a different project (by project ID)"),
   newParentTaskId: z.string().optional().describe("Move task to be a subtask of another task (by task ID)"),
   newParentTaskName: z.string().optional().describe("Move task to be a subtask of another task (by task name)"),

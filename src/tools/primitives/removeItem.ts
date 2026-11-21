@@ -15,7 +15,9 @@ export interface RemoveItemParams {
  * Remove a task or project from OmniFocus
  * Uses OmniJS to avoid AppleScript escaping issues with special characters like $
  */
-export async function removeItem(params: RemoveItemParams): Promise<{success: boolean, id?: string, name?: string, error?: string}> {
+// status and otherMatches are set only when a project was removed by a name
+// that two or more projects matched (#149)
+export async function removeItem(params: RemoveItemParams): Promise<{success: boolean, id?: string, name?: string, status?: string | null, otherMatches?: number, error?: string}> {
   try {
     // Validate parameters
     if (!params.id && !params.name) {
@@ -56,7 +58,9 @@ export async function removeItem(params: RemoveItemParams): Promise<{success: bo
       return {
         success: true,
         id: parsed.id,
-        name: parsed.name
+        name: parsed.name,
+        ...(parsed.status !== undefined ? { status: parsed.status } : {}),
+        ...(parsed.otherMatches !== undefined ? { otherMatches: parsed.otherMatches } : {})
       };
     } else {
       return {
